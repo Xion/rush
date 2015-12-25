@@ -1,9 +1,17 @@
 extern crate getopts;
+#[macro_use]
+extern crate nom;
 
 
-use getopts::Options;
+mod syntax;
+
+
 use std::env;
 use std::io::{self, Read, Write, BufRead, BufReader, BufWriter};
+
+use getopts::Options;
+
+use self::syntax::{AstNode, Context, parse};
 
 
 fn main() {
@@ -33,17 +41,26 @@ fn print_usage(program: &str, opts: Options) {
 /// Apply the expression to given input stream,
 /// writing to the given output stream.
 fn apply<R: Read, W: Write>(expr: &str, input: R, output: W) {
-    if !(expr == "" || expr == "_" || expr == "id") {
-        // TODO(xion): be less useless
-        panic!("NYI");
-    }
+    // TODO(xion): better error handling
+    let ast = parse(expr).unwrap();
+
+    // if !(expr == "" || expr == "_" || expr == "id") {
+    //     // TODO(xion): be less useless
+    //     panic!("NYI");
+    // }
 
     let reader = BufReader::new(input);
     let mut writer = BufWriter::new(output);
     for line in reader.lines() {
         // TODO(xion): handle read errors
         let line = line.unwrap();
+
+        let mut context = Context::new();
+        context.insert("_".to_string(), line);
+
+        let result = ast.eval(&context);
+
         // TODO(xion): handle write errors
-        write!(writer, "{}\n", line).unwrap();
+        write!(writer, "{}\n", result).unwrap();
     }
 }

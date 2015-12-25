@@ -5,3 +5,4 @@ authors = ["Karol Kuczmarski <karol.kuczmarski@gmail.com>"]
 
 [dependencies]
 getopts = "0.2"
+nom = { version = "~1.0.0", features = ["regexp"] }
