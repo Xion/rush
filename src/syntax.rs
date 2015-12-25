@@ -17,15 +17,14 @@ struct ValueNode {
     pub value: Value,
 }
 impl AstNode for ValueNode {
-    #[allow(unused_variables)]
     fn eval(&self, context: &Context) -> Value {
-        self.value.clone()
+        context.get(&self.value).unwrap_or(&self.value).clone()
     }
 }
 
 
 named!(value<&[u8], ValueNode>, chain!(
-    val: map_res!(alphanumeric, str::from_utf8),
+    val: map_res!(alt!(tag!("_") | alphanumeric), str::from_utf8),
     || { ValueNode{value: val.to_string()} }
 ));
 
