@@ -5,7 +5,7 @@ use std::str::from_utf8;
 use nom::{alphanumeric, multispace, IResult, Needed, Err, ErrorKind};
 
 use ast::*;
-use eval::Value;
+use eval::{Eval, Value};
 
 
 named!(value<&[u8], ValueNode>, chain!(

@@ -44,21 +44,29 @@ impl Display for Value {
 }
 
 
+type Functions = HashMap<String, Box<Fn(Vec<Value>) -> Value>>;
+type Variables = HashMap<String, Value>;
+
 /// Evaluation context for an expression.
 ///
 /// Contains all the variable and function bindings that are used
 /// when evaluation an expression.
 pub struct Context {
-    vars: HashMap<String, Value>,
-    funcs: HashMap<String, Box<Fn(Value) -> Value>>,
+    vars: Variables,
+    funcs: Functions,
 }
 
 impl Context {
     pub fn new() -> Context {
-        let mut funcs = HashMap::new();
-        // TODO(xion): some built-in functions
+        let mut funcs = Functions::new();
+        funcs.insert("abs".to_string(), Box::new(|args: Vec<Value>| {
+            if let Value::Float(ref f) = args[0] {
+                return Value::Float(f.abs());
+            }
+            panic!("invalid arguments to abs()");
+        }));
 
-        Context{vars: HashMap::new(), funcs: funcs}
+        Context{vars: Variables::new(), funcs: funcs}
     }
 
     /// Retrieves the value for a variable if it exists.
@@ -80,6 +88,12 @@ impl Context {
     /// Set a string value for a variable.
     pub fn set_string_var(&mut self, name: &str, value: &str) {
         self.set_var(name, Value::String(value.to_string()))
+    }
+
+    /// Call a function of given name with given arguments.
+    /// Returns result or None if the function couldn't be found.
+    pub fn call_func(&self, name: &str, args: Vec<Value>) -> Option<Value> {
+        self.funcs.get(&name.to_string()).map(|func| func(args))
     }
 }
 
