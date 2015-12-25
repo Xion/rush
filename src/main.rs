@@ -2,7 +2,7 @@ extern crate getopts;
 #[macro_use]
 extern crate nom;
 
-
+mod ast;
 mod eval;
 mod parse;
 
