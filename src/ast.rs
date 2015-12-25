@@ -1,18 +1,34 @@
 //! Data structures representing the abstract syntax tree (AST)
 //! of parsed expressions.
 
-use eval::{Eval, Context, Value};
+use std::str::FromStr;
+
+use eval::{self, Eval, Context, Value};
 
 
 pub struct ValueNode {
     pub value: Value,
 }
 
+impl FromStr for ValueNode {
+    type Err = <Value as FromStr>::Err;
+
+    fn from_str(s: &str) -> Result<ValueNode, Self::Err> {
+        s.parse::<Value>().map(|v| ValueNode{value: v})
+    }
+}
+
 impl Eval for ValueNode {
-    fn eval(&self, context: &Context) -> Value {
-        // treat the literal value as variable name if such variable exists;
-        // otherwise, just return the value itself as string
-        context.get_var(&self.value).unwrap_or(&self.value).clone()
+    fn eval(&self, context: &Context) -> Result<Value, eval::Error> {
+        if let Value::String(ref string) = self.value {
+            // treat the literal value as variable name if such variable exists;
+            // otherwise, just return the value itself as string
+            if let Some(value) = context.get_var(string) {
+                return Ok(value.clone());
+            }
+            return Ok(Value::String(string.clone()));
+        }
+        Ok(self.value.clone())
     }
 }
 
@@ -24,14 +40,22 @@ pub struct BinaryOpNode {
 }
 
 impl Eval for BinaryOpNode {
-    fn eval(&self, context: &Context) -> Value {
+    fn eval(&self, context: &Context) -> Result<Value, eval::Error> {
         match &self.op[..] {
             "+" => {
-                // TODO(xion): string concatenation vs. adding numbers
-                self.left.eval(&context) + &self.right.eval(&context)
+                let left = try!(self.left.eval(&context));
+                let right = try!(self.right.eval(&context));
+
+                if let Value::String(left) = left {
+                    if let Value::String(right) = right {
+                        return Ok(Value::String(left + &right));
+                    }
+                }
+                // TODO(xion): adding numbers
+                eval::Error::err("invalid types for + operator")
             }
             // TODO(xion): other operators
-            _ => panic!("unknown operator: {}", self.op)
+            _ => eval::Error::err(&format!("unknown operator: {}", self.op))
         }
     }
 }

@@ -5,12 +5,12 @@ use std::str::from_utf8;
 use nom::{alphanumeric, multispace, IResult, Needed, Err, ErrorKind};
 
 use ast::*;
-use eval::Eval;
+use eval::Value;
 
 
 named!(value<&[u8], ValueNode>, chain!(
     value: map_res!(alt!(tag!("_") | alphanumeric), from_utf8),
-    || { ValueNode{value: value.to_string()} }
+    || { value.parse::<ValueNode>().unwrap() }
 ));
 named!(binary_op<&[u8], BinaryOpNode>, chain!(
     left: value ~

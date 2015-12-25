@@ -52,9 +52,10 @@ fn apply<R: Read, W: Write>(expr: &str, input: R, output: W) {
         let line = line.unwrap();
 
         let mut context = Context::new();
-        context.set_var("_", line);
+        context.set_string_var("_", &line);
 
-        let result = ast.eval(&context);
+        // TODO(xion): handle evaluation errors
+        let result = ast.eval(&context).ok().unwrap();
 
         // TODO(xion): handle write errors
         write!(writer, "{}\n", result).unwrap();
