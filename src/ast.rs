@@ -10,7 +10,9 @@ pub struct ValueNode {
 
 impl Eval for ValueNode {
     fn eval(&self, context: &Context) -> Value {
-        context.get(&self.value).unwrap_or(&self.value).clone()
+        // treat the literal value as variable name if such variable exists;
+        // otherwise, just return the value itself as string
+        context.get_var(&self.value).unwrap_or(&self.value).clone()
     }
 }
 

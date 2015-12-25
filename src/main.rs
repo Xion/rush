@@ -52,7 +52,7 @@ fn apply<R: Read, W: Write>(expr: &str, input: R, output: W) {
         let line = line.unwrap();
 
         let mut context = Context::new();
-        context.insert("_".to_string(), line);
+        context.set_var("_", line);
 
         let result = ast.eval(&context);
 
