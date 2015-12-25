@@ -11,7 +11,7 @@ use std::io::{self, Read, Write, BufRead, BufReader, BufWriter};
 
 use getopts::Options;
 
-use self::syntax::{AstNode, Context, parse};
+use self::syntax::{Eval, Context, parse};
 
 
 fn main() {
@@ -41,13 +41,7 @@ fn print_usage(program: &str, opts: Options) {
 /// Apply the expression to given input stream,
 /// writing to the given output stream.
 fn apply<R: Read, W: Write>(expr: &str, input: R, output: W) {
-    // TODO(xion): better error handling
-    let ast = parse(expr).unwrap();
-
-    // if !(expr == "" || expr == "_" || expr == "id") {
-    //     // TODO(xion): be less useless
-    //     panic!("NYI");
-    // }
+    let ast = parse(expr);
 
     let reader = BufReader::new(input);
     let mut writer = BufWriter::new(output);
