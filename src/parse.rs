@@ -1,3 +1,5 @@
+//! Parser code for the expression syntax.
+
 use std::str::from_utf8;
 
 use nom::{alphanumeric, multispace, IResult, Needed, Err, ErrorKind};

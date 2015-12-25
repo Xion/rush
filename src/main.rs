@@ -4,7 +4,7 @@ extern crate nom;
 
 
 mod eval;
-mod syntax;
+mod parse;
 
 
 use std::env;
@@ -13,7 +13,7 @@ use std::io::{self, Read, Write, BufRead, BufReader, BufWriter};
 use getopts::Options;
 
 use self::eval::{Eval, Context};
-use self::syntax::parse;
+use self::parse::parse;
 
 
 fn main() {
