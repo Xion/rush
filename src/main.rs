@@ -3,6 +3,7 @@ extern crate getopts;
 extern crate nom;
 
 
+mod eval;
 mod syntax;
 
 
@@ -11,7 +12,8 @@ use std::io::{self, Read, Write, BufRead, BufReader, BufWriter};
 
 use getopts::Options;
 
-use self::syntax::{Eval, Context, parse};
+use self::eval::{Eval, Context};
+use self::syntax::parse;
 
 
 fn main() {

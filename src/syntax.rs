@@ -1,16 +1,8 @@
-use std::collections::hash_map::HashMap;
 use std::str::from_utf8;
 
 use nom::{alphanumeric, multispace, IResult, Needed, Err, ErrorKind};
 
-
-// TODO(xion): make an ADT or something, to represent various types of values
-pub type Value = String;
-pub type Context = HashMap<String, Value>;
-
-pub trait Eval {
-    fn eval(&self, context: &Context) -> Value;
-}
+use eval::{Eval, Context, Value};
 
 
 struct ValueNode {
