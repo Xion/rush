@@ -27,8 +27,8 @@ fn main() {
         return;
     }
 
-    let expr = args.free.first().map(|s| &**s).unwrap_or("");
-    apply(expr, io::stdin(), io::stdout());
+    let expr = args.free.join(" ");
+    apply(&expr, io::stdin(), io::stdout());
 }
 
 
