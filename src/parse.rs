@@ -22,22 +22,42 @@ named!(binary_op<&[u8], BinaryOpNode>, chain!(
                       left: Box::new(left),
                       right: Box::new(right)} }
 ));
+named!(function_call<&[u8], FunctionCallNode>, chain!(
+    name: map_res!(alphanumeric, from_utf8) ~
+    is_a!("(") ~
+    args: many0!(chain!(
+        multispace? ~ arg: expr ~ multispace? ~ is_a!(","),
+        || { arg }
+    )) ~
+    is_a!(")"),
+    || { FunctionCallNode{name: name.to_string(), args: args} }
+));
 
 fn expr(input: &[u8]) -> IResult<&[u8], Box<Eval>> {
     // TODO(xion): figure out how to do this with alt!() rather than manually
     // (the problem with alt! is that it uses `match` for branching
     // and that doesn't work since *Node results are unrelated types and cannot
     // be matched against)
+    if let IResult::Done(input, output) = function_call(input) {
+        if input.is_empty() {
+            return IResult::Done(input, Box::new(output) as Box<Eval>);
+        }
+    }
     if let IResult::Done(input, output) = binary_op(input) {
-        assert!(input.is_empty());
-        return IResult::Done(input, Box::new(output) as Box<Eval>);
+        if input.is_empty() {
+            return IResult::Done(input, Box::new(output) as Box<Eval>);
+        }
     }
     if let IResult::Done(input, output) = value(input) {
-        assert!(input.is_empty());
-        return IResult::Done(input, Box::new(output) as Box<Eval>);
+        if input.is_empty() {
+            return IResult::Done(input, Box::new(output) as Box<Eval>);
+        }
     }
 
     // TODO(xion): introduce custom error type instead of the default numeric
+    if !input.is_empty() {
+        panic!("leftover input: {}", from_utf8(input).unwrap());
+    }
     IResult::Error(Err::Code(ErrorKind::Custom(404)))
 }
 
