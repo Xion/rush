@@ -23,6 +23,13 @@ impl Value {
         None
     }
 
+    fn map_string<F: FnOnce(String) -> String>(self, func: F) -> Option<Value> {
+        if let Value::String(s) = self {
+            return Some(Value::String(func(s)));
+        }
+        None
+    }
+
     fn map_int<F: FnOnce(i64) -> i64>(&self, func: F) -> Option<Value> {
         if let Value::Integer(i) = *self {
             return Some(Value::Integer(func(i)));
@@ -81,9 +88,19 @@ pub struct Context {
 
 impl Context {
     pub fn new() -> Context {
+        // TODO(xion): consider making Functions a struct and extracting
+        // the boilerplate for defining functions there
         let mut funcs = Functions::new();
         funcs.insert("abs".to_string(), Box::new(|args: Vec<Value>| {
             args[0].map_float(f64::abs).expect("invalid arguments to abs()")
+        }));
+        funcs.insert("rev".to_string(), Box::new(|args: Vec<Value>| {
+            args[0].map_str(|s: &str| {
+                // TODO(xion): since this reverses chars not graphemes,
+                // it mangles some non-Latin strings;
+                // fix with unicode-segmentation crate
+                s.chars().rev().collect::<String>()
+            }).expect("invalid arguments to rev()")
         }));
 
         Context{vars: Variables::new(), funcs: funcs}
