@@ -15,6 +15,29 @@ pub enum Value {
     // TODO(xion): function type
 }
 
+impl Value {
+    fn map_str<F: FnOnce(&str) -> String>(&self, func: F) -> Option<Value> {
+        if let Value::String(ref s) = *self {
+            return Some(Value::String(func(s)));
+        }
+        None
+    }
+
+    fn map_int<F: FnOnce(i64) -> i64>(&self, func: F) -> Option<Value> {
+        if let Value::Integer(i) = *self {
+            return Some(Value::Integer(func(i)));
+        }
+        None
+    }
+
+    fn map_float<F: FnOnce(f64) -> f64>(&self, func: F) -> Option<Value> {
+        if let Value::Float(f) = *self {
+            return Some(Value::Float(func(f)))
+        }
+        None
+    }
+}
+
 impl FromStr for Value {
     // TODO(xion): better error type
     type Err = ();
@@ -60,10 +83,7 @@ impl Context {
     pub fn new() -> Context {
         let mut funcs = Functions::new();
         funcs.insert("abs".to_string(), Box::new(|args: Vec<Value>| {
-            if let Value::Float(ref f) = args[0] {
-                return Value::Float(f.abs());
-            }
-            panic!("invalid arguments to abs()");
+            args[0].map_float(f64::abs).expect("invalid arguments to abs()")
         }));
 
         Context{vars: Variables::new(), funcs: funcs}
