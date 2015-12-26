@@ -99,6 +99,7 @@ impl Context {
 
 
 /// Error that may have occurred during evaluation.
+#[derive(Clone)]
 pub struct Error {
     pub message: String,
 }
