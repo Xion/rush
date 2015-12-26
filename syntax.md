@@ -50,6 +50,8 @@ Anonymous functions are defined using `\`, an argument list, colon, and expressi
     \x: x + 2
     \x,y: x + y
 
+FIXME(xion): this won't work nicely with shell escaping (requires double backslash), probably need some other syntax ;/
+
 `.` is the composition operator:
 
     abs . (\x: x + 2)   ===  \x: abs(x + 2)
@@ -60,7 +62,7 @@ TODO(xion): Haskell-like syntax for (partial application of) operator functions:
 ## Reserved syntactic elements
 
 All "special" characters (incl. braces, brackets, all symbols on the numeric row, and semicolon)
-are reserved for possible future use. If string is to contain them, it must be surrounded with quotes.
+are reserved for possible future use. If string is to contain them, it must be surrounded by quotes.
 
 TODO(xion): reserve some keywords, e.g.: if else while for do.
 
