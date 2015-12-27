@@ -16,6 +16,13 @@ pub enum Value {
 }
 
 impl Value {
+    pub fn as_string(self) -> Option<String> {
+        return match self {
+            Value::String(s) => Some(s),
+            _ => None,
+        }
+    }
+
     fn map_str<F: FnOnce(&str) -> String>(&self, func: F) -> Option<Value> {
         if let Value::String(ref s) = *self {
             return Some(Value::String(func(s)));

@@ -8,62 +8,9 @@ use ast::*;
 use eval::{Eval, Value};
 
 
-named!(value<&[u8], ValueNode>, chain!(
-    value: map_res!(alt!(tag!("_") | alphanumeric), from_utf8),
-    || { value.parse::<ValueNode>().unwrap() }
-));
-named!(binary_op<&[u8], BinaryOpNode>, chain!(
-    left: value ~
-    multispace? ~
-    op: map_res!(is_a!("+"), from_utf8) ~
-    multispace? ~
-    right: value,
-    || { BinaryOpNode{op: op.to_string(),
-                      left: Box::new(left),
-                      right: Box::new(right)} }
-));
-named!(function_call<&[u8], FunctionCallNode>, chain!(
-    name: map_res!(alphanumeric, from_utf8) ~
-    is_a!("(") ~
-    args: many0!(chain!(
-        multispace? ~ arg: expr ~ multispace? ~ is_a!(","),
-        || { arg }
-    )) ~
-    is_a!(")"),
-    || { FunctionCallNode{name: name.to_string(), args: args} }
-));
-
-fn expr(input: &[u8]) -> IResult<&[u8], Box<Eval>> {
-    // TODO(xion): figure out how to do this with alt!() rather than manually
-    // (the problem with alt! is that it uses `match` for branching
-    // and that doesn't work since *Node results are unrelated types and cannot
-    // be matched against)
-    if let IResult::Done(input, output) = function_call(input) {
-        if input.is_empty() {
-            return IResult::Done(input, Box::new(output) as Box<Eval>);
-        }
-    }
-    if let IResult::Done(input, output) = binary_op(input) {
-        if input.is_empty() {
-            return IResult::Done(input, Box::new(output) as Box<Eval>);
-        }
-    }
-    if let IResult::Done(input, output) = value(input) {
-        if input.is_empty() {
-            return IResult::Done(input, Box::new(output) as Box<Eval>);
-        }
-    }
-
-    // TODO(xion): introduce custom error type instead of the default numeric
-    if !input.is_empty() {
-        panic!("leftover input: {}", from_utf8(input).unwrap());
-    }
-    IResult::Error(Err::Code(ErrorKind::Custom(404)))
-}
-
-
+/// Parse given exprssion, returning the AST that represents it.
 pub fn parse(input: &str) -> Box<Eval> {
-    match expr(input.trim().as_bytes()) {
+    match expression(input.trim().as_bytes()) {
         IResult::Done(_, node) => node,
 
         IResult::Incomplete(Needed::Size(c)) => {
@@ -78,3 +25,88 @@ pub fn parse(input: &str) -> Box<Eval> {
         IResult::Error(e) => panic!("parse error: {:?}", e),
     }
 }
+
+
+// Grammar definition.
+
+named!(expression( &[u8] ) -> Box<Eval>, chain!(e: argument, || { e }));
+
+/// argument ::== term [('+' | '-') argument]
+named!(argument( &[u8] ) -> Box<Eval>, chain!(
+    left: term ~
+    maybe_right: opt!(chain!(
+        multispace? ~
+        op: map_res!(is_a!("+-"), from_utf8) ~
+        multispace? ~
+        argument: argument,
+        || { (op, argument) }
+    )),
+    move || {
+        match maybe_right {
+            Some((op, right)) => Box::new(
+                BinaryOpNode{op: op.to_string(),
+                             left: left,
+                             right: right}
+            ) as Box<Eval>,
+            None => left
+        }
+    }
+));
+
+/// term ::== factor [('*' | '/') term]
+named!(term( &[u8] ) -> Box<Eval>, chain!(
+    left: factor ~
+    maybe_right: opt!(chain!(
+        multispace? ~
+        op: map_res!(is_a!("*/"), from_utf8) ~
+        multispace? ~
+        term: term,
+        || { (op, term) }
+    )),
+    move || {
+        match maybe_right {
+            Some((op, right)) => Box::new(
+                BinaryOpNode{op: op.to_string(),
+                             left: left,
+                             right: right}
+            ) as Box<Eval>,
+            None => left
+        }
+    }
+));
+
+/// factor ::== atom [function_args]
+named!(factor( &[u8] ) -> Box<Eval>, chain!(
+    atom: atom ~
+    function_args: opt!(function_args),
+    move || {
+        match function_args {
+            Some(args) => Box::new(
+                FunctionCallNode{
+                    name: atom.value.as_string().unwrap(),
+                    args: args,
+                }
+            ) as Box<Eval>,
+            None => Box::new(atom) as Box<Eval>,
+        }
+    }
+));
+
+// TODO(xion): support quoted strings
+named!(atom( &[u8] ) -> ValueNode, chain!(
+    value: map_res!(alt!(tag!("_") | alphanumeric), from_utf8),
+    || { value.parse::<ValueNode>().unwrap() }
+));
+
+/// function_args ::== '(' (expression ',')* ')'
+named!(function_args( &[u8] ) -> Vec<Box<Eval>>, chain!(
+    is_a!("(") ~
+    args: many0!(chain!(
+        // TODO(xion): disallow trailing comma (need to explicitly handle
+        // first or last arg for that)
+        multispace? ~ arg: expression ~ multispace? ~ is_a!(","),
+        || { arg }
+    )) ~
+    multispace? ~ is_a!(")"),
+    || { args }
+));
