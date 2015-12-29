@@ -70,12 +70,15 @@ named!(argument( &[u8] ) -> Box<Eval>, chain!(
 /// term ::== factor (('*' | '/') factor)*
 named!(term( &[u8] ) -> Box<Eval>, chain!(
     first: factor ~
-    rest: many0!(chain!(
-        op: map_res!(
-            delimited!(opt!(multispace), is_a!("*/"), opt!(multispace)),
-            from_utf8) ~
-        factor: factor,
-        || { (op.to_string(), factor) }
+    rest: many0!(pair!(
+        map!(
+            map_res!(
+                // multispaced!(is_a!("+-")),
+                delimited!(opt!(multispace), is_a!("+-"), opt!(multispace)),
+                from_utf8),
+            str::to_string
+        ),
+        factor
     )),
     move || {
         if rest.is_empty() { first }
@@ -89,9 +92,10 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
 named!(factor( &[u8] ) -> Box<Eval>, alt!(
     chain!(
         name: identifier ~
-        args: chain!(
-            is_a!("(") ~ multispace? ~ args: args ~ multispace? ~  is_a!(")"),
-            || { args }
+        args: delimited!(
+            delimited!(opt!(multispace), tag!("("), opt!(multispace)),
+            args,
+            delimited!(opt!(multispace), tag!(")"), opt!(multispace))
         ),
         move || {
             Box::new(
@@ -102,18 +106,9 @@ named!(factor( &[u8] ) -> Box<Eval>, alt!(
 ));
 
 /// args ::== expression (',' expression)*
-named!(args( &[u8] ) -> Vec<Box<Eval>>, chain!(
-    first: expression ~
-    rest: many0!(chain!(
-        multispace? ~ is_a!(",") ~ multispace? ~
-        arg: expression,
-        || { arg }
-    )),
-    move || {
-        let mut rest = rest;
-        rest.insert(0, first);
-        rest
-    }
+named!(args( &[u8] ) -> Vec<Box<Eval>>, separated_list!(
+    delimited!(opt!(multispace), tag!(","), opt!(multispace)),
+    argument
 ));
 
 // TODO(xion): support quoted strings
