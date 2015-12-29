@@ -5,13 +5,18 @@ use std::str::from_utf8;
 use nom::{alphanumeric, multispace, IResult, Needed, Err, ErrorKind};
 
 use ast::*;
-use eval::{Eval, Value};
+use eval::Eval;
 
 
 /// Parse given exprssion, returning the AST that represents it.
 pub fn parse(input: &str) -> Box<Eval> {
     match expression(input.trim().as_bytes()) {
-        IResult::Done(_, node) => node,
+        IResult::Done(input, node) => {
+            if !input.is_empty() {
+                panic!("excess input: {}", from_utf8(input).unwrap());
+            }
+            node
+        },
 
         IResult::Incomplete(Needed::Size(c)) => {
             panic!("incomplete input, need {} more bytes", c);
@@ -31,58 +36,54 @@ pub fn parse(input: &str) -> Box<Eval> {
 
 named!(expression( &[u8] ) -> Box<Eval>, chain!(e: argument, || { e }));
 
-/// argument ::== term [('+' | '-') argument]
+/// argument ::== term (('+' | '-') argument)*
 named!(argument( &[u8] ) -> Box<Eval>, chain!(
-    left: term ~
-    maybe_right: opt!(chain!(
+    first: term ~
+    rest: many0!(chain!(
         multispace? ~
         op: map_res!(is_a!("+-"), from_utf8) ~
         multispace? ~
         argument: argument,
-        || { (op, argument) }
+        || { (op.to_string(), argument) }
     )),
     move || {
-        match maybe_right {
-            Some((op, right)) => Box::new(
-                BinaryOpNode{op: op.to_string(),
-                             left: left,
-                             right: right}
-            ) as Box<Eval>,
-            None => left
-        }
+        if rest.is_empty() { first }
+        else { Box::new(
+            BinaryOpNode{first: first, rest: rest}
+        ) as Box<Eval> }
     }
 ));
 
-/// term ::== factor [('*' | '/') term]
+/// term ::== factor (('*' | '/') term)*
 named!(term( &[u8] ) -> Box<Eval>, chain!(
-    left: factor ~
-    maybe_right: opt!(chain!(
+    first: factor ~
+    rest: many0!(chain!(
         multispace? ~
-        op: map_res!(is_a!("*/"), from_utf8) ~
+        op: map_res!(is_a!("+-"), from_utf8) ~
         multispace? ~
         term: term,
-        || { (op, term) }
+        || { (op.to_string(), term) }
     )),
     move || {
-        match maybe_right {
-            Some((op, right)) => Box::new(
-                BinaryOpNode{op: op.to_string(),
-                             left: left,
-                             right: right}
-            ) as Box<Eval>,
-            None => left
-        }
+        if rest.is_empty() { first }
+        else { Box::new(
+            BinaryOpNode{first: first, rest: rest}
+        ) as Box<Eval> }
     }
 ));
 
-/// factor ::== atom [function_args]
+/// factor ::== atom ['(' args ')']
 named!(factor( &[u8] ) -> Box<Eval>, chain!(
     atom: atom ~
-    function_args: opt!(function_args),
+    maybe_args: opt!(chain!(
+        is_a!("(") ~ multispace? ~ args: args ~ multispace? ~  is_a!(")"),
+        || { args }
+    )),
     move || {
-        match function_args {
+        match maybe_args {
             Some(args) => Box::new(
                 FunctionCallNode{
+                    // TODO(xion): better error handling
                     name: atom.value.as_string().unwrap(),
                     args: args,
                 }
@@ -93,20 +94,23 @@ named!(factor( &[u8] ) -> Box<Eval>, chain!(
 ));
 
 // TODO(xion): support quoted strings
+// TODO(xion): support parenthesized expressions
 named!(atom( &[u8] ) -> ValueNode, chain!(
     value: map_res!(alt!(tag!("_") | alphanumeric), from_utf8),
     || { value.parse::<ValueNode>().unwrap() }
 ));
 
-/// function_args ::== '(' (expression ',')* ')'
-named!(function_args( &[u8] ) -> Vec<Box<Eval>>, chain!(
-    is_a!("(") ~
-    args: many0!(chain!(
-        // TODO(xion): disallow trailing comma (need to explicitly handle
-        // first or last arg for that)
-        multispace? ~ arg: expression ~ multispace? ~ is_a!(","),
+/// args ::== expression (',' expression)*
+named!(args( &[u8] ) -> Vec<Box<Eval>>, chain!(
+    first: expression ~
+    rest: many0!(chain!(
+        multispace? ~ is_a!(",") ~ multispace? ~
+        arg: expression,
         || { arg }
-    )) ~
-    multispace? ~ is_a!(")"),
-    || { args }
+    )),
+    move || {
+        let mut rest = rest;
+        rest.insert(0, first);
+        rest
+    }
 ));

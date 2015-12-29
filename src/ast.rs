@@ -3,7 +3,7 @@
 
 use std::str::FromStr;
 
-use eval::{self, Eval, Context, Value};
+use eval::{self, Eval, EvalResult, Context, Value};
 
 
 pub struct ValueNode {
@@ -19,7 +19,7 @@ impl FromStr for ValueNode {
 }
 
 impl Eval for ValueNode {
-    fn eval(&self, context: &Context) -> Result<Value, eval::Error> {
+    fn eval(&self, context: &Context) -> EvalResult {
         if let Value::String(ref string) = self.value {
             // treat the literal value as variable name if such variable exists;
             // otherwise, just return the value itself as string
@@ -34,31 +34,94 @@ impl Eval for ValueNode {
 
 
 pub struct BinaryOpNode {
-    pub op: String,  // TODO(xion): enum?
-    pub left: Box<Eval>,
-    pub right: Box<Eval>,
+    pub first: Box<Eval>,
+    pub rest: Vec<(String, Box<Eval>)>,
 }
 
 impl Eval for BinaryOpNode {
-    fn eval(&self, context: &Context) -> Result<Value, eval::Error> {
-        match &self.op[..] {
-            "+" => {
-                let left = try!(self.left.eval(&context));
-                let right = try!(self.right.eval(&context));
-
-                if let Value::String(left) = left {
-                    if let Value::String(right) = right {
-                        return Ok(Value::String(left + &right));
-                    }
-                }
-                // TODO(xion): adding numbers
-                eval::Error::err("invalid types for + operator")
+    fn eval(&self, context: &Context) -> EvalResult {
+        let mut result = try!(self.first.eval(&context));
+        for &(ref op, ref arg) in &self.rest {
+            let arg = try!(arg.eval(&context));
+            match &op[..] {
+                "+" => result = try!(BinaryOpNode::eval_plus(&context, &result, &arg)),
+                "-" => result = try!(BinaryOpNode::eval_minus(&context, &result, &arg)),
+                // TODO(xion): other operators
+                _ => { return eval::Error::err(&format!("unknown operator: {}", op)); }
             }
-            // TODO(xion): other operators
-            _ => eval::Error::err(&format!("unknown operator: {}", self.op))
         }
+        Ok(result)
     }
 }
+
+impl BinaryOpNode {
+    /// Evaluate the "+" operator for two values.
+    fn eval_plus(context: &Context, left: &Value, right: &Value) -> EvalResult {
+        if let &Value::String(ref left) = left {
+            if let &Value::String(ref right) = right {
+                return Ok(Value::String(left.clone() + &*right));
+            }
+        }
+        if let Value::Integer(left) = *left {
+            if let Value::Integer(right) = *right {
+                return Ok(Value::Integer(left + right));
+            }
+        }
+        if let Value::Float(left) = *left {
+            if let Value::Float(right) = *right {
+                return Ok(Value::Float(left + right));
+            }
+        }
+        eval::Error::err("invalid types for (+) operator")
+    }
+
+    /// Evaluate the "-" operator for two values.
+    fn eval_minus(context: &Context, left: &Value, right: &Value) -> EvalResult {
+        if let Value::Integer(left) = *left {
+            if let Value::Integer(right) = *right {
+                return Ok(Value::Integer(left - right));
+            }
+        }
+        if let Value::Float(left) = *left {
+            if let Value::Float(right) = *right {
+                return Ok(Value::Float(left - right));
+            }
+        }
+        eval::Error::err("invalid types for (-) operator")
+    }
+}
+
+
+// // TODO(xion): change to general OperatorNode that has starting value
+// // and arbitrary number of (op, value) pairs that it goes over during
+// // evaluation (the parser shall take care of operator precedence while
+// // building the tree)
+// pub struct BinaryOpNode {
+//     pub op: String,  // TODO(xion): enum?
+//     pub left: Box<Eval>,
+//     pub right: Box<Eval>,
+// }
+
+// impl Eval for BinaryOpNode {
+//     fn eval(&self, context: &Context) -> Result<Value, eval::Error> {
+//         match &self.op[..] {
+//             "+" => {
+//                 let left = try!(self.left.eval(&context));
+//                 let right = try!(self.right.eval(&context));
+
+//                 if let Value::String(left) = left {
+//                     if let Value::String(right) = right {
+//                         return Ok(Value::String(left + &right));
+//                     }
+//                 }
+//                 // TODO(xion): adding numbers
+//                 eval::Error::err("invalid types for + operator")
+//             }
+//             // TODO(xion): other operators
+//             _ => eval::Error::err(&format!("unknown operator: {}", self.op))
+//         }
+//     }
+// }
 
 
 pub struct FunctionCallNode {

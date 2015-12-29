@@ -153,7 +153,10 @@ impl Error {
     }
 }
 
+/// Result of an evaluation attempt.
+pub type EvalResult = Result<Value, Error>;
+
 /// Trait for objects that can be evaluated within given Context.
 pub trait Eval {
-    fn eval(&self, context: &Context) -> Result<Value, Error>;
+    fn eval(&self, context: &Context) -> EvalResult;
 }
