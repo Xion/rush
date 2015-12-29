@@ -92,38 +92,6 @@ impl BinaryOpNode {
 }
 
 
-// // TODO(xion): change to general OperatorNode that has starting value
-// // and arbitrary number of (op, value) pairs that it goes over during
-// // evaluation (the parser shall take care of operator precedence while
-// // building the tree)
-// pub struct BinaryOpNode {
-//     pub op: String,  // TODO(xion): enum?
-//     pub left: Box<Eval>,
-//     pub right: Box<Eval>,
-// }
-
-// impl Eval for BinaryOpNode {
-//     fn eval(&self, context: &Context) -> Result<Value, eval::Error> {
-//         match &self.op[..] {
-//             "+" => {
-//                 let left = try!(self.left.eval(&context));
-//                 let right = try!(self.right.eval(&context));
-
-//                 if let Value::String(left) = left {
-//                     if let Value::String(right) = right {
-//                         return Ok(Value::String(left + &right));
-//                     }
-//                 }
-//                 // TODO(xion): adding numbers
-//                 eval::Error::err("invalid types for + operator")
-//             }
-//             // TODO(xion): other operators
-//             _ => eval::Error::err(&format!("unknown operator: {}", self.op))
-//         }
-//     }
-// }
-
-
 pub struct FunctionCallNode {
     pub name: String,
     pub args: Vec<Box<Eval>>,

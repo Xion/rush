@@ -2,7 +2,7 @@
 
 use std::str::from_utf8;
 
-use nom::{alphanumeric, multispace, IResult, Needed, Err, ErrorKind};
+use nom::{alphanumeric, multispace, IResult, Needed, Err};
 
 use ast::*;
 use eval::Eval;
@@ -32,19 +32,32 @@ pub fn parse(input: &str) -> Box<Eval> {
 }
 
 
+macro_rules! multispaced (
+    ($i:expr, $submac:ident!( $($args:tt)* )) => (
+        delimited!(opt!(multispace), $submac!($i, $($args)*), opt!(multispace));
+    );
+    ($i:expr, $f:expr) => (
+        multispaced!($i, call!($f));
+    );
+);
+
+
 // Grammar definition.
 
 named!(expression( &[u8] ) -> Box<Eval>, chain!(e: argument, || { e }));
 
-/// argument ::== term (('+' | '-') argument)*
+/// argument ::== term (('+' | '-') term)*
 named!(argument( &[u8] ) -> Box<Eval>, chain!(
     first: term ~
-    rest: many0!(chain!(
-        multispace? ~
-        op: map_res!(is_a!("+-"), from_utf8) ~
-        multispace? ~
-        argument: argument,
-        || { (op.to_string(), argument) }
+    rest: many0!(pair!(
+        map!(
+            map_res!(
+                // multispaced!(is_a!("+-")),
+                delimited!(opt!(multispace), is_a!("+-"), opt!(multispace)),
+                from_utf8),
+            str::to_string
+        ),
+        term
     )),
     move || {
         if rest.is_empty() { first }
@@ -54,15 +67,15 @@ named!(argument( &[u8] ) -> Box<Eval>, chain!(
     }
 ));
 
-/// term ::== factor (('*' | '/') term)*
+/// term ::== factor (('*' | '/') factor)*
 named!(term( &[u8] ) -> Box<Eval>, chain!(
     first: factor ~
     rest: many0!(chain!(
-        multispace? ~
-        op: map_res!(is_a!("+-"), from_utf8) ~
-        multispace? ~
-        term: term,
-        || { (op.to_string(), term) }
+        op: map_res!(
+            delimited!(opt!(multispace), is_a!("*/"), opt!(multispace)),
+            from_utf8) ~
+        factor: factor,
+        || { (op.to_string(), factor) }
     )),
     move || {
         if rest.is_empty() { first }
@@ -72,32 +85,20 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
     }
 ));
 
-/// factor ::== atom ['(' args ')']
-named!(factor( &[u8] ) -> Box<Eval>, chain!(
-    atom: atom ~
-    maybe_args: opt!(chain!(
-        is_a!("(") ~ multispace? ~ args: args ~ multispace? ~  is_a!(")"),
-        || { args }
-    )),
-    move || {
-        match maybe_args {
-            Some(args) => Box::new(
-                FunctionCallNode{
-                    // TODO(xion): better error handling
-                    name: atom.value.as_string().unwrap(),
-                    args: args,
-                }
-            ) as Box<Eval>,
-            None => Box::new(atom) as Box<Eval>,
+/// factor ::== identifier '(' args ')' | atom
+named!(factor( &[u8] ) -> Box<Eval>, alt!(
+    chain!(
+        name: identifier ~
+        args: chain!(
+            is_a!("(") ~ multispace? ~ args: args ~ multispace? ~  is_a!(")"),
+            || { args }
+        ),
+        move || {
+            Box::new(
+                FunctionCallNode{name: name, args: args}
+            ) as Box<Eval>
         }
-    }
-));
-
-// TODO(xion): support quoted strings
-// TODO(xion): support parenthesized expressions
-named!(atom( &[u8] ) -> ValueNode, chain!(
-    value: map_res!(alt!(tag!("_") | alphanumeric), from_utf8),
-    || { value.parse::<ValueNode>().unwrap() }
+    ) | atom
 ));
 
 /// args ::== expression (',' expression)*
@@ -113,4 +114,22 @@ named!(args( &[u8] ) -> Vec<Box<Eval>>, chain!(
         rest.insert(0, first);
         rest
     }
+));
+
+// TODO(xion): support quoted strings
+named!(atom( &[u8] ) -> Box<Eval>, alt!(
+    map!(identifier, |id: String| {
+        Box::new(id.parse::<ValueNode>().unwrap()) as Box<Eval>
+    }) |
+    delimited!(
+        delimited!(opt!(multispace), tag!("("), opt!(multispace)),
+        expression,
+        delimited!(opt!(multispace), tag!(")"), opt!(multispace))
+    )
+));
+
+// TODO(xion): typed underscore vars (_i, _f)
+named!(identifier( &[u8] ) -> String, map!(
+    map_res!(alt!(tag!("_") | alphanumeric), from_utf8),
+    str::to_string
 ));
