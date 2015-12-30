@@ -19,6 +19,8 @@ impl FromStr for ValueNode {
 }
 
 impl Eval for ValueNode {
+    // TODO(xion): most of this should go to a new VariableNode, and ValueNode
+    // should just return the value verbatim
     fn eval(&self, context: &Context) -> EvalResult {
         if let Value::String(ref string) = self.value {
             // treat the literal value as variable name if such variable exists;

@@ -63,14 +63,14 @@ impl Functions {
                 // it mangles some non-Latin strings;
                 // fix with unicode-segmentation crate
                 s.chars().rev().collect::<String>()
-            }).expect("invalid arguments to rev()")
+            })
         }));
         fs.define_unary("abs", Box::new(|value| {
             match value {
                 v @ Value::Integer(_) => v.map_int(i64::abs),
                 v @ Value::Float(_) => v.map_float(f64::abs),
                 _ => None,
-            }.expect("invalid arguments to abs()")
+            }
         }));
 
         return fs;
@@ -80,17 +80,23 @@ impl Functions {
         self.funcs.get(&name.to_string()).map(|func| func(args))
     }
 
-    fn define(&mut self, name: &str, func: Box<Function>) -> &mut Self {
-        self.funcs.insert(name.to_string(), func);
+    fn define(&mut self, name: &str,
+              func: Box<Fn(Args) -> Option<Value>>) -> &mut Self {
+        let name = name.to_string();
+        self.funcs.insert(name.clone(), Box::new(move |args: Args| {
+            func(args).expect(&format!("invalid arguments to {}()", name))
+        }));
         self
     }
 
-    fn define_unary(&mut self, name: &str, func: Box<UnaryFunction>) -> &mut Self {
+    fn define_unary(&mut self, name: &str,
+                    func: Box<Fn(Value) -> Option<Value>>) -> &mut Self {
         self.define(name, Box::new(
             move |args: Args| func(args[0].clone())))
     }
 
-    fn define_binary(&mut self, name: &str, func: Box<BinaryFunction>) -> &mut Self {
+    fn define_binary(&mut self, name: &str,
+                     func: Box<Fn(Value, Value) -> Option<Value>>) -> &mut Self {
         self.define(name, Box::new(
             move |args: Args| func(args[0].clone(), args[1].clone())))
     }
@@ -99,8 +105,6 @@ impl Functions {
 // Type aliases to make working with functions easier.
 type Args = Vec<Value>;
 type Function = Fn(Args) -> Value;
-type UnaryFunction = Fn(Value) -> Value;
-type BinaryFunction = Fn(Value, Value) -> Value;
 
 
 /// Type for a container of variables within a scope.

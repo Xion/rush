@@ -91,6 +91,9 @@ named!(args( &[u8] ) -> Vec<Box<Eval>>,
 // TODO(xion): support quoted strings
 named!(atom( &[u8] ) -> Box<Eval>, alt!(
     map_res!(identifier, |id: String| {
+        // TODO(xion): distinguish between strings and variable references;
+        // the easiest way is probably to have VariableNode here whose
+        // eval() would fall back to just returning string
         id.parse::<ValueNode>().map(|node| Box::new(node) as Box<Eval>)
     }) |
     delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
