@@ -43,7 +43,8 @@ fn print_usage(program: &str, opts: Options) {
 /// Apply the expression to given input stream,
 /// writing to the given output stream.
 fn apply<R: Read, W: Write>(expr: &str, input: R, output: W) {
-    let ast = parse(expr);
+    // TODO(xion): nice error messages on different kinds of errors
+    let ast = parse(expr).unwrap();
 
     let reader = BufReader::new(input);
     let mut writer = BufWriter::new(output);
