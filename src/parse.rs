@@ -32,6 +32,10 @@ pub fn parse(input: &str) -> Box<Eval> {
 }
 
 
+// Grammar utilities.
+
+// TODO(xion): wait for https://github.com/Geal/nom/issues/149 to be addressed
+// before using this macro in the grammar
 macro_rules! multispaced (
     ($i:expr, $submac:ident!( $($args:tt)* )) => (
         delimited!(opt!(multispace), $submac!($i, $($args)*), opt!(multispace));
@@ -73,8 +77,8 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
     rest: many0!(pair!(
         map!(
             map_res!(
-                // multispaced!(is_a!("+-")),
-                delimited!(opt!(multispace), is_a!("+-"), opt!(multispace)),
+                // multispaced!(is_a!("*/")),
+                delimited!(opt!(multispace), is_a!("*/"), opt!(multispace)),
                 from_utf8),
             str::to_string
         ),
@@ -90,7 +94,12 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
 
 /// factor ::== identifier '(' args ')' | atom
 named!(factor( &[u8] ) -> Box<Eval>, alt!(
-    chain!(
+    // complete!(...) is necessary because `atom` branch below can be a prefix
+    // of this branch, so trying to parse an atom as function will result
+    // in incomplete input (because the pair of parentheses is "missing").
+    // Using complete! forces the parses to interpret this IResult::Incomplete
+    // as error (and thus try the `atom` branch) rather than bubble it up.
+    complete!(chain!(
         name: identifier ~
         args: delimited!(
             delimited!(opt!(multispace), tag!("("), opt!(multispace)),
@@ -102,7 +111,7 @@ named!(factor( &[u8] ) -> Box<Eval>, alt!(
                 FunctionCallNode{name: name, args: args}
             ) as Box<Eval>
         }
-    ) | atom
+    )) | atom
 ));
 
 /// args ::== expression (',' expression)*
@@ -113,8 +122,8 @@ named!(args( &[u8] ) -> Vec<Box<Eval>>, separated_list!(
 
 // TODO(xion): support quoted strings
 named!(atom( &[u8] ) -> Box<Eval>, alt!(
-    map!(identifier, |id: String| {
-        Box::new(id.parse::<ValueNode>().unwrap()) as Box<Eval>
+    map_res!(identifier, |id: String| {
+        id.parse::<ValueNode>().map(|node| Box::new(node) as Box<Eval>)
     }) |
     delimited!(
         delimited!(opt!(multispace), tag!("("), opt!(multispace)),
