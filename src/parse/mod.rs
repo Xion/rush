@@ -3,13 +3,14 @@
 mod error;
 mod syntax;
 
+pub use self::error::ParseError;
+
 
 use std::str::from_utf8;
 
 use nom::IResult;
 
 use eval::Eval;
-use self::error::ParseError;
 use self::syntax::expression;
 
 
@@ -18,6 +19,7 @@ pub fn parse(input: &str) -> Result<Box<Eval>, ParseError> {
     if input.is_empty() {
         return Err(ParseError::Empty);
     }
+
     match expression(input.trim().as_bytes()) {
         IResult::Done(input, node) => {
             if input.is_empty() {
