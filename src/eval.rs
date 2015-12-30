@@ -1,6 +1,7 @@
 //! Module implementing evaluation of parsed expressions.
 
 use std::collections::HashMap;
+use std::error;
 use std::fmt::{self, Display};
 use std::str::FromStr;
 
@@ -143,7 +144,7 @@ impl Context {
 
 
 /// Error that may have occurred during evaluation.
-#[derive(Clone)]
+#[derive(Clone,Debug)]
 pub struct Error {
     pub message: String,
 }
@@ -151,6 +152,15 @@ impl Error {
     pub fn err<T>(msg: &str) -> Result<T, Error> {
         Err(Error{message: msg.to_string()})
     }
+}
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "Eval error: {}", self.message)
+    }
+}
+impl error::Error for Error {
+    fn description(&self) -> &str { &self.message }
+    fn cause(&self) -> Option<&error::Error> { None }
 }
 
 /// Result of an evaluation attempt.

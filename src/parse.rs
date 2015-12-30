@@ -1,5 +1,7 @@
 //! Parser code for the expression syntax.
 
+use std::error::Error;
+use std::fmt;
 use std::str::from_utf8;
 
 use nom::{alphanumeric, multispace, IResult, ErrorKind, Needed};
@@ -10,6 +12,9 @@ use eval::Eval;
 
 /// Parse given exprssion, returning the AST that represents it.
 pub fn parse(input: &str) -> Result<Box<Eval>, ParseError> {
+    if input.is_empty() {
+        return Err(ParseError::Empty);
+    }
     match expression(input.trim().as_bytes()) {
         IResult::Done(input, node) => {
             if input.is_empty() {
@@ -50,6 +55,30 @@ impl ParseError {
         match self {
             ParseError::Empty | ParseError::Corrupted => false,
             _ => true
+        }
+    }
+}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl Error for ParseError {
+    fn description(&self) -> &str {
+        // TODO(xion): error descriptions
+        "Parse error"
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        match *self {
+            ParseError::Empty |
+            ParseError::Excess(_) |
+            ParseError::Incomplete(_) => None,
+            // TODO(xion): for the rest, we could store or recreate
+            // the original Error to return it as cause here
+            _ => None,
         }
     }
 }

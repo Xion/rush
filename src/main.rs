@@ -9,6 +9,7 @@ mod parse;
 
 use std::env;
 use std::io::{self, Read, Write, BufRead, BufReader, BufWriter};
+use std::process::exit;
 
 use getopts::Options;
 
@@ -30,7 +31,11 @@ fn main() {
     }
 
     let expr = args.free.join(" ");
-    apply(&expr, io::stdin(), io::stdout());
+    if let Err(error) = apply(&expr, io::stdin(), io::stdout()) {
+        // TODO(xion): user-friendly error messages
+        writeln!(&mut io::stderr(), "{:?}", error).unwrap();
+        exit(1);
+    }
 }
 
 
@@ -42,23 +47,21 @@ fn print_usage(program: &str, opts: Options) {
 
 /// Apply the expression to given input stream,
 /// writing to the given output stream.
-fn apply<R: Read, W: Write>(expr: &str, input: R, output: W) {
-    // TODO(xion): nice error messages on different kinds of errors
-    let ast = parse(expr).unwrap();
+fn apply<R: Read, W: Write>(expr: &str, input: R, output: W) -> Result<(), io::Error> {
+    let ast = try!(parse(expr)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e)));
 
     let reader = BufReader::new(input);
     let mut writer = BufWriter::new(output);
-    for line in reader.lines() {
-        // TODO(xion): handle read errors
-        let line = line.unwrap();
+    let mut context = Context::new();
 
-        let mut context = Context::new();
+    for line in reader.lines() {
+        let line = try!(line);
         context.set_string_var("_", &line);
 
-        // TODO(xion): handle evaluation errors
-        let result = ast.eval(&context).ok().unwrap();
-
-        // TODO(xion): handle write errors
-        write!(writer, "{}\n", result).unwrap();
+        let result = try!(ast.eval(&context)
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e)));
+        try!(write!(writer, "{}\n", result));
     }
+    Ok(())
 }

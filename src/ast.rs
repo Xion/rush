@@ -44,8 +44,8 @@ impl Eval for BinaryOpNode {
         for &(ref op, ref arg) in &self.rest {
             let arg = try!(arg.eval(&context));
             match &op[..] {
-                "+" => result = try!(BinaryOpNode::eval_plus(&context, &result, &arg)),
-                "-" => result = try!(BinaryOpNode::eval_minus(&context, &result, &arg)),
+                "+" => result = try!(BinaryOpNode::eval_plus(&result, &arg)),
+                "-" => result = try!(BinaryOpNode::eval_minus(&result, &arg)),
                 // TODO(xion): other operators
                 _ => { return eval::Error::err(&format!("unknown operator: {}", op)); }
             }
@@ -56,7 +56,7 @@ impl Eval for BinaryOpNode {
 
 impl BinaryOpNode {
     /// Evaluate the "+" operator for two values.
-    fn eval_plus(context: &Context, left: &Value, right: &Value) -> EvalResult {
+    fn eval_plus(left: &Value, right: &Value) -> EvalResult {
         if let &Value::String(ref left) = left {
             if let &Value::String(ref right) = right {
                 return Ok(Value::String(left.clone() + &*right));
@@ -76,7 +76,7 @@ impl BinaryOpNode {
     }
 
     /// Evaluate the "-" operator for two values.
-    fn eval_minus(context: &Context, left: &Value, right: &Value) -> EvalResult {
+    fn eval_minus(left: &Value, right: &Value) -> EvalResult {
         if let Value::Integer(left) = *left {
             if let Value::Integer(right) = *right {
                 return Ok(Value::Integer(left - right));
