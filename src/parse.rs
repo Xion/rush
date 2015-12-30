@@ -86,11 +86,11 @@ impl Error for ParseError {
 
 // Grammar utilities.
 
-// TODO(xion): wait for https://github.com/Geal/nom/issues/149 to be addressed
-// before using this macro in the grammar
+/// Parses values that are optionally surrounded by arbitrary number of
+/// any of the whitespace characters.
 macro_rules! multispaced (
     ($i:expr, $submac:ident!( $($args:tt)* )) => (
-        delimited!(opt!(multispace), $submac!($i, $($args)*), opt!(multispace));
+        delimited!($i, opt!(multispace), $submac!($($args)*), opt!(multispace));
     );
     ($i:expr, $f:expr) => (
         multispaced!($i, call!($f));
@@ -107,10 +107,7 @@ named!(argument( &[u8] ) -> Box<Eval>, chain!(
     first: term ~
     rest: many0!(pair!(
         map!(
-            map_res!(
-                // multispaced!(is_a!("+-")),
-                delimited!(opt!(multispace), is_a!("+-"), opt!(multispace)),
-                from_utf8),
+            map_res!(multispaced!(is_a!("+-")), from_utf8),
             str::to_string
         ),
         term
@@ -128,10 +125,7 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
     first: factor ~
     rest: many0!(pair!(
         map!(
-            map_res!(
-                // multispaced!(is_a!("*/")),
-                delimited!(opt!(multispace), is_a!("*/"), opt!(multispace)),
-                from_utf8),
+            map_res!(multispaced!(is_a!("*/")), from_utf8),
             str::to_string
         ),
         factor
@@ -147,17 +141,13 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
 /// factor ::== identifier '(' args ')' | atom
 named!(factor( &[u8] ) -> Box<Eval>, alt!(
     // complete!(...) is necessary because `atom` branch below can be a prefix
-    // of this branch, so trying to parse an atom as function will result
+    // of this branch, so trying to parse an atom as function call will result
     // in incomplete input (because the pair of parentheses is "missing").
     // Using complete! forces the parses to interpret this IResult::Incomplete
     // as error (and thus try the `atom` branch) rather than bubble it up.
     complete!(chain!(
         name: identifier ~
-        args: delimited!(
-            delimited!(opt!(multispace), tag!("("), opt!(multispace)),
-            args,
-            delimited!(opt!(multispace), tag!(")"), opt!(multispace))
-        ),
+        args: delimited!(multispaced!(tag!("(")), args, multispaced!(tag!(")"))),
         move || {
             Box::new(
                 FunctionCallNode{name: name, args: args}
@@ -167,21 +157,15 @@ named!(factor( &[u8] ) -> Box<Eval>, alt!(
 ));
 
 /// args ::== expression (',' expression)*
-named!(args( &[u8] ) -> Vec<Box<Eval>>, separated_list!(
-    delimited!(opt!(multispace), tag!(","), opt!(multispace)),
-    argument
-));
+named!(args( &[u8] ) -> Vec<Box<Eval>>,
+       separated_list!(multispaced!(tag!(",")), argument));
 
 // TODO(xion): support quoted strings
 named!(atom( &[u8] ) -> Box<Eval>, alt!(
     map_res!(identifier, |id: String| {
         id.parse::<ValueNode>().map(|node| Box::new(node) as Box<Eval>)
     }) |
-    delimited!(
-        delimited!(opt!(multispace), tag!("("), opt!(multispace)),
-        expression,
-        delimited!(opt!(multispace), tag!(")"), opt!(multispace))
-    )
+    delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
 ));
 
 // TODO(xion): typed underscore vars (_i, _f)

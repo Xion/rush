@@ -57,6 +57,8 @@ impl FromStr for Value {
     // TODO(xion): better error type
     type Err = ();
 
+    /// Create a Value from string, reinterpreting input as number
+    /// if we find out it's in numeric form.
     fn from_str(s: &str) -> Result<Value, Self::Err> {
         if let Ok(float) = s.parse::<f64>() {
             return Ok(Value::Float(float));
@@ -64,7 +66,6 @@ impl FromStr for Value {
         if let Ok(int) = s.parse::<i64>() {
             return Ok(Value::Integer(int));
         }
-        // TODO(xion): strip quotes
         Ok(Value::String(s.to_string()))
     }
 }
@@ -101,6 +102,9 @@ impl Context {
         let mut funcs = Functions::new();
         funcs.insert("abs".to_string(), Box::new(|args: Vec<Value>| {
             args[0].map_float(f64::abs).expect("invalid arguments to abs()")
+        }));
+        funcs.insert("abs".to_string(), Box::new(|args: Vec<Value>| {
+            args[0].map_int(i64::abs).expect("invalid arguments to abs()")
         }));
         funcs.insert("rev".to_string(), Box::new(|args: Vec<Value>| {
             args[0].map_str(|s: &str| {
