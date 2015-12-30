@@ -3,7 +3,7 @@
 use std::error::Error;
 use std::fmt;
 
-use nom::{Needed};
+use nom::Needed;
 
 
 /// Error from parsing an expression.
