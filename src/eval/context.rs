@@ -16,25 +16,7 @@ pub struct Context {
 
 impl Context {
     pub fn new() -> Context {
-        // TODO(xion): consider making Functions a struct and extracting
-        // the boilerplate for defining functions there
-        let mut funcs = Functions::new();
-        funcs.insert("abs".to_string(), Box::new(|args: Vec<Value>| {
-            args[0].map_float(f64::abs).expect("invalid arguments to abs()")
-        }));
-        funcs.insert("abs".to_string(), Box::new(|args: Vec<Value>| {
-            args[0].map_int(i64::abs).expect("invalid arguments to abs()")
-        }));
-        funcs.insert("rev".to_string(), Box::new(|args: Vec<Value>| {
-            args[0].map_str(|s: &str| {
-                // TODO(xion): since this reverses chars not graphemes,
-                // it mangles some non-Latin strings;
-                // fix with unicode-segmentation crate
-                s.chars().rev().collect::<String>()
-            }).expect("invalid arguments to rev()")
-        }));
-
-        Context{vars: Variables::new(), funcs: funcs}
+        Context{vars: Variables::new(), funcs: Functions::new()}
     }
 
     /// Retrieves the value for a variable if it exists.
@@ -60,14 +42,66 @@ impl Context {
 
     /// Call a function of given name with given arguments.
     /// Returns Some(result), or None if the function couldn't be found.
-    pub fn call_func(&self, name: &str, args: Vec<Value>) -> Option<Value> {
-        self.funcs.get(&name.to_string()).map(|func| func(args))
+    pub fn call_func(&self, name: &str, args: Args) -> Option<Value> {
+        self.funcs.call(name, args)
     }
 }
 
 
-/// Type for a container of functions available within the evaluation context.
-type Functions = HashMap<String, Box<Fn(Vec<Value>) -> Value>>;
+/// Container of functions available within the evaluation context.
+struct Functions {
+    funcs: HashMap<String, Box<Function>>,
+}
+
+impl Functions {
+    pub fn new() -> Functions {
+        let mut fs = Functions{funcs: HashMap::new()};
+
+        fs.define_unary("rev", Box::new(|value| {
+            value.map_str(|s: &str| {
+                // TODO(xion): since this reverses chars not graphemes,
+                // it mangles some non-Latin strings;
+                // fix with unicode-segmentation crate
+                s.chars().rev().collect::<String>()
+            }).expect("invalid arguments to rev()")
+        }));
+        fs.define_unary("abs", Box::new(|value| {
+            match value {
+                v @ Value::Integer(_) => v.map_int(i64::abs),
+                v @ Value::Float(_) => v.map_float(f64::abs),
+                _ => None,
+            }.expect("invalid arguments to abs()")
+        }));
+
+        return fs;
+    }
+
+    pub fn call(&self, name: &str, args: Args) -> Option<Value>  {
+        self.funcs.get(&name.to_string()).map(|func| func(args))
+    }
+
+    fn define(&mut self, name: &str, func: Box<Function>) -> &mut Self {
+        self.funcs.insert(name.to_string(), func);
+        self
+    }
+
+    fn define_unary(&mut self, name: &str, func: Box<UnaryFunction>) -> &mut Self {
+        self.define(name, Box::new(
+            move |args: Args| func(args[0].clone())))
+    }
+
+    fn define_binary(&mut self, name: &str, func: Box<BinaryFunction>) -> &mut Self {
+        self.define(name, Box::new(
+            move |args: Args| func(args[0].clone(), args[1].clone())))
+    }
+}
+
+// Type aliases to make working with functions easier.
+type Args = Vec<Value>;
+type Function = Fn(Args) -> Value;
+type UnaryFunction = Fn(Value) -> Value;
+type BinaryFunction = Fn(Value, Value) -> Value;
+
 
 /// Type for a container of variables within a scope.
 type Variables = HashMap<String, Value>;
