@@ -36,10 +36,10 @@ impl ValueNode {
         // follow the chain of references until it bottoms out
         loop {
             match result {
-                Value::Reference(t) => {
-                    result = context.get_var(&t)
-                        .map(|v| v.clone())
-                        .unwrap_or_else(move || Value::String(t));
+                Value::Symbol(sym) => {
+                    result = context.get_var(&sym)
+                        .map(Value::clone)
+                        .unwrap_or_else(move || Value::String(sym));
                 }
                 _ => { break; }
             }

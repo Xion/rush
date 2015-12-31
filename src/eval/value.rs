@@ -3,8 +3,6 @@
 use std::fmt;
 use std::str::FromStr;
 
-use super::context::Context;
-
 
 /// Typed value that's operated upon.
 #[derive(Clone,Debug,PartialEq)]
@@ -12,11 +10,11 @@ pub enum Value {
     /// No value at all.
     Empty,
 
-    /// Reference to a variable of given name.
+    /// Symbol is a string that can be interpreted as a variable name.
     ///
-    /// If the variable is not found in the scope, the name is interpreted
-    /// verbatim as a String.
-    Reference(String),
+    /// `Symbol("x")` shall evaluate to the value of variable `x` if one is in scope.
+    /// Otherwise, it should be equivalent to String("x").
+    Symbol(String),
 
     // Various data types.
     String(String),
@@ -77,7 +75,7 @@ impl FromStr for Value {
         }
 
         // quoted string literals are always interpreted as strings,
-        // whereas unquoted identifiers may be variable references
+        // whereas unquoted identifiers are symbols and may be variable references
         let mut s = s.to_string();
         if s.is_empty() {
             Ok(Value::String(s))
@@ -86,7 +84,8 @@ impl FromStr for Value {
             s.remove(0);
             Ok(Value::String(s))
         } else {
-            Ok(Value::Reference(s))
+            // TODO(xion): check if content is alphanumeric
+            Ok(Value::Symbol(s))
         }
     }
 }
@@ -96,10 +95,10 @@ impl fmt::Display for Value {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Value::Empty => write!(fmt, "{}", "<empty>"),
+            Value::Symbol(ref t) => write!(fmt, "{}", t),
             Value::String(ref s) => write!(fmt, "\"{}\"", s),
             Value::Integer(ref i) => write!(fmt, "{}", i),
             Value::Float(ref f) => write!(fmt, "{}", f),
-            Value::Reference(ref t) => write!(fmt, "{}", t),
             // _ => write!(fmt, "{}", "<unknown>")
         }
     }
