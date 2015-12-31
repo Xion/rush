@@ -68,37 +68,48 @@ impl Eval for BinaryOpNode {
 ///
 /// Usage:
 /// ```ignore
-/// binary_op_eval!(Integer, left, right, left + right)
+/// binary_op_eval!(left, right :Integer { left + right });
 /// ```
 macro_rules! binary_op_eval {
-    (&$t:ident, $x:ident, $y:ident, $e:expr) => {
-        if let &Value::$t(ref $x) = $x {
-            if let &Value::$t(ref $y) = $y {
-                return Ok(Value::$t($e));
+    // left :&Foo, right :&Bar -> Baz { foo(left, right) }
+    (($x:ident :&$t1:ident, $y:ident :&$t2:ident) -> $rt:ident { $e:expr }) => {
+        if let &Value::$t1(ref $x) = $x {
+            if let &Value::$t2(ref $y) = $y {
+                return Ok(Value::$rt($e));
             }
         }
     };
-    ($t:ident, $x:ident, $y:ident, $e:expr) => {
-        if let Value::$t($x) = *$x {
-            if let Value::$t($y) = *$y {
-                return Ok(Value::$t($e));
+    // left :Foo, right :Bar -> Baz { foo(left, right) }
+    (($x:ident :$t1:ident, $y:ident :$t2:ident) -> $rt:ident { $e:expr }) => {
+        if let Value::$t1($x) = *$x {
+            if let Value::$t2($y) = *$y {
+                return Ok(Value::$rt($e));
             }
         }
+    };
+
+    // left, right :&Foo { foo(left, right) }
+    ($x:ident, $y:ident :&$t:ident { $e:expr }) => {
+        binary_op_eval!(($x :&$t, $y :&$t) -> $t { $e });
+    };
+    // left, right :Foo { foo(left, right) }
+    ($x:ident, $y:ident :$t:ident { $e:expr }) => {
+        binary_op_eval!(($x :$t, $y :$t) -> $t { $e });
     };
 }
 impl BinaryOpNode {
     /// Evaluate the "+" operator for two values.
     fn eval_plus(left: &Value, right: &Value) -> EvalResult {
-        binary_op_eval!(&String, left, right, left.clone() + &*right);
-        binary_op_eval!(Integer, left, right, left + right);
-        binary_op_eval!(Float, left, right, left + right);
+        binary_op_eval!(left, right :&String { left.clone() + &*right });
+        binary_op_eval!(left, right :Integer { left + right });
+        binary_op_eval!(left, right :Float { left + right });
         Err(eval::Error::new("invalid types for (+) operator"))
     }
 
     /// Evaluate the "-" operator for two values.
     fn eval_minus(left: &Value, right: &Value) -> EvalResult {
-        binary_op_eval!(Integer, left, right, left - right);
-        binary_op_eval!(Float, left, right, left - right);
+        binary_op_eval!(left, right :Integer { left - right });
+        binary_op_eval!(left, right :Float { left - right });
         Err(eval::Error::new("invalid types for (-) operator"))
     }
 }
