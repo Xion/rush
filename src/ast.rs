@@ -53,9 +53,10 @@ impl Eval for BinaryOpNode {
             match &op[..] {
                 "+" => result = try!(BinaryOpNode::eval_plus(&result, &arg)),
                 "-" => result = try!(BinaryOpNode::eval_minus(&result, &arg)),
-                // TODO(xion): other operators
+                "*" => result = try!(BinaryOpNode::eval_times(&result, &arg)),
+                "/" => result = try!(BinaryOpNode::eval_by(&result, &arg)),
                 _ => { return Err(
-                    eval::Error::new(&format!("unknown operator: {}", op))
+                    eval::Error::new(&format!("unknown operator: `{}`", op))
                 ); }
             }
         }
@@ -103,14 +104,29 @@ impl BinaryOpNode {
         binary_op_eval!(left, right :&String { left.clone() + &*right });
         binary_op_eval!(left, right :Integer { left + right });
         binary_op_eval!(left, right :Float { left + right });
-        Err(eval::Error::new("invalid types for (+) operator"))
+        Err(eval::Error::new("invalid types for `+` operator"))
     }
 
     /// Evaluate the "-" operator for two values.
     fn eval_minus(left: &Value, right: &Value) -> EvalResult {
         binary_op_eval!(left, right :Integer { left - right });
         binary_op_eval!(left, right :Float { left - right });
-        Err(eval::Error::new("invalid types for (-) operator"))
+        Err(eval::Error::new("invalid types for `-` operator"))
+    }
+
+    /// Evaluate the "*" operator for two values.
+    fn eval_times(left: &Value, right: &Value) -> EvalResult {
+        binary_op_eval!(left, right :Integer { left * right });
+        binary_op_eval!(left, right :Float { left * right });
+        // TODO(xion): String * Integer == string repetition
+        Err(eval::Error::new("invalid types for `*` operator"))
+    }
+
+    /// Evaluate the "/" operator for two values.
+    fn eval_by(left: &Value, right: &Value) -> EvalResult {
+        binary_op_eval!(left, right :Integer { left / right });
+        binary_op_eval!(left, right :Float { left / right });
+        Err(eval::Error::new("invalid types for `/` operator"))
     }
 }
 
