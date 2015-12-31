@@ -96,6 +96,7 @@ macro_rules! binary_op_eval {
                 return Ok(Value::$rt($e));
             }
         }
+        // TODO(xion): left: Foo, right: &Bar -> Baz { foo(left, right) }
     };
     // left: Foo, right: Bar -> Baz { foo(left, right) }
     (($x:ident: $t1:ident, $y:ident: $t2:ident) -> $rt:ident { $e:expr }) => {
