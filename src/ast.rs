@@ -49,7 +49,9 @@ impl Eval for BinaryOpNode {
                 "+" => result = try!(BinaryOpNode::eval_plus(&result, &arg)),
                 "-" => result = try!(BinaryOpNode::eval_minus(&result, &arg)),
                 // TODO(xion): other operators
-                _ => { return eval::Error::err(&format!("unknown operator: {}", op)); }
+                _ => { return Err(
+                    eval::Error::new(&format!("unknown operator: {}", op))
+                ); }
             }
         }
         Ok(result)
@@ -74,7 +76,7 @@ impl BinaryOpNode {
                 return Ok(Value::Float(left + right));
             }
         }
-        eval::Error::err("invalid types for (+) operator")
+        Err(eval::Error::new("invalid types for (+) operator"))
     }
 
     /// Evaluate the "-" operator for two values.
@@ -89,7 +91,7 @@ impl BinaryOpNode {
                 return Ok(Value::Float(left - right));
             }
         }
-        eval::Error::err("invalid types for (-) operator")
+        Err(eval::Error::new("invalid types for (-) operator"))
     }
 }
 
@@ -111,7 +113,6 @@ impl Eval for FunctionCallNode {
         // extract the argument values and call the function
         let args = evals.iter().map(|r| r.clone().ok().unwrap()).collect();
         context.call_func(&self.name, args).ok_or(
-            eval::Error{message: format!("unknown function: {}", self.name)}
-        )
+            eval::Error::new(&format!("unknown function: {}", self.name)))
     }
 }

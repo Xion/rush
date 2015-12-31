@@ -18,8 +18,8 @@ pub struct Error {
 }
 
 impl Error {
-    pub fn err<T>(msg: &str) -> Result<T, Error> {
-        Err(Error{message: msg.to_string()})
+    pub fn new(msg: &str) -> Error {
+        Error{message: msg.to_string()}
     }
 }
 
