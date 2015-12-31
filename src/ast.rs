@@ -67,21 +67,21 @@ impl Eval for BinaryOpNode {
 /// Helper macro for defining how binary operators evaluate
 /// for different value types.
 ///
-/// Usage:
+/// Example usage:
 /// ```ignore
 /// binary_op_eval!(left, right :Integer { left + right });
 /// ```
 macro_rules! binary_op_eval {
-    // left :&Foo, right :&Bar -> Baz { foo(left, right) }
-    (($x:ident :&$t1:ident, $y:ident :&$t2:ident) -> $rt:ident { $e:expr }) => {
+    // left: &Foo, right: &Bar -> Baz { foo(left, right) }
+    (($x:ident: &$t1:ident, $y:ident: &$t2:ident) -> $rt:ident { $e:expr }) => {
         if let &Value::$t1(ref $x) = $x {
             if let &Value::$t2(ref $y) = $y {
                 return Ok(Value::$rt($e));
             }
         }
     };
-    // left :Foo, right :Bar -> Baz { foo(left, right) }
-    (($x:ident :$t1:ident, $y:ident :$t2:ident) -> $rt:ident { $e:expr }) => {
+    // left: Foo, right: Bar -> Baz { foo(left, right) }
+    (($x:ident: $t1:ident, $y:ident: $t2:ident) -> $rt:ident { $e:expr }) => {
         if let Value::$t1($x) = *$x {
             if let Value::$t2($y) = *$y {
                 return Ok(Value::$rt($e));
@@ -89,43 +89,43 @@ macro_rules! binary_op_eval {
         }
     };
 
-    // left, right :&Foo { foo(left, right) }
-    ($x:ident, $y:ident :&$t:ident { $e:expr }) => {
+    // left, right : &Foo { foo(left, right) }
+    ($x:ident, $y:ident : &$t:ident { $e:expr }) => {
         binary_op_eval!(($x :&$t, $y :&$t) -> $t { $e });
     };
-    // left, right :Foo { foo(left, right) }
-    ($x:ident, $y:ident :$t:ident { $e:expr }) => {
+    // left, right : Foo { foo(left, right) }
+    ($x:ident, $y:ident : $t:ident { $e:expr }) => {
         binary_op_eval!(($x :$t, $y :$t) -> $t { $e });
     };
 }
 impl BinaryOpNode {
     /// Evaluate the "+" operator for two values.
     fn eval_plus(left: &Value, right: &Value) -> EvalResult {
-        binary_op_eval!(left, right :&String { left.clone() + &*right });
-        binary_op_eval!(left, right :Integer { left + right });
-        binary_op_eval!(left, right :Float { left + right });
+        binary_op_eval!(left, right : &String { left.clone() + &*right });
+        binary_op_eval!(left, right : Integer { left + right });
+        binary_op_eval!(left, right : Float { left + right });
         Err(eval::Error::new("invalid types for `+` operator"))
     }
 
     /// Evaluate the "-" operator for two values.
     fn eval_minus(left: &Value, right: &Value) -> EvalResult {
-        binary_op_eval!(left, right :Integer { left - right });
-        binary_op_eval!(left, right :Float { left - right });
+        binary_op_eval!(left, right : Integer { left - right });
+        binary_op_eval!(left, right : Float { left - right });
         Err(eval::Error::new("invalid types for `-` operator"))
     }
 
     /// Evaluate the "*" operator for two values.
     fn eval_times(left: &Value, right: &Value) -> EvalResult {
-        binary_op_eval!(left, right :Integer { left * right });
-        binary_op_eval!(left, right :Float { left * right });
+        binary_op_eval!(left, right : Integer { left * right });
+        binary_op_eval!(left, right : Float { left * right });
         // TODO(xion): String * Integer == string repetition
         Err(eval::Error::new("invalid types for `*` operator"))
     }
 
     /// Evaluate the "/" operator for two values.
     fn eval_by(left: &Value, right: &Value) -> EvalResult {
-        binary_op_eval!(left, right :Integer { left / right });
-        binary_op_eval!(left, right :Float { left / right });
+        binary_op_eval!(left, right : Integer { left / right });
+        binary_op_eval!(left, right : Float { left / right });
         Err(eval::Error::new("invalid types for `/` operator"))
     }
 }
