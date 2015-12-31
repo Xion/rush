@@ -43,7 +43,6 @@ impl Context {
     /// Call a function of given name with given arguments.
     /// Returns Some(result), or None if the function couldn't be found.
     pub fn call_func(&self, name: &str, args: Args) -> Option<Value> {
-        let args = args.iter().map(|v| v.resolve(self)).collect();
         self.funcs.call(name, args)
     }
 }

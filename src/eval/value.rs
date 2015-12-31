@@ -26,19 +26,6 @@ pub enum Value {
 }
 
 impl Value {
-    /// Resolve a possible variable reference against given context.
-    ///
-    /// Returns the variable's Value (which may be just variable name as string),
-    /// or a copy of the original Value if it wasn't a reference.
-    pub fn resolve(&self, context: &Context) -> Value {
-        match *self {
-            Value::Reference(ref t) => context.get_var(t)
-                .map(|v| v.clone())
-                .unwrap_or_else(|| Value::String(t.clone())),
-            _ => self.clone(),
-        }
-    }
-
     pub fn as_string(self) -> Option<String> {
         return match self {
             Value::String(s) => Some(s),

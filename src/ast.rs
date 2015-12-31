@@ -19,18 +19,23 @@ impl FromStr for ValueNode {
 }
 
 impl Eval for ValueNode {
-    // TODO(xion): most of this should go to a new VariableNode, and ValueNode
-    // should just return the value verbatim
     fn eval(&self, context: &Context) -> EvalResult {
-        if let Value::String(ref string) = self.value {
-            // treat the literal value as variable name if such variable exists;
-            // otherwise, just return the value itself as string
-            if let Some(value) = context.get_var(string) {
-                return Ok(value.clone());
-            }
-            return Ok(Value::String(string.clone()));
+        Ok(self.resolve(&context))
+    }
+}
+
+impl ValueNode {
+    /// Resolve a possible variable reference against given context.
+    ///
+    /// Returns the variable's Value (which may be just variable name as string),
+    /// or a copy of the original Value if it wasn't a reference.
+    fn resolve(&self, context: &Context) -> Value {
+        match self.value {
+            Value::Reference(ref t) => context.get_var(t)
+                .map(|v| v.clone())
+                .unwrap_or_else(|| Value::String(t.clone())),
+            _ => self.value.clone(),
         }
-        Ok(self.value.clone())
     }
 }
 
