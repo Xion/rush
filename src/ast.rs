@@ -63,6 +63,21 @@ impl Eval for BinaryOpNode {
     }
 }
 
+/// Helper macro for defining how binary operators evaluate
+/// for different value types.
+///
+/// Usage:
+///    binary_op_eval!(Integer, left, right, left + right)
+///
+macro_rules! binary_op_eval {
+    ($t:ident, $x:ident, $y:ident, $e:expr) => {
+        if let Value::$t($x) = *$x {
+            if let Value::$t($y) = *$y {
+                return Ok(Value::$t($e));
+            }
+        }
+    }
+}
 impl BinaryOpNode {
     /// Evaluate the "+" operator for two values.
     fn eval_plus(left: &Value, right: &Value) -> EvalResult {
@@ -71,31 +86,15 @@ impl BinaryOpNode {
                 return Ok(Value::String(left.clone() + &*right));
             }
         }
-        if let Value::Integer(left) = *left {
-            if let Value::Integer(right) = *right {
-                return Ok(Value::Integer(left + right));
-            }
-        }
-        if let Value::Float(left) = *left {
-            if let Value::Float(right) = *right {
-                return Ok(Value::Float(left + right));
-            }
-        }
+        binary_op_eval!(Integer, left, right, left + right);
+        binary_op_eval!(Float, left, right, left + right);
         Err(eval::Error::new("invalid types for (+) operator"))
     }
 
     /// Evaluate the "-" operator for two values.
     fn eval_minus(left: &Value, right: &Value) -> EvalResult {
-        if let Value::Integer(left) = *left {
-            if let Value::Integer(right) = *right {
-                return Ok(Value::Integer(left - right));
-            }
-        }
-        if let Value::Float(left) = *left {
-            if let Value::Float(right) = *right {
-                return Ok(Value::Float(left - right));
-            }
-        }
+        binary_op_eval!(Integer, left, right, left - right);
+        binary_op_eval!(Float, left, right, left - right);
         Err(eval::Error::new("invalid types for (-) operator"))
     }
 }
