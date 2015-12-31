@@ -49,6 +49,75 @@ impl ValueNode {
 }
 
 
+pub struct UnaryOpNode {
+    pub op: String,
+    pub arg: Box<Eval>,
+}
+
+impl Eval for UnaryOpNode {
+    fn eval(&self, context: &Context) -> EvalResult {
+        let arg = try!(self.arg.eval(&context));
+        match &self.op[..] {
+            "+" => UnaryOpNode::eval_plus(&arg),
+            "-" => UnaryOpNode::eval_minus(&arg),
+            _ => Err(eval::Error::new(
+                &format!("unknown unary operator: `{}`", self.op)
+            ))
+        }
+    }
+}
+
+/// Helper macro for defining how unary operators evaluate
+/// for different value types.
+///
+/// See the usage in UnaryOpNode.eval_X methods below.
+macro_rules! unary_op_eval {
+    // (arg: &Foo) -> Bar { foo(arg) }
+    (($x:ident: &$t:ident) -> $rt:ident { $e:expr }) => {
+        if let &Value::$t(ref $x) = $x {
+            return Ok(Value::$rt($e));
+        }
+    };
+    // (arg: Foo) -> Bar { foo(arg) }
+    (($x:ident: $t:ident) -> $rt:ident { $e:expr }) => {
+        if let Value::$t($x) = *$x {
+            return Ok(Value::$rt($e));
+        }
+    };
+
+    // arg : &Foo { foo(arg) }
+    ($x:ident : &$t:ident { $e:expr }) => {
+        unary_op_eval!(($x: &$t) -> $t { $e });
+    };
+    // arg : Foo { foo(arg) }
+    ($x:ident : $t:ident { $e:expr }) => {
+        unary_op_eval!(($x: $t) -> $t { $e });
+    };
+}
+impl UnaryOpNode {
+    /// Evaluate the "+" argument for one value.
+    fn eval_plus(arg: &Value) -> EvalResult {
+        unary_op_eval!(arg : Integer { arg });
+        unary_op_eval!(arg : Float { arg });
+        UnaryOpNode::err("+", &arg)
+    }
+
+    /// Evaluate the "_" argument for one value.
+    fn eval_minus(arg: &Value) -> EvalResult {
+        unary_op_eval!(arg : Integer { -arg });
+        unary_op_eval!(arg : Float { -arg });
+        UnaryOpNode::err("-", &arg)
+    }
+
+    /// Produce an error about invalid argument for an operator.
+    fn err(op: &str, arg: &Value) -> EvalResult {
+        Err(eval::Error::new(&format!(
+            "invalid argument for `{}` operator: `{:?}`", op, arg
+        )))
+    }
+}
+
+
 pub struct BinaryOpNode {
     pub first: Box<Eval>,
     pub rest: Vec<(String, Box<Eval>)>,
@@ -65,7 +134,7 @@ impl Eval for BinaryOpNode {
                 "*" => result = try!(BinaryOpNode::eval_times(&result, &arg)),
                 "/" => result = try!(BinaryOpNode::eval_by(&result, &arg)),
                 _ => { return Err(
-                    eval::Error::new(&format!("unknown operator: `{}`", op))
+                    eval::Error::new(&format!("unknown binary operator: `{}`", op))
                 ); }
             }
         }
@@ -76,12 +145,9 @@ impl Eval for BinaryOpNode {
 /// Helper macro for defining how binary operators evaluate
 /// for different value types.
 ///
-/// Example usage:
-/// ```ignore
-/// binary_op_eval!(left, right :Integer { left + right });
-/// ```
+/// See the usage in BinaryOpNode.eval_X methods below.
 macro_rules! binary_op_eval {
-    // left: &Foo, right: &Bar -> Baz { foo(left, right) }
+    // (left: &Foo, right: &Bar) -> Baz { foo(left, right) }
     (($x:ident: &$t1:ident, $y:ident: &$t2:ident) -> $rt:ident { $e:expr }) => {
         if let &Value::$t1(ref $x) = $x {
             if let &Value::$t2(ref $y) = $y {
@@ -89,16 +155,16 @@ macro_rules! binary_op_eval {
             }
         }
     };
-    // left: &Foo, right: Bar -> Baz { foo(left, right) }
+    // (left: &Foo, right: Bar) -> Baz { foo(left, right) }
     (($x:ident: &$t1:ident, $y:ident: $t2:ident) -> $rt:ident { $e:expr }) => {
         if let &Value::$t1(ref $x) = $x {
             if let Value::$t2($y) = *$y {
                 return Ok(Value::$rt($e));
             }
         }
-        // TODO(xion): left: Foo, right: &Bar -> Baz { foo(left, right) }
+        // TODO(xion): (left: Foo, right: &Bar)-> Baz { foo(left, right) }
     };
-    // left: Foo, right: Bar -> Baz { foo(left, right) }
+    // (left: Foo, right: Bar) -> Baz { foo(left, right) }
     (($x:ident: $t1:ident, $y:ident: $t2:ident) -> $rt:ident { $e:expr }) => {
         if let Value::$t1($x) = *$x {
             if let Value::$t2($y) = *$y {
