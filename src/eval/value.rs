@@ -69,11 +69,11 @@ impl FromStr for Value {
     /// Create a Value from string, reinterpreting input as number
     /// if we find out it's in numeric form.
     fn from_str(s: &str) -> Result<Value, Self::Err> {
-        if let Ok(float) = s.parse::<f64>() {
-            return Ok(Value::Float(float));
-        }
         if let Ok(int) = s.parse::<i64>() {
             return Ok(Value::Integer(int));
+        }
+        if let Ok(float) = s.parse::<f64>() {
+            return Ok(Value::Float(float));
         }
 
         // quoted string literals are always interpreted as strings,
@@ -91,6 +91,7 @@ impl FromStr for Value {
     }
 }
 
+// TODO(xion): implement custom Debug for more user-friendly error messages
 impl fmt::Display for Value {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match *self {

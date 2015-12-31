@@ -1,6 +1,7 @@
 //! Data structures representing the abstract syntax tree (AST)
 //! of parsed expressions.
 
+use std::iter;
 use std::str::FromStr;
 
 use eval::{self, Eval, EvalResult, Context, Value};
@@ -30,12 +31,20 @@ impl ValueNode {
     /// Returns the variable's Value (which may be just variable name as string),
     /// or a copy of the original Value if it wasn't a reference.
     fn resolve(&self, context: &Context) -> Value {
-        match self.value {
-            Value::Reference(ref t) => context.get_var(t)
-                .map(|v| v.clone())
-                .unwrap_or_else(|| Value::String(t.clone())),
-            _ => self.value.clone(),
+        let mut result = self.value.clone();
+
+        // follow the chain of references until it bottoms out
+        loop {
+            match result {
+                Value::Reference(t) => {
+                    result = context.get_var(&t)
+                        .map(|v| v.clone())
+                        .unwrap_or_else(move || Value::String(t));
+                }
+                _ => { break; }
+            }
         }
+        result
     }
 }
 
@@ -80,6 +89,14 @@ macro_rules! binary_op_eval {
             }
         }
     };
+    // left: &Foo, right: Bar -> Baz { foo(left, right) }
+    (($x:ident: &$t1:ident, $y:ident: $t2:ident) -> $rt:ident { $e:expr }) => {
+        if let &Value::$t1(ref $x) = $x {
+            if let Value::$t2($y) = *$y {
+                return Ok(Value::$rt($e));
+            }
+        }
+    };
     // left: Foo, right: Bar -> Baz { foo(left, right) }
     (($x:ident: $t1:ident, $y:ident: $t2:ident) -> $rt:ident { $e:expr }) => {
         if let Value::$t1($x) = *$x {
@@ -104,29 +121,38 @@ impl BinaryOpNode {
         binary_op_eval!(left, right : &String { left.clone() + &*right });
         binary_op_eval!(left, right : Integer { left + right });
         binary_op_eval!(left, right : Float { left + right });
-        Err(eval::Error::new("invalid types for `+` operator"))
+        BinaryOpNode::err("+", &left, &right)
     }
 
     /// Evaluate the "-" operator for two values.
     fn eval_minus(left: &Value, right: &Value) -> EvalResult {
         binary_op_eval!(left, right : Integer { left - right });
         binary_op_eval!(left, right : Float { left - right });
-        Err(eval::Error::new("invalid types for `-` operator"))
+        BinaryOpNode::err("-", &left, &right)
     }
 
     /// Evaluate the "*" operator for two values.
     fn eval_times(left: &Value, right: &Value) -> EvalResult {
         binary_op_eval!(left, right : Integer { left * right });
         binary_op_eval!(left, right : Float { left * right });
-        // TODO(xion): String * Integer == string repetition
-        Err(eval::Error::new("invalid types for `*` operator"))
+        binary_op_eval!((left: &String, right: Integer) -> String {
+            iter::repeat(left).map(String::clone).take(right as usize).collect()
+        });
+        BinaryOpNode::err("*", &left, &right)
     }
 
     /// Evaluate the "/" operator for two values.
     fn eval_by(left: &Value, right: &Value) -> EvalResult {
         binary_op_eval!(left, right : Integer { left / right });
         binary_op_eval!(left, right : Float { left / right });
-        Err(eval::Error::new("invalid types for `/` operator"))
+        BinaryOpNode::err("/", &left, &right)
+    }
+
+    /// Produce an error about invalid arguments for an operator.
+    fn err(op: &str, left: &Value, right: &Value) -> EvalResult {
+        Err(eval::Error::new(&format!(
+            "invalid arguments for `{}` operator: `{:?}` and `{:?}`",
+            op, left, right)))
     }
 }
 
