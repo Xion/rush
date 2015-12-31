@@ -67,25 +67,29 @@ impl Eval for BinaryOpNode {
 /// for different value types.
 ///
 /// Usage:
-///    binary_op_eval!(Integer, left, right, left + right)
-///
+/// ```ignore
+/// binary_op_eval!(Integer, left, right, left + right)
+/// ```
 macro_rules! binary_op_eval {
+    (&$t:ident, $x:ident, $y:ident, $e:expr) => {
+        if let &Value::$t(ref $x) = $x {
+            if let &Value::$t(ref $y) = $y {
+                return Ok(Value::$t($e));
+            }
+        }
+    };
     ($t:ident, $x:ident, $y:ident, $e:expr) => {
         if let Value::$t($x) = *$x {
             if let Value::$t($y) = *$y {
                 return Ok(Value::$t($e));
             }
         }
-    }
+    };
 }
 impl BinaryOpNode {
     /// Evaluate the "+" operator for two values.
     fn eval_plus(left: &Value, right: &Value) -> EvalResult {
-        if let &Value::String(ref left) = left {
-            if let &Value::String(ref right) = right {
-                return Ok(Value::String(left.clone() + &*right));
-            }
-        }
+        binary_op_eval!(&String, left, right, left.clone() + &*right);
         binary_op_eval!(Integer, left, right, left + right);
         binary_op_eval!(Float, left, right, left + right);
         Err(eval::Error::new("invalid types for (+) operator"))
