@@ -36,13 +36,14 @@ impl Context {
     }
 
     /// Set a string value for a variable.
-    pub fn set_string_var(&mut self, name: &str, value: &str) {
+    pub fn set_str_var(&mut self, name: &str, value: &str) {
         self.set_var(name, Value::String(value.to_string()))
     }
 
     /// Call a function of given name with given arguments.
     /// Returns Some(result), or None if the function couldn't be found.
     pub fn call_func(&self, name: &str, args: Args) -> Option<Value> {
+        let args = args.iter().map(|v| v.resolve(self)).collect();
         self.funcs.call(name, args)
     }
 }

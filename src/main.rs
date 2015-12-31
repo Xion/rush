@@ -13,7 +13,7 @@ use std::process::exit;
 
 use getopts::Options;
 
-use self::eval::{Eval, Context};
+use self::eval::{Eval, Context, Value};
 use self::parse::parse;
 
 
@@ -57,7 +57,8 @@ fn apply<R: Read, W: Write>(expr: &str, input: R, output: W) -> Result<(), io::E
 
     for line in reader.lines() {
         let line = try!(line);
-        context.set_string_var("_", &line);
+        context.set_var("_",
+            line.parse::<Value>().unwrap_or_else(|_| Value::String(line)));
 
         let result = try!(ast.eval(&context)
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e)));
