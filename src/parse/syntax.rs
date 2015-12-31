@@ -66,22 +66,34 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
     }
 ));
 
-/// factor ::== identifier '(' args ')' | atom
-named!(factor( &[u8] ) -> Box<Eval>, alt!(
-    // complete!(...) is necessary because `atom` branch below can be a prefix
-    // of this branch, so trying to parse an atom as function call will result
-    // in incomplete input (because the pair of parentheses is "missing").
-    // Using complete! forces the parses to interpret this IResult::Incomplete
-    // as error (and thus try the `atom` branch) rather than bubble it up.
-    complete!(chain!(
-        name: identifier ~
-        args: delimited!(multispaced!(tag!("(")), args, multispaced!(tag!(")"))),
-        move || {
-            Box::new(
-                FunctionCallNode{name: name, args: args}
-            ) as Box<Eval>
-        }
-    )) | atom
+/// factor ::== ['+'|'-'] (identifier '(' args ')' | atom)
+named!(factor( &[u8] ) -> Box<Eval>, map!(
+    pair!(
+        opt!(map!(
+            map_res!(multispaced!(is_a!("+-")), from_utf8),
+            str::to_string
+        )),
+        alt!(
+            // complete!(...) is necessary because `atom` branch below can be a prefix
+            // of this branch, so trying to parse an atom as function call will result
+            // in incomplete input (because the pair of parentheses is "missing").
+            // Using complete! forces the parses to interpret this IResult::Incomplete
+            // as error (and thus try the `atom` branch) rather than bubble it up.
+            complete!(chain!(
+                name: identifier ~
+                args: delimited!(multispaced!(tag!("(")), args, multispaced!(tag!(")"))),
+                move || {
+                    Box::new(
+                        FunctionCallNode{name: name, args: args}
+                    ) as Box<Eval>
+                }
+            )) | atom
+        )
+    ),
+    |(maybe_op, factor): (_, Box<Eval>)| match maybe_op {
+        Some(op) => Box::new(UnaryOpNode{op: op, arg: factor}) as Box<Eval>,
+        None => factor,
+    }
 ));
 
 /// args ::== expression (',' expression)*
