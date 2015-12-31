@@ -13,6 +13,17 @@ use eval::Eval;
 
 // Grammar utilities.
 
+/// Make the underlying parser assume UTF8-encoded input
+/// and output String objects.
+macro_rules! string {
+    ($i:expr, $submac:ident!( $($args:tt)* )) => (
+        map!($i, map_res!($submac!($($args)*), from_utf8), str::to_string);
+    );
+    ($i:expr, $f:expr) => (
+        string!($i, call!($f));
+    );
+}
+
 /// Parses values that are optionally surrounded by arbitrary number of
 /// any of the whitespace characters.
 macro_rules! multispaced (
@@ -34,10 +45,7 @@ named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: argument, || { e }));
 named!(argument( &[u8] ) -> Box<Eval>, chain!(
     first: term ~
     rest: many0!(pair!(
-        map!(
-            map_res!(multispaced!(is_a!("+-")), from_utf8),
-            str::to_string
-        ),
+        string!(multispaced!(is_a!("+-"))),
         term
     )),
     move || {
@@ -52,10 +60,7 @@ named!(argument( &[u8] ) -> Box<Eval>, chain!(
 named!(term( &[u8] ) -> Box<Eval>, chain!(
     first: factor ~
     rest: many0!(pair!(
-        map!(
-            map_res!(multispaced!(is_a!("*/")), from_utf8),
-            str::to_string
-        ),
+        string!(multispaced!(is_a!("*/"))),
         factor
     )),
     move || {
@@ -69,10 +74,7 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
 /// factor ::== ['+'|'-'] (identifier '(' args ')' | atom)
 named!(factor( &[u8] ) -> Box<Eval>, map!(
     pair!(
-        opt!(map!(
-            map_res!(multispaced!(is_a!("+-")), from_utf8),
-            str::to_string
-        )),
+        opt!(string!(multispaced!(is_a!("+-")))),
         alt!(
             // complete!(...) is necessary because `atom` branch below can be a prefix
             // of this branch, so trying to parse an atom as function call will result
@@ -110,7 +112,6 @@ named!(atom( &[u8] ) -> Box<Eval>, alt!(
 ));
 
 // TODO(xion): typed underscore vars (_i, _f)
-named!(identifier( &[u8] ) -> String, map!(
-    map_res!(alt!(tag!("_") | alphanumeric), from_utf8),
-    str::to_string
+named!(identifier( &[u8] ) -> String, string!(
+    alt!(tag!("_") | alphanumeric)
 ));
