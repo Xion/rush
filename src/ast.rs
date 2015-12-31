@@ -171,12 +171,25 @@ macro_rules! binary_op_eval {
                 }
             }
         }
-        // TODO(xion): (left: Foo, right: &Bar) -> Baz where pre() { foo(left, right) }
     };
     // (left: &Foo, right: Bar) -> Baz { foo(left, right) }
     (($x:ident: &$t1:ident, $y:ident: $t2:ident) -> $rt:ident { $e:expr }) => {
         binary_op_eval!(($x: &$t1, $y: $t2) -> $rt where true { $e });
-        // TODO(xion): (left: Foo, right: &Bar)-> Baz { foo(left, right) }
+    };
+
+    // (left: Foo, right: &Bar) -> Baz where pre() { foo(left, right) }
+    (($x:ident: $t1:ident, $y:ident: &$t2:ident) -> $rt:ident where $pre:expr { $e:expr }) => {
+        if let Value::$t1($x) = *$x {
+            if let &Value::$t2(ref $y) = $y {
+                if $pre {
+                    return Ok(Value::$rt($e));
+                }
+            }
+        }
+    };
+    // (left: Foo, right: &Bar)-> Baz { foo(left, right) }
+    (($x:ident: $t1:ident, $y:ident: &$t2:ident) -> $rt:ident { $e:expr }) => {
+        binary_op_eval!(($x: $t1, $y: &$t2) -> $rt where true { $e });
     };
 
     // (left: Foo, right: Bar) -> Baz where pre() { foo(left, right) }
