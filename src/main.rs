@@ -1,9 +1,15 @@
 extern crate getopts;
+
+// NOTE: `nom` has to be declared before `log` because both define an error!
+// macro, and we want to use the one from `log`.
 #[macro_use]
 extern crate nom;
+#[macro_use]
+extern crate log;
 
 mod ast;
 mod eval;
+mod logging;
 mod parse;
 
 
@@ -18,6 +24,8 @@ use self::parse::parse;
 
 
 fn main() {
+    logging::init().unwrap();
+
     let argv: Vec<String> = env::args().collect();
     let program = argv[0].clone();
 
@@ -32,8 +40,7 @@ fn main() {
 
     let expr = args.free.join(" ");
     if let Err(error) = apply(&expr, io::stdin(), io::stdout()) {
-        // TODO(xion): user-friendly error messages
-        writeln!(&mut io::stderr(), "{:?}", error).unwrap();
+        error!("{:?}", error);
         exit(1);
     }
 }
@@ -41,13 +48,16 @@ fn main() {
 
 /// Print the instructions about invoking the program from the command line.
 fn print_usage(program: &str, opts: Options) {
-    println!("{}", opts.usage(&format!("Usage: {} [options]", program)));
+    writeln!(&mut io::stderr(), "{}",
+             opts.usage(&format!("Usage: {} [options]", program)));
 }
 
 
 /// Apply the expression to given input stream,
 /// writing to the given output stream.
 fn apply<R: Read, W: Write>(expr: &str, input: R, output: W) -> Result<(), io::Error> {
+    debug!("Using expression: {}", expr);
+
     let ast = try!(parse(expr)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e)));
 
@@ -55,6 +65,7 @@ fn apply<R: Read, W: Write>(expr: &str, input: R, output: W) -> Result<(), io::E
     let mut writer = BufWriter::new(output);
     let mut context = Context::new();
 
+    let mut count = 0;
     for line in reader.lines() {
         let line = try!(line);
         context.set_var("_",
@@ -63,6 +74,10 @@ fn apply<R: Read, W: Write>(expr: &str, input: R, output: W) -> Result<(), io::E
         let result = try!(ast.eval(&context)
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e)));
         try!(write!(writer, "{}\n", result));
+
+        count += 1;
     }
+
+    info!("Processed {} line(s) of input", count);
     Ok(())
 }
