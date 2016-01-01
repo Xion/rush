@@ -2,15 +2,17 @@
 //! of parsed expressions.
 
 mod binaryop;
+mod functioncall;
 mod unaryop;
 
 pub use self::binaryop::*;
+pub use self::functioncall::*;
 pub use self::unaryop::*;
 
 
 use std::str::FromStr;
 
-use eval::{self, Eval, EvalResult, Context, Value};
+use eval::{Eval, EvalResult, Context, Value};
 
 
 pub struct AtomNode {
@@ -51,27 +53,5 @@ impl AtomNode {
             }
         }
         result
-    }
-}
-
-
-pub struct FunctionCallNode {
-    pub name: String,
-    pub args: Vec<Box<Eval>>,
-}
-
-impl Eval for FunctionCallNode {
-    fn eval(&self, context: &Context) -> Result<Value, eval::Error> {
-        // evaluate all the arguments first, bail if any of that fails
-        let evals: Vec<_> =
-            self.args.iter().map(|x| x.eval(&context)).collect();
-        if let Some(res) = evals.iter().find(|r| r.is_err()) {
-            return res.clone();
-        }
-
-        // extract the argument values and call the function
-        let args = evals.iter().map(|r| r.clone().ok().unwrap()).collect();
-        context.call_func(&self.name, args).ok_or(
-            eval::Error::new(&format!("unknown function: {}", self.name)))
     }
 }
