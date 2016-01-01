@@ -1,6 +1,11 @@
 //! Data structures representing the abstract syntax tree (AST)
 //! of parsed expressions.
 
+mod unaryop;
+
+pub use self::unaryop::*;
+
+
 use std::iter;
 use std::str::FromStr;
 
@@ -45,75 +50,6 @@ impl AtomNode {
             }
         }
         result
-    }
-}
-
-
-pub struct UnaryOpNode {
-    pub op: String,
-    pub arg: Box<Eval>,
-}
-
-impl Eval for UnaryOpNode {
-    fn eval(&self, context: &Context) -> EvalResult {
-        let arg = try!(self.arg.eval(&context));
-        match &self.op[..] {
-            "+" => UnaryOpNode::eval_plus(&arg),
-            "-" => UnaryOpNode::eval_minus(&arg),
-            _ => Err(eval::Error::new(
-                &format!("unknown unary operator: `{}`", self.op)
-            ))
-        }
-    }
-}
-
-/// Helper macro for defining how unary operators evaluate
-/// for different value types.
-///
-/// See the usage in UnaryOpNode.eval_X methods below.
-macro_rules! unary_op_eval {
-    // (arg: &Foo) -> Bar { foo(arg) }
-    (($x:ident: &$t:ident) -> $rt:ident { $e:expr }) => {
-        if let &Value::$t(ref $x) = $x {
-            return Ok(Value::$rt($e));
-        }
-    };
-    // (arg: Foo) -> Bar { foo(arg) }
-    (($x:ident: $t:ident) -> $rt:ident { $e:expr }) => {
-        if let Value::$t($x) = *$x {
-            return Ok(Value::$rt($e));
-        }
-    };
-
-    // arg : &Foo { foo(arg) }
-    ($x:ident : &$t:ident { $e:expr }) => {
-        unary_op_eval!(($x: &$t) -> $t { $e });
-    };
-    // arg : Foo { foo(arg) }
-    ($x:ident : $t:ident { $e:expr }) => {
-        unary_op_eval!(($x: $t) -> $t { $e });
-    };
-}
-impl UnaryOpNode {
-    /// Evaluate the "+" argument for one value.
-    fn eval_plus(arg: &Value) -> EvalResult {
-        unary_op_eval!(arg : Integer { arg });
-        unary_op_eval!(arg : Float { arg });
-        UnaryOpNode::err("+", &arg)
-    }
-
-    /// Evaluate the "_" argument for one value.
-    fn eval_minus(arg: &Value) -> EvalResult {
-        unary_op_eval!(arg : Integer { -arg });
-        unary_op_eval!(arg : Float { -arg });
-        UnaryOpNode::err("-", &arg)
-    }
-
-    /// Produce an error about invalid argument for an operator.
-    fn err(op: &str, arg: &Value) -> EvalResult {
-        Err(eval::Error::new(&format!(
-            "invalid argument for `{}` operator: `{:?}`", op, arg
-        )))
     }
 }
 
