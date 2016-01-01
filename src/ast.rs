@@ -7,25 +7,25 @@ use std::str::FromStr;
 use eval::{self, Eval, EvalResult, Context, Value};
 
 
-pub struct ValueNode {
+pub struct AtomNode {
     pub value: Value,
 }
 
-impl FromStr for ValueNode {
+impl FromStr for AtomNode {
     type Err = <Value as FromStr>::Err;
 
-    fn from_str(s: &str) -> Result<ValueNode, Self::Err> {
-        s.parse::<Value>().map(|v| ValueNode{value: v})
+    fn from_str(s: &str) -> Result<AtomNode, Self::Err> {
+        s.parse::<Value>().map(|v| AtomNode{value: v})
     }
 }
 
-impl Eval for ValueNode {
+impl Eval for AtomNode {
     fn eval(&self, context: &Context) -> EvalResult {
         Ok(self.resolve(&context))
     }
 }
 
-impl ValueNode {
+impl AtomNode {
     /// Resolve a possible variable reference against given context.
     ///
     /// Returns the variable's Value (which may be just variable name as string),

@@ -106,7 +106,7 @@ named!(args( &[u8] ) -> Vec<Box<Eval>>,
 // TODO(xion): correct parsing of floating point numbers (it's broken now)
 named!(atom( &[u8] ) -> Box<Eval>, alt!(
     map_res!(identifier, |id: String| {
-        id.parse::<ValueNode>().map(|node| Box::new(node) as Box<Eval>)
+        id.parse::<AtomNode>().map(|node| Box::new(node) as Box<Eval>)
     }) |
     delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
 ));
