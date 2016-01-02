@@ -2,12 +2,23 @@
 name = "ap"
 version = "0.1.0"
 authors = ["Karol Kuczmarski <karol.kuczmarski@gmail.com>"]
-
-[[bin]]
-name = "main"
-doc = false
+license = "GPL-3.0"
+repository = "https://github.com/Xion/ap"
+readme = "README.md"
 
 [dependencies]
 getopts = "0.2"
 log = "0.3"
 nom = { version = "~1.0.0", features = ["regexp"] }
+
+# Note that "unit" tests (i.e. tests within code files) are not used,
+# so we disable them for both library and binary targets.
+
+[lib]
+test = false
+doctest = false
+
+[[bin]]
+name = "main"
+test = false
+doc = false
