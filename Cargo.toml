@@ -3,6 +3,10 @@ name = "ap"
 version = "0.1.0"
 authors = ["Karol Kuczmarski <karol.kuczmarski@gmail.com>"]
 
+[[bin]]
+name = "main"
+doc = false
+
 [dependencies]
 getopts = "0.2"
 log = "0.3"
