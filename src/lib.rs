@@ -20,7 +20,7 @@ use self::parse::parse;
 
 /// Apply the expression to given input stream,
 /// writing to the given output stream.
-pub fn apply<R: Read, W: Write>(expr: &str, input: R, output: W) -> Result<(), io::Error> {
+pub fn apply<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> Result<(), io::Error> {
     debug!("Using expression: {}", expr);
 
     let ast = try!(parse(expr)

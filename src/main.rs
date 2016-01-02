@@ -33,7 +33,7 @@ fn main() {
     }
 
     let expr = args.free.join(" ");
-    if let Err(error) = ap::apply(&expr, io::stdin(), io::stdout()) {
+    if let Err(error) = ap::apply(&expr, io::stdin(), &mut io::stdout()) {
         error!("{:?}", error);
         exit(1);
     }
