@@ -8,7 +8,19 @@ use std::string::ToString;
 
 
 #[test]
-fn underscore() {
+fn constant_number() {
+    const EXPR: &'static str = "42";
+    assert_eq!(EXPR, apply(EXPR, "unused"));
+}
+
+#[test]
+fn constant_string() {
+    const EXPR: &'static str = "foo";
+    assert_eq!(EXPR, apply(EXPR, "unused"));
+}
+
+#[test]
+fn identity() {
     const INPUT: &'static str = "42";
     assert_eq!(INPUT, apply("_", INPUT));
 }

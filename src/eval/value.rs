@@ -96,7 +96,7 @@ impl fmt::Display for Value {
         match *self {
             Value::Empty => write!(fmt, "{}", "<empty>"),
             Value::Symbol(ref t) => write!(fmt, "{}", t),
-            Value::String(ref s) => write!(fmt, "\"{}\"", s),
+            Value::String(ref s) => write!(fmt, "{}", s),
             Value::Integer(ref i) => write!(fmt, "{}", i),
             Value::Float(ref f) => write!(fmt, "{}", f),
             // _ => write!(fmt, "{}", "<unknown>")
