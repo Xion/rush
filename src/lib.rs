@@ -7,6 +7,8 @@ extern crate nom;
 #[macro_use]
 extern crate log;
 
+extern crate regex;
+
 mod ast;
 mod eval;
 mod parse;

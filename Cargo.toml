@@ -10,6 +10,7 @@ readme = "README.md"
 getopts = "0.2"
 log = "0.3"
 nom = { version = "~1.0.0", features = ["regexp"] }
+regex = "0.1"
 
 # Note that "unit" tests (i.e. tests within code files) are not used,
 # so we disable them for both library and binary targets.

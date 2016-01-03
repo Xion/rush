@@ -5,10 +5,14 @@
 
 use std::str::from_utf8;
 
-use nom::{alpha, alphanumeric, multispace};
+use nom::{alpha, alphanumeric, multispace, rest};
 
 use ast::*;
 use eval::Eval;
+
+
+// TODO(xion): switch from parsers expecting &[u8] to accepting &str;
+// this requires shimming the alpha etc. parsers to operate on &str too
 
 
 // Grammar utilities.
@@ -104,7 +108,7 @@ named!(args( &[u8] ) -> Vec<Box<Eval>>,
 
 // TODO(xion): correct parsing of floating point numbers (it's broken now)
 named!(atom( &[u8] ) -> Box<Eval>, alt!(
-    map_res!(alt!(identifier | int_literal | string_literal), |id: String| {
+    map_res!(alt!(identifier | int_literal | float_literal | string_literal), |id: String| {
         id.parse::<AtomNode>().map(|node| Box::new(node) as Box<Eval>)
     }) |
     delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
@@ -132,11 +136,13 @@ named!(int_literal( &[u8] ) -> String, map_res!(
     }
 ));
 
-// named!(float_literal( &[u8] ) -> String, string!(
-//     // TOOD(xion): use re_match_static! when regexp_macros feature
-//     // can be used in stable Rust
-//     re_match!(r"0|([1-9][0-9]*)\.[0-9]+(e[+-]?[1-9][0-9]*)")
-// ));
+named!(float_literal( &[u8] ) -> String, map!(
+    // TOOD(xion): use re_match_static! when regexp_macros feature
+    // can be used in stable Rust
+    flat_map!(map_res!(rest, from_utf8),
+              re_match!(r"0|([1-9][0-9]*)\.[0-9]+(e[+-]?[1-9][0-9]*)")),
+    str::to_string
+));
 
 // TODO(xion): quote escaping
 named!(string_literal( &[u8] ) -> String, string!(
