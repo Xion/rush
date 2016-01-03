@@ -84,7 +84,7 @@ impl Read for StringIO {
 }
 impl Write for StringIO {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        // TODO(xion): ignore the last UTF8 codepoint if it's incomplete
+        // TODO(xion): skip over the last UTF8 codepoint if it's incomplete
         let s = try!(from_utf8(buf).or(Err(
             io::Error::new(io::ErrorKind::InvalidInput, "malformed UTF8")
         )));

@@ -5,7 +5,7 @@
 
 use std::str::from_utf8;
 
-use nom::{alphanumeric, multispace};
+use nom::{alpha, alphanumeric, multispace};
 
 use ast::*;
 use eval::Eval;
@@ -104,18 +104,41 @@ named!(args( &[u8] ) -> Vec<Box<Eval>>,
 
 // TODO(xion): correct parsing of floating point numbers (it's broken now)
 named!(atom( &[u8] ) -> Box<Eval>, alt!(
-    map_res!(alt!(quoted_string | identifier), |id: String| {
+    map_res!(alt!(identifier | int_literal | string_literal), |id: String| {
         id.parse::<AtomNode>().map(|node| Box::new(node) as Box<Eval>)
     }) |
     delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
 ));
 
-// TODO(xion): typed underscore vars (_i, _f)
-named!(identifier( &[u8] ) -> String, string!(
-    alt!(tag!("_") | alphanumeric)
+named!(identifier( &[u8] ) -> String, alt!(
+    // TODO(xion): typed underscore vars (_i, _f)
+    string!(tag!("_")) |
+    map_res!(
+        pair!(alpha, many0!(alphanumeric)), |(first, rest): (_, Vec<&[u8]>)| {
+            let mut rest = rest;
+            rest.insert(0, first);
+            from_utf8(&rest.concat()[..]).map(str::to_string)
+        }
+    )
 ));
 
+const DIGITS: &'static str = "0123456789";
+named!(int_literal( &[u8] ) -> String, map_res!(
+    pair!(is_a!(&DIGITS[1..]), many0!(is_a!(DIGITS))),
+    |(first, rest): (_, Vec<&[u8]>)| {
+        let mut rest = rest;
+        rest.insert(0, first);
+        from_utf8(&rest.concat()[..]).map(str::to_string)
+    }
+));
+
+// named!(float_literal( &[u8] ) -> String, string!(
+//     // TOOD(xion): use re_match_static! when regexp_macros feature
+//     // can be used in stable Rust
+//     re_match!(r"0|([1-9][0-9]*)\.[0-9]+(e[+-]?[1-9][0-9]*)")
+// ));
+
 // TODO(xion): quote escaping
-named!(quoted_string( &[u8] ) -> String, string!(
+named!(string_literal( &[u8] ) -> String, string!(
     preceded!(tag!("\""), take_until_and_consume!("\""))
 ));
