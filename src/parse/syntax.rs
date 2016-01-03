@@ -102,10 +102,9 @@ named!(factor( &[u8] ) -> Box<Eval>, map!(
 named!(args( &[u8] ) -> Vec<Box<Eval>>,
        separated_list!(multispaced!(tag!(",")), argument));
 
-// TODO(xion): support quoted strings
 // TODO(xion): correct parsing of floating point numbers (it's broken now)
 named!(atom( &[u8] ) -> Box<Eval>, alt!(
-    map_res!(identifier, |id: String| {
+    map_res!(alt!(quoted_string | identifier), |id: String| {
         id.parse::<AtomNode>().map(|node| Box::new(node) as Box<Eval>)
     }) |
     delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
@@ -114,4 +113,9 @@ named!(atom( &[u8] ) -> Box<Eval>, alt!(
 // TODO(xion): typed underscore vars (_i, _f)
 named!(identifier( &[u8] ) -> String, string!(
     alt!(tag!("_") | alphanumeric)
+));
+
+// TODO(xion): quote escaping
+named!(quoted_string( &[u8] ) -> String, string!(
+    preceded!(tag!("\""), take_until_and_consume!("\""))
 ));

@@ -20,6 +20,13 @@ fn constant_string() {
 }
 
 #[test]
+fn constant_quoted_string() {
+    const STRING: &'static str = "foo";
+    let expr = &format!("\"{}\"", STRING);
+    assert_eq!(STRING, apply(expr, "unused"));
+}
+
+#[test]
 fn identity() {
     const INPUT: &'static str = "42";
     assert_eq!(INPUT, apply("_", INPUT));
