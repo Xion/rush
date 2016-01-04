@@ -8,9 +8,22 @@ use std::string::ToString;
 
 
 #[test]
-fn constant_number() {
+fn constant_integer() {
     const EXPR: &'static str = "42";
     assert_eq!(EXPR, apply(EXPR, "unused"));
+}
+
+#[test]
+fn constant_float() {
+    const EXPR: &'static str = "42.42";
+    assert_eq!(EXPR, apply(EXPR, "unused"));
+}
+
+#[test]
+fn constant_float_scientific() {
+    const EXPR: &'static str = "42.4e2";
+    let expected = EXPR.parse::<f64>().unwrap().to_string();
+    assert_eq!(expected, apply(EXPR, "unused"));
 }
 
 #[test]
@@ -48,7 +61,9 @@ fn apply(expr: &str, input: &str) -> String {
     }
 
     let mut output = StringIO::new("");
-    ap::apply(expr, StringIO::new(&input), &mut output).unwrap();
+    if let Err(err) = ap::apply(expr, StringIO::new(&input), &mut output) {
+        panic!("apply() error: {}", err);
+    }
 
     let mut result = output.to_string();
     if extra_newline {
