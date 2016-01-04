@@ -12,7 +12,7 @@ use eval::Eval;
 
 
 // TODO(xion): switch from parsers expecting &[u8] to accepting &str;
-// this requires shimming the alpha etc. parsers to operate on &str too
+// this will get rid of the hack in float_literal()
 
 
 // Grammar utilities.
@@ -140,7 +140,7 @@ const FLOAT_REGEX: &'static str = r"(0|[1-9][0-9]*)\.[0-9]+(e[+-]?[1-9][0-9]*)?"
 fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
     let (_, input) = try_parse!(input, expr_res!(from_utf8(input)));
 
-    // TOOD(xion): use re_match_static! when regexp_macros feature
+    // TODO(xion): use re_match_static! when regexp_macros feature
     // can be used in stable Rust
     let result = re_match!(input, FLOAT_REGEX);
 
@@ -154,7 +154,7 @@ fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
         IResult::Done(rest, parsed) =>
             IResult::Done(rest.as_bytes(), parsed.to_string()),
         IResult::Incomplete(i) => IResult::Incomplete(i),
-        IResult::Error(nom::Err::Code(ek)) => IResult::Error(nom::Err::Code(ek)),
+        IResult::Error(nom::Err::Code(e)) => IResult::Error(nom::Err::Code(e)),
         _ => panic!("unexpected IResult from re_match!"),
     }
 }
