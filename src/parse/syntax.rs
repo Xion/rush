@@ -117,6 +117,9 @@ named!(atom( &[u8] ) -> Box<Eval>, alt!(
     delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
 ));
 
+const RESERVED_WORDS: &'static [&'static str] = &[
+    "const", "do", "else", "for", "if", "let", "while",
+];
 named!(identifier( &[u8] ) -> String, alt!(
     // TODO(xion): typed underscore vars (_i, _f)
     string!(tag!("_")) |
@@ -124,7 +127,14 @@ named!(identifier( &[u8] ) -> String, alt!(
         pair!(alpha, many0!(alphanumeric)), |(first, rest): (_, Vec<&[u8]>)| {
             let mut rest = rest;
             rest.insert(0, first);
-            from_utf8(&rest.concat()[..]).map(str::to_string)
+            // TODO(xion): better error handling for the reserved word case
+            // (note that map_res! generally discards errors so we may have
+            // to use fix_error!, add_error!, or error!)
+            from_utf8(&rest.concat()[..])
+                .map_err(|_| ())
+                .and_then(|s| { if RESERVED_WORDS.contains(&s) { Err(()) }
+                                else { Ok(s) } })
+                .map(str::to_string)
         }
     )
 ));
