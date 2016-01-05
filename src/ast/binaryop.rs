@@ -149,6 +149,13 @@ impl BinaryOpNode {
     fn eval_modulo(left: &Value, right: &Value) -> EvalResult {
         // modulo/remainder
         eval!(left, right : Integer { left % right });
+        eval!(left, right : Float { left % right });
+        eval!((left: Integer, right: Float) -> Float {
+            (left as f64) % right
+        });
+        eval!((left: Float, right: Integer) -> Float {
+            left % (right as f64)
+        });
 
         // string formatting (for just one argument)
         // TODO(xion): improve:
