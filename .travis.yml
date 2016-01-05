@@ -1,7 +1,13 @@
 language: rust
 
 rust:
-  # TODO(xion): test on nightly & beta
+  - nightly
+  - beta
   - stable
+
+# Test on nightly Rust, but failures there won't break the build.
+matrix:
+  allow_failures:
+    - rust: nightly
 
 sudo: false
