@@ -147,7 +147,25 @@ impl BinaryOpNode {
 
     /// Evaluate the "%" operator for two values.
     fn eval_modulo(left: &Value, right: &Value) -> EvalResult {
+        // modulo/remainder
         eval!(left, right : Integer { left % right });
+
+        // string formatting (for just one argument)
+        // TODO(xion): improve:
+        // 1) error out for invalid placeholders (e.g. %d for strings)
+        // 2) %% for escaping %
+        // 3) numeric formatting options
+        // the easiest way is probably call real snprintf() with FFI
+        eval!((left: &String, right: &String) -> String {
+            left.replace("%s", &right)
+        });
+        eval!((left: &String, right: Integer) -> String {
+            left.replace("%d", &right.to_string())
+        });
+        eval!((left: &String, right: Float) -> String {
+            left.replace("%f", &right.to_string())
+        });
+
         BinaryOpNode::err("%", &left, &right)
     }
 
