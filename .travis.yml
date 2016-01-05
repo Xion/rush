@@ -1,0 +1,7 @@
+language: rust
+
+rust:
+  # TODO(xion): test on nightly & beta
+  - stable
+
+sudo: false
