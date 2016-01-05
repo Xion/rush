@@ -64,7 +64,7 @@ named!(argument( &[u8] ) -> Box<Eval>, chain!(
 named!(term( &[u8] ) -> Box<Eval>, chain!(
     first: factor ~
     rest: many0!(pair!(
-        string!(multispaced!(is_a!("*/"))),
+        string!(multispaced!(is_a!("*/%"))),
         factor
     )),
     move || {
@@ -108,9 +108,12 @@ named!(args( &[u8] ) -> Vec<Box<Eval>>,
 
 // TODO(xion): correct parsing of floating point numbers (it's broken now)
 named!(atom( &[u8] ) -> Box<Eval>, alt!(
-    map_res!(alt!(identifier | float_literal | int_literal | string_literal), |id: String| {
-        id.parse::<AtomNode>().map(|node| Box::new(node) as Box<Eval>)
-    }) |
+    map_res!(
+        alt!(identifier | float_literal | int_literal | string_literal),
+        |id: String| {
+            id.parse::<AtomNode>().map(|node| Box::new(node) as Box<Eval>)
+        }
+    ) |
     delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
 ));
 

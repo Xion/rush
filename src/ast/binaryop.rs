@@ -27,6 +27,7 @@ impl Eval for BinaryOpNode {
                 "-" => result = try!(BinaryOpNode::eval_minus(&result, &arg)),
                 "*" => result = try!(BinaryOpNode::eval_times(&result, &arg)),
                 "/" => result = try!(BinaryOpNode::eval_by(&result, &arg)),
+                "%" => result = try!(BinaryOpNode::eval_modulo(&result, &arg)),
                 _ => { return Err(
                     eval::Error::new(&format!("unknown binary operator: `{}`", op))
                 ); }
@@ -142,6 +143,12 @@ impl BinaryOpNode {
         eval!(left, right : Integer { left / right });
         eval!(left, right : Float { left / right });
         BinaryOpNode::err("/", &left, &right)
+    }
+
+    /// Evaluate the "%" operator for two values.
+    fn eval_modulo(left: &Value, right: &Value) -> EvalResult {
+        eval!(left, right : Integer { left % right });
+        BinaryOpNode::err("%", &left, &right)
     }
 
     /// Produce an error about invalid arguments for an operator.
