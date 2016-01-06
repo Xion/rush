@@ -22,6 +22,9 @@ impl Eval for BinaryOpNode {
         let mut result = try!(self.first.eval(&context));
         for &(ref op, ref arg) in &self.rest {
             let arg = try!(arg.eval(&context));
+
+            // TODO(xion): define operators as regular functions on Context,
+            // allowing the use of eval! macro for those functions as well
             match &op[..] {
                 "+" => result = try!(BinaryOpNode::eval_plus(&result, &arg)),
                 "-" => result = try!(BinaryOpNode::eval_minus(&result, &arg)),

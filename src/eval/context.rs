@@ -2,6 +2,8 @@
 
 use std::collections::HashMap;
 
+use rand::{self, Rng};
+
 use super::value::Value;
 
 
@@ -57,6 +59,10 @@ impl Functions {
     pub fn new() -> Functions {
         let mut fs = Functions{funcs: HashMap::new()};
 
+        fs.define_nullary("rand", Box::new(|| {
+            Some(Value::Float(rand::random::<f64>()))
+        }));
+
         fs.define_unary("rev", Box::new(|value| {
             value.map_str(|s: &str| {
                 // TODO(xion): since this reverses chars not graphemes,
@@ -89,13 +95,24 @@ impl Functions {
     fn define(&mut self, name: &str,
               func: Box<Fn(Args) -> Option<Value>>) -> &mut Self {
         let name = name.to_string();
-        self.funcs.insert(name.clone(), Box::new(move |args: Args| {
+        self.funcs.insert(name.to_owned(), Box::new(move |args: Args| {
             // TODO(xion): better error messages for different problems;
             // for example, we could remember the arity of functions
             // and say "too many/few arguments"
             func(args).expect(&format!("invalid arguments to {}()", name))
         }));
         self
+    }
+
+    fn define_nullary(&mut self, name: &str,
+                      func: Box<Fn() -> Option<Value>>) -> &mut Self {
+        self.define(name, Box::new(move |args: Args| {
+            if args.len() == 0 {
+                func()
+            } else {
+                None
+            }
+        }))
     }
 
     fn define_unary(&mut self, name: &str,
