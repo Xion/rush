@@ -72,6 +72,12 @@ impl Functions {
                 _ => None,
             }
         }));
+        fs.define_unary("len", Box::new(|value| {
+            match value {
+                Value::String(ref s) => Some(Value::Integer(s.len() as i64)),
+                _ => None,
+            }
+        }));
 
         return fs;
     }
@@ -84,6 +90,9 @@ impl Functions {
               func: Box<Fn(Args) -> Option<Value>>) -> &mut Self {
         let name = name.to_string();
         self.funcs.insert(name.clone(), Box::new(move |args: Args| {
+            // TODO(xion): better error messages for different problems;
+            // for example, we could remember the arity of functions
+            // and say "too many/few arguments"
             func(args).expect(&format!("invalid arguments to {}()", name))
         }));
         self
@@ -91,14 +100,24 @@ impl Functions {
 
     fn define_unary(&mut self, name: &str,
                     func: Box<Fn(Value) -> Option<Value>>) -> &mut Self {
-        self.define(name, Box::new(
-            move |args: Args| func(args[0].clone())))
+        self.define(name, Box::new(move |args: Args| {
+            if args.len() == 1 {
+                func(args[0].clone())
+            } else {
+                None
+            }
+        }))
     }
 
     fn define_binary(&mut self, name: &str,
                      func: Box<Fn(Value, Value) -> Option<Value>>) -> &mut Self {
-        self.define(name, Box::new(
-            move |args: Args| func(args[0].clone(), args[1].clone())))
+        self.define(name, Box::new(move |args: Args| {
+            if args.len() == 2 {
+                func(args[0].clone(), args[1].clone())
+            } else {
+                None
+            }
+        }))
     }
 }
 
