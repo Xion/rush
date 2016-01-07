@@ -2,9 +2,7 @@
 
 extern crate ap;
 
-use std::io::{self, Read, Write};
 use std::str::from_utf8;
-use std::string::ToString;
 
 
 #[test]
@@ -60,58 +58,14 @@ fn apply(expr: &str, input: &str) -> String {
         extra_newline = true;
     }
 
-    let mut output = StringIO::new("");
-    if let Err(err) = ap::apply(expr, StringIO::new(&input), &mut output) {
+    let mut output: Vec<u8> = Vec::new();
+    if let Err(err) = ap::apply(expr, input.as_bytes(), &mut output) {
         panic!("apply() error: {}", err);
     }
 
-    let mut result = output.to_string();
+    let mut result = from_utf8(&output).unwrap().to_string();
     if extra_newline {
         result.pop();  // remove trailing \n
     }
     result
-}
-
-// TODO(xion): this is essentially a minimal implementation of StringIO from Python,
-// and it seems useful enough to warrant extracting it as separate crate
-// (possibly after generalzing it to MemoryIO that works with arbitrary [u8])
-struct StringIO {
-    string: String,
-    pos: usize,  // in chatacters
-}
-impl StringIO {
-    pub fn new(s: &str) -> Self {
-        StringIO{string: s.to_string(), pos: 0}
-    }
-}
-impl Read for StringIO {
-    fn read(&mut self, mut buf: &mut [u8]) -> io::Result<usize> {
-        if self.pos < self.string.len() {
-            // TODO(xion): write the string in chunks, not all at once
-            let bytes = self.string.as_bytes();
-            try!(buf.write_all(bytes).map(|_| ()));
-            self.pos = self.string.len();
-            Ok(bytes.len())
-        } else {
-            Ok(0)
-        }
-    }
-}
-impl Write for StringIO {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        // TODO(xion): skip over the last UTF8 codepoint if it's incomplete
-        let s = try!(from_utf8(buf).or(Err(
-            io::Error::new(io::ErrorKind::InvalidInput, "malformed UTF8")
-        )));
-        self.string.push_str(s);
-        Ok(buf.len())
-    }
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
-    }
-}
-impl ToString for StringIO {
-    fn to_string(&self) -> String {
-        self.string.clone()
-    }
 }

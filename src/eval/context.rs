@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use rand::{self, Rng};
+use rand;
 
 use super::value::Value;
 
