@@ -118,7 +118,7 @@ named!(atom( &[u8] ) -> Box<Eval>, alt!(
 ));
 
 const RESERVED_WORDS: &'static [&'static str] = &[
-    "const", "do", "else", "for", "if", "let", "while",
+    "const", "do", "else", "false", "for", "if", "let", "true", "while",
 ];
 named!(identifier( &[u8] ) -> String, alt!(
     // TODO(xion): typed underscore vars (_i, _f)
