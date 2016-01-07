@@ -17,22 +17,19 @@ fn constant_boolean_false() {
 
 #[test]
 fn constant_integer() {
-    const EXPR: &'static str = "42";
-    assert_eq!(EXPR, eval(EXPR));
+    assert_noop_eval("42");
 }
 
 #[test]
 fn constant_integer_negative() {
     // Note that this may actually be interpreted as unary minus expression,
     // but the user wouldn't care about that so we consider it constant.
-    const EXPR: &'static str = "-42";
-    assert_eq!(EXPR, eval(EXPR));
+    assert_noop_eval("-42");
 }
 
 #[test]
 fn constant_float() {
-    const EXPR: &'static str = "42.42";
-    assert_eq!(EXPR, eval(EXPR));
+    assert_noop_eval("42.42");
 }
 
 #[test]
@@ -46,14 +43,12 @@ fn constant_float_scientific() {
 fn constant_float_negative() {
     // Note that this may actually be interpreted as unary minus expression,
     // but the user wouldn't care about that so we consider it constant.
-    const EXPR: &'static str = "-42.42";
-    assert_eq!(EXPR, eval(EXPR));
+    assert_noop_eval("-42.42");
 }
 
 #[test]
 fn constant_string() {
-    const EXPR: &'static str = "foo";
-    assert_eq!(EXPR, eval(EXPR));
+    assert_noop_eval("foo");
 }
 
 #[test]
