@@ -17,9 +17,10 @@ pub enum Value {
     Symbol(String),
 
     // Various data types.
-    String(String),
+    Boolean(bool),
     Integer(i64),
     Float(f64),
+    String(String),
     // TODO(xion): function type
 }
 
@@ -55,6 +56,13 @@ impl Value {
     pub fn map_float<F: FnOnce(f64) -> f64>(&self, func: F) -> Option<Value> {
         if let Value::Float(f) = *self {
             return Some(Value::Float(func(f)))
+        }
+        None
+    }
+
+    pub fn map_bool<F: FnOnce(bool) -> bool>(&self, func: F) -> Option<Value> {
+        if let Value::Boolean(b) = *self {
+            return Some(Value::Boolean(func(b)));
         }
         None
     }
@@ -96,9 +104,10 @@ impl fmt::Display for Value {
         match *self {
             Value::Empty => write!(fmt, "{}", "<empty>"),
             Value::Symbol(ref t) => write!(fmt, "{}", t),
-            Value::String(ref s) => write!(fmt, "{}", s),
+            Value::Boolean(ref b) => write!(fmt, "{}", b),
             Value::Integer(ref i) => write!(fmt, "{}", i),
             Value::Float(ref f) => write!(fmt, "{}", f),
+            Value::String(ref s) => write!(fmt, "{}", s),
             // _ => write!(fmt, "{}", "<unknown>")
         }
     }
