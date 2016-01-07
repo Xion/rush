@@ -8,7 +8,7 @@ use std::str::from_utf8;
 use nom::{self, alpha, alphanumeric, multispace, IResult};
 
 use ast::*;
-use eval::Eval;
+use eval::{Eval, Value};
 
 
 // TODO(xion): switch from parsers expecting &[u8] to accepting &str;
@@ -106,8 +106,10 @@ named!(factor( &[u8] ) -> Box<Eval>, map!(
 named!(args( &[u8] ) -> Vec<Box<Eval>>,
        separated_list!(multispaced!(tag!(",")), argument));
 
-// TODO(xion): correct parsing of floating point numbers (it's broken now)
+// TODO(xion): create typed Values for AtomNode here rather than
+// reparsing some of the strings again in AtomNode/Value::from_str
 named!(atom( &[u8] ) -> Box<Eval>, alt!(
+    bool_value |
     map_res!(
         alt!(identifier | float_literal | int_literal | string_literal),
         |id: String| {
@@ -115,6 +117,11 @@ named!(atom( &[u8] ) -> Box<Eval>, alt!(
         }
     ) |
     delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
+));
+
+named!(bool_value( &[u8] ) -> Box<Eval>, alt!(
+    tag!("true") => { |_| Box::new(AtomNode::new(Value::Boolean(true))) } |
+    tag!("false") => { |_| Box::new(AtomNode::new(Value::Boolean(false))) }
 ));
 
 const RESERVED_WORDS: &'static [&'static str] = &[

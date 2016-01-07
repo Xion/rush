@@ -28,6 +28,11 @@ impl Eval for AtomNode {
 
 
 impl AtomNode {
+    /// Create the node from a Value.
+    pub fn new(value: Value) -> AtomNode {
+        AtomNode{value: value}
+    }
+
     /// Resolve a possible variable reference against given context.
     ///
     /// Returns the variable's Value (which may be just variable name as string),

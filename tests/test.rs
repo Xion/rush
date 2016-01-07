@@ -6,6 +6,16 @@ use std::str::from_utf8;
 
 
 #[test]
+fn constant_boolean_true() {
+    assert_noop_eval("true");
+}
+
+#[test]
+fn constant_boolean_false() {
+    assert_noop_eval("true");
+}
+
+#[test]
 fn constant_integer() {
     const EXPR: &'static str = "42";
     assert_eq!(EXPR, eval(EXPR));
@@ -57,6 +67,13 @@ fn constant_quoted_string() {
 fn identity() {
     const INPUT: &'static str = "42";
     assert_eq!(INPUT, apply("_", INPUT));
+}
+
+
+// Assertions.
+
+fn assert_noop_eval(expr: &str) {
+    assert_eq!(expr, eval(expr));
 }
 
 
