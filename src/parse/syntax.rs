@@ -75,10 +75,10 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
     }
 ));
 
-/// factor ::== ['+'|'-'] (identifier '(' args ')' | atom)
+/// factor ::== ['+'|'-'|'!'] (identifier '(' args ')' | atom)
 named!(factor( &[u8] ) -> Box<Eval>, map!(
     pair!(
-        opt!(string!(multispaced!(is_a!("+-")))),
+        opt!(string!(multispaced!(is_a!("+-!")))),
         alt!(
             // complete!(...) is necessary because `atom` branch below can be a prefix
             // of this branch, so trying to parse an atom as function call will result
@@ -89,6 +89,7 @@ named!(factor( &[u8] ) -> Box<Eval>, map!(
                 name: identifier ~
                 args: delimited!(multispaced!(tag!("(")), args, multispaced!(tag!(")"))),
                 move || {
+                    // TODO(xion): prohibit reserved words as function names
                     Box::new(
                         FunctionCallNode{name: name, args: args}
                     ) as Box<Eval>
@@ -108,6 +109,7 @@ named!(args( &[u8] ) -> Vec<Box<Eval>>,
 
 // TODO(xion): create typed Values for AtomNode here rather than
 // reparsing some of the strings again in AtomNode/Value::from_str
+// (right now we're conflating some types, e.g. string "true" as boolean true)
 named!(atom( &[u8] ) -> Box<Eval>, alt!(
     bool_value |
     map_res!(
@@ -120,8 +122,8 @@ named!(atom( &[u8] ) -> Box<Eval>, alt!(
 ));
 
 named!(bool_value( &[u8] ) -> Box<Eval>, alt!(
-    tag!("true") => { |_| Box::new(AtomNode::new(Value::Boolean(true))) } |
-    tag!("false") => { |_| Box::new(AtomNode::new(Value::Boolean(false))) }
+    tag!("false") => { |_| Box::new(AtomNode::new(Value::Boolean(false))) } |
+    tag!("true") => { |_| Box::new(AtomNode::new(Value::Boolean(true))) }
 ));
 
 const RESERVED_WORDS: &'static [&'static str] = &[

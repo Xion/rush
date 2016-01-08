@@ -64,6 +64,18 @@ fn identity() {
     assert_eq!(INPUT, apply("_", INPUT));
 }
 
+#[test]
+fn unary_bang_constant() {
+    assert_eq!("false", eval("!true"));
+    assert_eq!("true", eval("!false"));
+}
+
+#[test]
+fn unary_bang_input() {
+    assert_eq!("false", apply("!_", "true"));
+    assert_eq!("true", apply("!_", "false"));
+}
+
 
 // Assertions.
 

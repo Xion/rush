@@ -81,6 +81,9 @@ impl FromStr for Value {
         if let Ok(float) = s.parse::<f64>() {
             return Ok(Value::Float(float));
         }
+        if let Ok(boolean) = s.parse::<bool>() {
+            return Ok(Value::Boolean(boolean));
+        }
 
         // quoted string literals are always interpreted as strings,
         // whereas unquoted identifiers are symbols and may be variable references

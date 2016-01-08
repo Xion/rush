@@ -16,6 +16,7 @@ impl Eval for UnaryOpNode {
         match &self.op[..] {
             "+" => UnaryOpNode::eval_plus(&arg),
             "-" => UnaryOpNode::eval_minus(&arg),
+            "!" => UnaryOpNode::eval_bang(&arg),
             _ => Err(eval::Error::new(
                 &format!("unknown unary operator: `{}`", self.op)
             ))
@@ -53,18 +54,24 @@ macro_rules! eval {
 }
 
 impl UnaryOpNode {
-    /// Evaluate the "+" argument for one value.
+    /// Evaluate the "+" operator for one value.
     fn eval_plus(arg: &Value) -> EvalResult {
         eval!(arg : Integer { arg });
         eval!(arg : Float { arg });
         UnaryOpNode::err("+", &arg)
     }
 
-    /// Evaluate the "_" argument for one value.
+    /// Evaluate the "-" operator for one value.
     fn eval_minus(arg: &Value) -> EvalResult {
         eval!(arg : Integer { -arg });
         eval!(arg : Float { -arg });
         UnaryOpNode::err("-", &arg)
+    }
+
+    /// Evaluate the "!" operator for one value.
+    fn eval_bang(arg: &Value) -> EvalResult {
+        eval!(arg : Boolean { !arg });
+        UnaryOpNode::err("!", &arg)
     }
 
     /// Produce an error about invalid argument for an operator.
