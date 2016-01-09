@@ -32,8 +32,14 @@ fn main() {
         return;
     }
 
-    let expr = args.free.join(" ");
-    if let Err(error) = ap::apply(&expr, io::stdin(), &mut io::stdout()) {
+    if args.free.len() != 1 {
+        error!("Invalid number of expression arguments; expected 1, got {}",
+               args.free.len());
+        exit(1);
+    }
+
+    let expr = &args.free[0];
+    if let Err(error) = ap::apply(expr, io::stdin(), &mut io::stdout()) {
         error!("{:?}", error);
         exit(1);
     }
