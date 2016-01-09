@@ -149,13 +149,16 @@ named!(identifier( &[u8] ) -> String, alt!(
 ));
 
 const DIGITS: &'static str = "0123456789";
-named!(int_literal( &[u8] ) -> String, map_res!(
-    pair!(is_a!(&DIGITS[1..]), many0!(is_a!(DIGITS))),
-    |(first, rest): (_, Vec<&[u8]>)| {
-        let mut rest = rest;
-        rest.insert(0, first);
-        from_utf8(&rest.concat()[..]).map(str::to_string)
-    }
+named!(int_literal( &[u8] ) -> String, alt!(
+    map_res!(
+        pair!(is_a!(&DIGITS[1..]), many0!(is_a!(DIGITS))),
+        |(first, rest): (_, Vec<&[u8]>)| {
+            let mut rest = rest;
+            rest.insert(0, first);
+            from_utf8(&rest.concat()[..]).map(str::to_string)
+        }
+    ) |
+    string!(tag!("0"))
 ));
 
 const FLOAT_REGEX: &'static str = r"(0|[1-9][0-9]*)\.[0-9]+(e[+-]?[1-9][0-9]*)?";
