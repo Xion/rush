@@ -40,16 +40,30 @@ macro_rules! multispaced (
 );
 
 
+// Grammar constants.
+
+const ADDITIVE_BINARY_OPS: &'static str = "+-";
+const MULTIPLICATIVE_BINARY_OPS: &'static str = "*/%";
+const UNARY_OPS: &'static str = "+-!";
+
+const RESERVED_WORDS: &'static [&'static str] = &[
+    "const", "do", "else", "false", "for", "if", "let", "true", "while",
+];
+
+const DIGITS: &'static str = "0123456789";
+const FLOAT_REGEX: &'static str = r"(0|[1-9][0-9]*)\.[0-9]+(e[+-]?[1-9][0-9]*)?";
+
+
 // Grammar definition.
 
 /// Root symbol of the grammar.
 named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: argument, || { e }));
 
-/// argument ::== term (('+' | '-') term)*
+/// argument ::== term (ADDITIVE_BIN_OP term)*
 named!(argument( &[u8] ) -> Box<Eval>, chain!(
     first: term ~
     rest: many0!(pair!(
-        string!(multispaced!(is_a!("+-"))),
+        string!(multispaced!(is_a!(ADDITIVE_BINARY_OPS))),
         term
     )),
     move || {
@@ -60,11 +74,11 @@ named!(argument( &[u8] ) -> Box<Eval>, chain!(
     }
 ));
 
-/// term ::== factor (('*' | '/') factor)*
+/// term ::== factor (MULT_BIN_OP factor)*
 named!(term( &[u8] ) -> Box<Eval>, chain!(
     first: factor ~
     rest: many0!(pair!(
-        string!(multispaced!(is_a!("*/%"))),
+        string!(multispaced!(is_a!(MULTIPLICATIVE_BINARY_OPS))),
         factor
     )),
     move || {
@@ -75,10 +89,10 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
     }
 ));
 
-/// factor ::== ['+'|'-'|'!'] (identifier '(' args ')' | atom)
+/// factor ::== [UNARY_OP] (identifier '(' args ')' | atom)
 named!(factor( &[u8] ) -> Box<Eval>, map!(
     pair!(
-        opt!(string!(multispaced!(is_a!("+-!")))),
+        opt!(string!(multispaced!(is_a!(UNARY_OPS)))),
         alt!(
             // complete!(...) is necessary because `atom` branch below can be a prefix
             // of this branch, so trying to parse an atom as function call will result
@@ -126,9 +140,6 @@ named!(bool_value( &[u8] ) -> Box<Eval>, alt!(
     tag!("true") => { |_| Box::new(AtomNode::new(Value::Boolean(true))) }
 ));
 
-const RESERVED_WORDS: &'static [&'static str] = &[
-    "const", "do", "else", "false", "for", "if", "let", "true", "while",
-];
 named!(identifier( &[u8] ) -> String, alt!(
     // TODO(xion): typed underscore vars (_i, _f)
     string!(tag!("_")) |
@@ -148,7 +159,6 @@ named!(identifier( &[u8] ) -> String, alt!(
     )
 ));
 
-const DIGITS: &'static str = "0123456789";
 named!(int_literal( &[u8] ) -> String, alt!(
     map_res!(
         pair!(is_a!(&DIGITS[1..]), many0!(is_a!(DIGITS))),
@@ -161,7 +171,6 @@ named!(int_literal( &[u8] ) -> String, alt!(
     string!(tag!("0"))
 ));
 
-const FLOAT_REGEX: &'static str = r"(0|[1-9][0-9]*)\.[0-9]+(e[+-]?[1-9][0-9]*)?";
 fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
     let (_, input) = try_parse!(input, expr_res!(from_utf8(input)));
 
