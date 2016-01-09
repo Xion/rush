@@ -33,7 +33,7 @@ impl Value {
     }
 
     pub fn map_str<F: FnOnce(&str) -> String>(&self, func: F) -> Option<Value> {
-        if let Value::String(ref s) = *self {
+        if let &Value::String(ref s) = self {
             return Some(Value::String(func(s)));
         }
         None
@@ -91,11 +91,12 @@ impl FromStr for Value {
         if s.is_empty() {
             Ok(Value::String(s))
         } else if s.starts_with("\"") && s.ends_with("\"") {
+            // TODO(xion): once this function is only used on input lines,
+            // stop stripping off quotes
             s.pop().unwrap();
             s.remove(0);
             Ok(Value::String(s))
         } else {
-            // TODO(xion): check if content is alphanumeric
             Ok(Value::Symbol(s))
         }
     }

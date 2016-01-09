@@ -85,6 +85,18 @@ impl Functions {
             }
         }));
 
+        fs.define_binary("at", Box::new(|idx, value| {
+            match (idx, value) {
+                (Value::Integer(i),
+                 Value::String(s)) => s.chars().nth(i as usize).map(|c| {
+                    let mut result = String::new();
+                    result.push(c);
+                    Value::String(result)
+                }),
+                _ => None,
+            }
+        }));
+
         return fs;
     }
 
