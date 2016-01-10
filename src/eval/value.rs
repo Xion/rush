@@ -25,46 +25,47 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn as_string(self) -> Option<String> {
-        return match self {
-            Value::String(s) => Some(s),
-            _ => None,
-        }
-    }
-
     pub fn map_str<F: FnOnce(&str) -> String>(&self, func: F) -> Option<Value> {
         if let &Value::String(ref s) = self {
             return Some(Value::String(func(s)));
         }
         None
     }
-
     pub fn map_string<F: FnOnce(String) -> String>(self, func: F) -> Option<Value> {
         if let Value::String(s) = self {
             return Some(Value::String(func(s)));
         }
         None
     }
-
     pub fn map_int<F: FnOnce(i64) -> i64>(&self, func: F) -> Option<Value> {
         if let Value::Integer(i) = *self {
             return Some(Value::Integer(func(i)));
         }
         None
     }
-
     pub fn map_float<F: FnOnce(f64) -> f64>(&self, func: F) -> Option<Value> {
         if let Value::Float(f) = *self {
             return Some(Value::Float(func(f)))
         }
         None
     }
-
     pub fn map_bool<F: FnOnce(bool) -> bool>(&self, func: F) -> Option<Value> {
         if let Value::Boolean(b) = *self {
             return Some(Value::Boolean(func(b)));
         }
         None
+    }
+
+    pub fn to_string_value(&self) -> Option<Value> {
+        match *self {
+            Value::String(_) => Some(self.clone()),
+            Value::Integer(i) => Some(Value::String(i.to_string())),
+            Value::Float(f) => Some(Value::String(f.to_string())),
+            Value::Boolean(b) => Some(Value::String((
+                if b { "true" } else { "false" }
+            ).to_string())),
+            _ => None,
+        }
     }
 }
 

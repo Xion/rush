@@ -84,6 +84,7 @@ impl Functions {
                 _ => None,
             }
         }));
+        fs.define_unary("str", Box::new(|value| value.to_string_value()));
 
         fs.define_binary("at", Box::new(|idx, value| {
             match (idx, value) {
