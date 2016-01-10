@@ -70,9 +70,18 @@ impl Value {
     pub fn to_int_value(&self) -> Option<Value> {
         match *self {
             Value::String(ref s) => s.parse::<i64>().ok().map(Value::Integer),
-            Value::Integer(i) => Some(self.clone()),
+            Value::Integer(_) => Some(self.clone()),
             Value::Float(f) => Some(Value::Integer(f as i64)),
             Value::Boolean(b) => Some(Value::Integer(if b { 1 } else { 0 })),
+            _ => None,
+        }
+    }
+    pub fn to_float_value(&self) -> Option<Value> {
+        match *self {
+            Value::String(ref s) => s.parse::<f64>().ok().map(Value::Float),
+            Value::Integer(i) => Some(Value::Float(i as f64)),
+            Value::Float(_) => Some(self.clone()),
+            Value::Boolean(b) => Some(Value::Float(if b { 1.0 } else { 0.0 })),
             _ => None,
         }
     }
