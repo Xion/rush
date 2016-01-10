@@ -1,5 +1,6 @@
 //! Module implementing the AST that represents an expression "atom".
 
+use std::fmt;
 use std::str::FromStr;
 
 use eval::{Eval, EvalResult, Context, Value};
@@ -8,6 +9,13 @@ use eval::{Eval, EvalResult, Context, Value};
 /// Represents the smallest, indivisible unit of an expression: a single value.
 pub struct AtomNode {
     pub value: Value,
+}
+
+
+impl fmt::Debug for AtomNode {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "<Atom: {}>", self.value)
+    }
 }
 
 

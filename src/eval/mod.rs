@@ -40,6 +40,6 @@ pub type EvalResult = Result<Value, Error>;
 
 
 /// Trait for objects that can be evaluated within given Context.
-pub trait Eval {
+pub trait Eval : fmt::Debug {
     fn eval(&self, context: &Context) -> EvalResult;
 }

@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 
 /// Typed value that's operated upon.
-#[derive(Clone,Debug,PartialEq)]
+#[derive(Clone,PartialEq)]
 pub enum Value {
     /// No value at all.
     Empty,
@@ -23,6 +23,7 @@ pub enum Value {
     String(String),
     // TODO(xion): function type
 }
+
 
 impl Value {
     pub fn map_str<F: FnOnce(&str) -> String>(&self, func: F) -> Option<Value> {
@@ -87,6 +88,7 @@ impl Value {
     }
 }
 
+
 impl FromStr for Value {
     // TODO(xion): better error type
     type Err = ();
@@ -121,7 +123,21 @@ impl FromStr for Value {
     }
 }
 
-// TODO(xion): implement custom Debug for more user-friendly error messages
+
+impl fmt::Debug for Value {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Value::Empty => write!(fmt, "{}", "<empty>"),
+            Value::Symbol(ref t) => write!(fmt, ":{}", t),
+            Value::Boolean(ref b) => write!(fmt, "{}", b.to_string()),
+            Value::Integer(ref i) => write!(fmt, "{}i", i),
+            Value::Float(ref f) => write!(fmt, "{}f", f),
+            Value::String(ref s) => write!(fmt, "\"{}\"", s),
+        }
+    }
+}
+
+
 impl fmt::Display for Value {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -131,7 +147,6 @@ impl fmt::Display for Value {
             Value::Integer(ref i) => write!(fmt, "{}", i),
             Value::Float(ref f) => write!(fmt, "{}", f),
             Value::String(ref s) => write!(fmt, "{}", s),
-            // _ => write!(fmt, "{}", "<unknown>")
         }
     }
 }
