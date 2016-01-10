@@ -65,6 +65,30 @@ fn identity() {
 }
 
 #[test]
+fn unary_plus_integer() {
+    assert_noop_apply("+_", "42");
+}
+
+#[test]
+fn unary_plus_float() {
+    assert_noop_apply("+_", "42.42");
+}
+
+#[test]
+fn unary_minus_integer() {
+    const INPUT: &'static str = "42";
+    let expected = format!("-{}", INPUT);
+    assert_eq!(expected, apply("-_", INPUT));
+}
+
+#[test]
+fn unary_minus_float() {
+    const INPUT: &'static str = "42.42";
+    let expected = format!("-{}", INPUT);
+    assert_eq!(expected, apply("-_", INPUT));
+}
+
+#[test]
 fn unary_bang_constant() {
     assert_eq!("false", eval("!true"));
     assert_eq!("true", eval("!false"));
@@ -78,6 +102,10 @@ fn unary_bang_input() {
 
 
 // Assertions.
+
+fn assert_noop_apply(expr: &str, input: &str) {
+    assert_eq!(input, apply(expr, input));
+}
 
 fn assert_noop_eval(expr: &str) {
     assert_eq!(expr, eval(expr));
