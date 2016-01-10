@@ -67,6 +67,15 @@ impl Value {
             _ => None,
         }
     }
+    pub fn to_int_value(&self) -> Option<Value> {
+        match *self {
+            Value::String(ref s) => s.parse::<i64>().ok().map(Value::Integer),
+            Value::Integer(i) => Some(self.clone()),
+            Value::Float(f) => Some(Value::Integer(f as i64)),
+            Value::Boolean(b) => Some(Value::Integer(if b { 1 } else { 0 })),
+            _ => None,
+        }
+    }
 }
 
 impl FromStr for Value {
