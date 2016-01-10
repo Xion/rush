@@ -33,6 +33,11 @@ fn constant_float() {
 }
 
 #[test]
+fn constant_float_fraction() {
+    assert_noop_eval("0.42");
+}
+
+#[test]
 fn constant_float_scientific() {
     const EXPR: &'static str = "42.4e2";
     let expected = EXPR.parse::<f64>().unwrap().to_string();
@@ -59,9 +64,18 @@ fn constant_quoted_string() {
 }
 
 #[test]
-fn identity() {
-    const INPUT: &'static str = "42";
-    assert_eq!(INPUT, apply("_", INPUT));
+fn identity_on_string() {
+    assert_noop_apply("_", "foo");
+}
+
+#[test]
+fn identity_on_int() {
+    assert_noop_apply("_", "42");
+}
+
+#[test]
+fn identity_on_float() {
+    assert_noop_apply("_", "42.42");
 }
 
 #[test]
