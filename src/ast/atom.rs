@@ -14,7 +14,7 @@ pub struct AtomNode {
 
 impl fmt::Debug for AtomNode {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "<Atom: {}>", self.value)
+        write!(fmt, "<Atom: {:?}>", self.value)
     }
 }
 

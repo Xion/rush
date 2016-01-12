@@ -25,6 +25,7 @@ fn main() {
 
     let mut options = Options::new();
     options.optflag("h", "help", "Show this usage message");
+    options.optflag("p", "parse", "Only parse the expression, printing AST");
 
     let args = options.parse(&argv[1..]).unwrap();
     if args.opt_present("h") {
@@ -39,9 +40,16 @@ fn main() {
     }
 
     let expr = &args.free[0];
-    if let Err(error) = ap::apply(expr, io::stdin(), &mut io::stdout()) {
-        error!("{:?}", error);
-        exit(1);
+    if args.opt_present("p") {
+        match ap::parse(expr) {
+            Ok(ast) => println!("{:?}", ast),
+            Err(error) => { error!("{:?}", error); exit(1); },
+        }
+    } else {
+        if let Err(error) = ap::apply(expr, io::stdin(), &mut io::stdout()) {
+            error!("{:?}", error);
+            exit(1);
+        }
     }
 }
 

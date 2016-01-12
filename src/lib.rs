@@ -14,11 +14,12 @@ mod ast;
 mod eval;
 mod parse;
 
+pub use self::parse::parse;
+
 
 use std::io::{self, Read, Write, BufRead, BufReader, BufWriter};
 
 use self::eval::{Eval, Context, Value};
-use self::parse::parse;
 
 
 /// Apply the expression to given input stream,
