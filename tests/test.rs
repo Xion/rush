@@ -114,6 +114,30 @@ fn unary_bang_input() {
     assert_eq!("true", apply("!_", "false"));
 }
 
+#[test]
+fn binary_plus_constant_integers() {
+    assert_eq!("0", eval("0 + 0"));
+    assert_eq!("2", eval("0 + 2"));
+    assert_eq!("4", eval("2 + 2"));
+    assert_eq!("42", eval("-2 + 44"));
+}
+
+#[test]
+#[should_panic]  // TODO(xion): fix
+fn binary_plus_constant_floats() {
+    assert_eq!("0.0", eval("0.0 + 0.0"));
+    assert_eq!("2.0", eval("0 + 2.0"));
+    assert_eq!("4", eval("2.0 + 2"));
+    assert_eq!("42", eval("-2.5 + 44.5"));
+}
+
+#[test]
+fn binary_plus_constant_strings() {
+    assert_eq!("foo", eval("\"\" + foo"));
+    assert_eq!("foobar", eval("foo + bar"));
+    assert_eq!("barbaz", eval("bar + \"baz\""));
+}
+
 
 // Assertions.
 
