@@ -33,6 +33,11 @@ fn constant_float() {
 }
 
 #[test]
+fn constant_float_zero() {
+    assert_noop_eval("0.0");
+}
+
+#[test]
 fn constant_float_fraction() {
     assert_noop_eval("0.42");
 }
@@ -40,7 +45,7 @@ fn constant_float_fraction() {
 #[test]
 fn constant_float_scientific() {
     const EXPR: &'static str = "42.4e2";
-    let expected = EXPR.parse::<f64>().unwrap().to_string();
+    let expected = EXPR.parse::<f64>().unwrap().to_string() + ".0";
     assert_eq!(expected, eval(EXPR));
 }
 
@@ -123,12 +128,11 @@ fn binary_plus_constant_integers() {
 }
 
 #[test]
-#[should_panic]  // TODO(xion): fix
 fn binary_plus_constant_floats() {
     assert_eq!("0.0", eval("0.0 + 0.0"));
     assert_eq!("2.0", eval("0 + 2.0"));
-    assert_eq!("4", eval("2.0 + 2"));
-    assert_eq!("42", eval("-2.5 + 44.5"));
+    assert_eq!("4.0", eval("2.0 + 2"));
+    assert_eq!("42.0", eval("-2.5 + 44.5"));
 }
 
 #[test]

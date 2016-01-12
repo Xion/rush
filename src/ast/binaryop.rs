@@ -132,6 +132,8 @@ impl BinaryOpNode {
         eval!(left, right : &String { left.clone() + &*right });
         eval!(left, right : Integer { left + right });
         eval!(left, right : Float { left + right });
+        eval!((left: Integer, right: Float) -> Float { left as f64 + right });
+        eval!((left: Float, right: Integer) -> Float { left + right as f64 });
         BinaryOpNode::err("+", &left, &right)
     }
 
@@ -139,6 +141,8 @@ impl BinaryOpNode {
     fn eval_minus(left: &Value, right: &Value) -> EvalResult {
         eval!(left, right : Integer { left - right });
         eval!(left, right : Float { left - right });
+        eval!((left: Integer, right: Float) -> Float { left as f64 - right });
+        eval!((left: Float, right: Integer) -> Float { left - right as f64 });
         BinaryOpNode::err("-", &left, &right)
     }
 

@@ -111,14 +111,18 @@ impl FromStr for Value {
         let mut s = s.to_string();
         if s.is_empty() {
             Ok(Value::String(s))
-        } else if s.starts_with("\"") && s.ends_with("\"") {
+        } else {
             // TODO(xion): once this function is only used on input lines,
             // stop stripping off quotes
-            s.pop().unwrap();
-            s.remove(0);
-            Ok(Value::String(s))
-        } else {
-            Ok(Value::Symbol(s))
+            if s.starts_with("\"") && s.ends_with("\"") {
+                s.pop().unwrap();
+                s.remove(0);
+            }
+            if s.contains(" ") {
+                Ok(Value::String(s))
+            } else {
+                Ok(Value::Symbol(s))
+            }
         }
     }
 }
@@ -145,7 +149,15 @@ impl fmt::Display for Value {
             Value::Symbol(ref t) => write!(fmt, "{}", t),
             Value::Boolean(ref b) => write!(fmt, "{}", b),
             Value::Integer(ref i) => write!(fmt, "{}", i),
-            Value::Float(ref f) => write!(fmt, "{}", f),
+            Value::Float(ref f) => {
+                // always include decimal point and zero, even if the float
+                // is actually an integer
+                let mut res = f.to_string();
+                if !res.contains(".") {
+                    res.push_str(".0");
+                }
+                write!(fmt, "{}", res)
+            },
             Value::String(ref s) => write!(fmt, "{}", s),
         }
     }

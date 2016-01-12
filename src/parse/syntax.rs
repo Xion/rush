@@ -174,9 +174,9 @@ named!(int_literal( &[u8] ) -> String, alt!(
 fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
     let (_, input) = try_parse!(input, expr_res!(from_utf8(input)));
 
-    // TODO(xion): use re_match_static! when regexp_macros feature
+    // TODO(xion): use *_static! variant when regexp_macros feature
     // can be used in stable Rust
-    let result = re_match!(input, FLOAT_REGEX);
+    let result = re_find!(input, FLOAT_REGEX);
 
     // This match has to be explicit (rather than try_parse! etc.)
     // because of the silly IResult::Error branch, which is seemingly no-op
