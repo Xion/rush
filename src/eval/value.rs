@@ -90,7 +90,6 @@ impl Value {
 
 
 impl FromStr for Value {
-    // TODO(xion): better error type
     type Err = ();
 
     /// Create a Value from string, reinterpreting input as number
@@ -106,24 +105,7 @@ impl FromStr for Value {
             return Ok(Value::Boolean(boolean));
         }
 
-        // quoted string literals are always interpreted as strings,
-        // whereas unquoted identifiers are symbols and may be variable references
-        let mut s = s.to_string();
-        if s.is_empty() {
-            Ok(Value::String(s))
-        } else {
-            // TODO(xion): once this function is only used on input lines,
-            // stop stripping off quotes
-            if s.starts_with("\"") && s.ends_with("\"") {
-                s.pop().unwrap();
-                s.remove(0);
-            }
-            if s.contains(" ") {
-                Ok(Value::String(s))
-            } else {
-                Ok(Value::Symbol(s))
-            }
-        }
+        Ok(Value::String(s.to_string()))
     }
 }
 
