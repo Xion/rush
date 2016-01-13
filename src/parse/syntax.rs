@@ -125,13 +125,13 @@ named!(args( &[u8] ) -> Vec<Box<Eval>>,
 // reparsing some of the strings again in AtomNode/Value::from_str
 // (right now we're conflating some types, e.g. string "true" as boolean true)
 named!(atom( &[u8] ) -> Box<Eval>, alt!(
-    bool_value |
+    bool_value | symbol_value | float_value | int_value |
     map_res!(
-        alt!(identifier | string_literal),
+        string_literal,
         |id: String| {
             id.parse::<AtomNode>().map(|node| Box::new(node) as Box<Eval>)
         }
-    ) | float_value | int_value |
+    ) |
     delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
 ));
 
@@ -140,6 +140,9 @@ named!(bool_value( &[u8] ) -> Box<Eval>, alt!(
     tag!("true") => { |_| Box::new(AtomNode::new(Value::Boolean(true))) }
 ));
 
+named!(symbol_value( &[u8] ) -> Box<Eval>, map!(identifier, |value: String| {
+    Box::new(AtomNode::new(Value::Symbol(value)))
+}));
 named!(identifier( &[u8] ) -> String, alt!(
     // TODO(xion): typed underscore vars (_i, _f)
     string!(tag!("_")) |
