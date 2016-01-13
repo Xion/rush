@@ -121,17 +121,9 @@ named!(factor( &[u8] ) -> Box<Eval>, map!(
 named!(args( &[u8] ) -> Vec<Box<Eval>>,
        separated_list!(multispaced!(tag!(",")), argument));
 
-// TODO(xion): create typed Values for AtomNode here rather than
-// reparsing some of the strings again in AtomNode/Value::from_str
-// (right now we're conflating some types, e.g. string "true" as boolean true)
+/// atom ::== BOOLEAN | SYMBOL | FLOAT | INTEGER | STRING | '(' expression ')'
 named!(atom( &[u8] ) -> Box<Eval>, alt!(
-    bool_value | symbol_value | float_value | int_value |
-    map_res!(
-        string_literal,
-        |id: String| {
-            id.parse::<AtomNode>().map(|node| Box::new(node) as Box<Eval>)
-        }
-    ) |
+    bool_value | symbol_value | float_value | int_value | string_value |
     delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
 ));
 
@@ -203,6 +195,9 @@ fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
 }
 
 // TODO(xion): quote escaping
+named!(string_value( &[u8] ) -> Box<Eval>, map!(string_literal, |value: String| {
+    Box::new(AtomNode::new(Value::String(value)))
+}));
 named!(string_literal( &[u8] ) -> String, string!(
     preceded!(tag!("\""), take_until_and_consume!("\""))
 ));
