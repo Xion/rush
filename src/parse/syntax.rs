@@ -127,11 +127,11 @@ named!(args( &[u8] ) -> Vec<Box<Eval>>,
 named!(atom( &[u8] ) -> Box<Eval>, alt!(
     bool_value |
     map_res!(
-        alt!(identifier | float_literal | int_literal | string_literal),
+        alt!(identifier | float_literal | string_literal),
         |id: String| {
             id.parse::<AtomNode>().map(|node| Box::new(node) as Box<Eval>)
         }
-    ) |
+    ) | int_value |
     delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
 ));
 
@@ -159,6 +159,9 @@ named!(identifier( &[u8] ) -> String, alt!(
     )
 ));
 
+named!(int_value( &[u8] ) -> Box<Eval>, map_res!(int_literal, |value: String| {
+    value.parse::<i64>().map(|i| Box::new(AtomNode::new(Value::Integer(i))))
+}));
 named!(int_literal( &[u8] ) -> String, alt!(
     map_res!(
         pair!(is_a!(&DIGITS[1..]), many0!(is_a!(DIGITS))),
