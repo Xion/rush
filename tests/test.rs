@@ -2,6 +2,7 @@
 
 extern crate ap;
 
+use std::io;
 use std::str::from_utf8;
 
 
@@ -161,6 +162,13 @@ fn assert_noop_eval(expr: &str) {
 /// Single- and multiline strings are handled automatically:
 /// if the input didn't end with a newline, output won't either.
 fn apply(expr: &str, input: &str) -> String {
+    match apply_ex(expr, input) {
+        Ok(output) => output,
+        Err(err) => { panic!("apply() error: {}", err); }
+    }
+}
+
+fn apply_ex(expr: &str, input: &str) -> Result<String, io::Error> {
     let mut extra_newline = false;
     let mut input = input.to_string();
     if !input.ends_with("\n") {
@@ -169,15 +177,16 @@ fn apply(expr: &str, input: &str) -> String {
     }
 
     let mut output: Vec<u8> = Vec::new();
-    if let Err(err) = ap::apply(expr, input.as_bytes(), &mut output) {
-        panic!("apply() error: {}", err);
-    }
+    try!(ap::apply(expr, input.as_bytes(), &mut output));
 
-    let mut result = from_utf8(&output).unwrap().to_string();
+    let mut result = try!(
+        from_utf8(&output)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
+    ).to_string();
     if extra_newline {
         result.pop();  // remove trailing \n
     }
-    result
+    Ok(result)
 }
 
 /// Evaluate the expression without any input.
