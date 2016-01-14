@@ -14,12 +14,13 @@ mod ast;
 mod eval;
 mod parse;
 
+pub use self::eval::Value;
 pub use self::parse::parse;
 
 
 use std::io::{self, Read, Write, BufRead, BufReader, BufWriter};
 
-use self::eval::{Eval, Context, Value};
+use self::eval::{Eval, Context};
 
 
 /// Apply the expression to given input stream,
@@ -37,8 +38,7 @@ pub fn apply<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> Result<
     let mut count = 0;
     for line in reader.lines() {
         let line = try!(line);
-        context.set_var("_",
-            line.parse::<Value>().unwrap_or_else(|_| Value::String(line)));
+        update_context(&mut context, &line);
 
         let result = try!(ast.eval(&context)
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e)));
@@ -49,4 +49,14 @@ pub fn apply<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> Result<
 
     info!("Processed {} line(s) of input", count);
     Ok(())
+}
+
+fn update_context(ctx: &mut Context, input: &str) {
+    ctx.set_var("_", input.parse::<Value>().unwrap_or_else(|_| Value::String(input.to_string())));
+    ctx.set_var("_b", input.parse::<bool>().map(Value::Boolean).unwrap_or(Value::Empty));
+    ctx.set_var("_f", input.parse::<f64>().map(Value::Float).unwrap_or(Value::Empty));
+    // TODO(xion): consider also trying to parse the input as f64
+    // and exposing the rounded version as _i
+    ctx.set_var("_i", input.parse::<i64>().map(Value::Integer).unwrap_or(Value::Empty));
+    ctx.set_var("_s", Value::String(input.to_string()));
 }

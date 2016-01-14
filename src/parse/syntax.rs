@@ -53,6 +53,8 @@ const RESERVED_WORDS: &'static [&'static str] = &[
 const DIGITS: &'static str = "0123456789";
 const FLOAT_REGEX: &'static str = r"(0|[1-9][0-9]*)\.[0-9]+(e[+-]?[1-9][0-9]*)?";
 
+const UNDERSCORE_SUFFIXES: &'static str = "bifs";
+
 
 // Grammar definition.
 
@@ -136,8 +138,14 @@ named!(symbol_value( &[u8] ) -> Box<Eval>, map!(identifier, |value: String| {
     Box::new(AtomNode::new(Value::Symbol(value)))
 }));
 named!(identifier( &[u8] ) -> String, alt!(
-    // TODO(xion): typed underscore vars (_i, _f)
-    string!(tag!("_")) |
+    map!(
+        pair!(string!(tag!("_")), opt!(string!(is_a!(UNDERSCORE_SUFFIXES)))),
+        |(uscore, maybe_suffix) : (String, Option<String>)| {
+            let mut result = uscore;
+            result.push_str(&maybe_suffix.unwrap_or(String::new()));
+            result
+        }
+    ) |
     map_res!(
         pair!(alpha, many0!(alphanumeric)), |(first, rest): (_, Vec<&[u8]>)| {
             let mut rest = rest;
@@ -182,7 +190,7 @@ fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
     // This match has to be explicit (rather than try_parse! etc.)
     // because of the silly IResult::Error branch, which is seemingly no-op
     // but it forces the result to be of correct type (nom::Err<&[u8]>
-    // rather than nom::Err<&str> returned by regex match parser).
+    // rather than nom::Err<&str> returned by regex parser).
     // TODO(xion): consider switching all parsers to &str->&str
     // to avoid this hack and the various map_res!(..., from_utf8) elsewhere
     match result {
@@ -190,7 +198,7 @@ fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
             IResult::Done(rest.as_bytes(), parsed.to_string()),
         IResult::Incomplete(i) => IResult::Incomplete(i),
         IResult::Error(nom::Err::Code(e)) => IResult::Error(nom::Err::Code(e)),
-        _ => panic!("unexpected IResult from re_match!"),
+        _ => panic!("unexpected IResult from re_find!"),
     }
 }
 

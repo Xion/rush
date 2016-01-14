@@ -85,6 +85,39 @@ fn identity_on_float() {
 }
 
 #[test]
+fn input_conversion_integer() {
+    assert_noop_apply("_i", "42");
+    assert_eq!(empty(), apply("_i", "42.42"));
+    assert_eq!(empty(), apply("_i", "true"));
+    assert_eq!(empty(), apply("_i", "foo"));
+}
+
+#[test]
+fn input_conversion_float() {
+    assert_noop_apply("_f", "42.42");
+    assert_eq!("42.0", apply("_f", "42"));
+    assert_eq!(empty(), apply("_f", "true"));
+    assert_eq!(empty(), apply("_f", "foo"));
+}
+
+#[test]
+fn input_conversion_boolean() {
+    assert_noop_apply("_b", "true");
+    assert_noop_apply("_b", "false");
+    assert_eq!(empty(), apply("_b", "42"));
+    assert_eq!(empty(), apply("_b", "42.42"));
+    assert_eq!(empty(), apply("_b", "foo"));
+}
+
+#[test]
+fn input_conversion_string() {
+    assert_noop_apply("_s", "42");
+    assert_noop_apply("_s", "42.42");
+    assert_noop_apply("_s", "true");
+    assert_noop_apply("_s", "foo");
+}
+
+#[test]
 fn unary_plus_integer() {
     assert_noop_apply("+_", "42");
 }
@@ -192,4 +225,9 @@ fn apply_ex(expr: &str, input: &str) -> Result<String, io::Error> {
 /// Evaluate the expression without any input.
 fn eval(expr: &str) -> String {
     apply(expr, "unused")
+}
+
+/// Return the string representation of Value::Empty.
+fn empty() -> String {
+    format!("{}", ap::Value::Empty)
 }

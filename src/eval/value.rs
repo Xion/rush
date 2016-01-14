@@ -104,7 +104,6 @@ impl FromStr for Value {
         if let Ok(boolean) = s.parse::<bool>() {
             return Ok(Value::Boolean(boolean));
         }
-
         Ok(Value::String(s.to_string()))
     }
 }
