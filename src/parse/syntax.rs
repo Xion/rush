@@ -105,7 +105,6 @@ named!(factor( &[u8] ) -> Box<Eval>, map!(
                 name: identifier ~
                 args: delimited!(multispaced!(tag!("(")), args, multispaced!(tag!(")"))),
                 move || {
-                    // TODO(xion): prohibit reserved words as function names
                     Box::new(
                         FunctionCallNode{name: name, args: args}
                     ) as Box<Eval>

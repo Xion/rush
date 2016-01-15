@@ -70,6 +70,12 @@ fn constant_quoted_string() {
 }
 
 #[test]
+fn constant_boolean() {
+    assert_noop_eval("true");
+    assert_noop_eval("false");
+}
+
+#[test]
 fn identity_on_string() {
     assert_noop_apply("_", "foo");
 }
@@ -82,6 +88,12 @@ fn identity_on_int() {
 #[test]
 fn identity_on_float() {
     assert_noop_apply("_", "42.42");
+}
+
+#[test]
+fn identity_on_boolean() {
+    assert_noop_apply("_", "true");
+    assert_noop_apply("_", "false");
 }
 
 #[test]
@@ -125,6 +137,17 @@ fn unary_plus_integer() {
 #[test]
 fn unary_plus_float() {
     assert_noop_apply("+_", "42.42");
+}
+
+#[test]
+fn unary_plus_string() {
+    assert_apply_error("+_", "foo");
+}
+
+#[test]
+fn unary_plus_boolean() {
+    assert_apply_error("+_", "true");
+    assert_apply_error("+_", "false");
 }
 
 #[test]
@@ -178,6 +201,7 @@ fn binary_plus_constant_strings() {
 
 
 // Assertions.
+// TODO(xion): allow for more fine grained error assertions
 
 fn assert_noop_apply(expr: &str, input: &str) {
     assert_eq!(input, apply(expr, input));
@@ -185,6 +209,14 @@ fn assert_noop_apply(expr: &str, input: &str) {
 
 fn assert_noop_eval(expr: &str) {
     assert_eq!(expr, eval(expr));
+}
+
+fn assert_apply_error(expr: &str, input: &str) {
+    assert!(apply_ex(expr, input).is_err());
+}
+
+fn assert_eval_error(expr: &str) {
+    assert!(eval_ex(expr).is_err());
 }
 
 
@@ -224,7 +256,14 @@ fn apply_ex(expr: &str, input: &str) -> Result<String, io::Error> {
 
 /// Evaluate the expression without any input.
 fn eval(expr: &str) -> String {
-    apply(expr, "unused")
+    match eval_ex(expr) {
+        Ok(output) => output,
+        Err(err) => { panic!("eval() error: {}", err); }
+    }
+}
+
+fn eval_ex(expr: &str) -> Result<String, io::Error> {
+    apply_ex(expr, "unused")
 }
 
 /// Return the string representation of Value::Empty.
