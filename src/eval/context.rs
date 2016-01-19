@@ -99,6 +99,18 @@ impl Functions {
             }
         });
 
+        // TODO(xion): allow this function to accept just two arguments,
+        // with the third one being an implicit reference to the default var
+        // (requires allowing functions to access the Context)
+        fs.define_ternary("sub", |needle, replacement, haystack| {
+            match (needle, replacement, haystack) {
+                (Value::String(n), Value::String(r), Value::String(h)) => Some(
+                    Value::String(h.replace(&n, &r))
+                ),
+                _ => None,
+            }
+        });
+
         return fs;
     }
 
@@ -149,6 +161,18 @@ impl Functions {
         self.define(name, move |args: Args| {
             if args.len() == 2 {
                 func(args[0].clone(), args[1].clone())
+            } else {
+                None
+            }
+        })
+    }
+
+    fn define_ternary<F>(&mut self, name: &str, func: F) -> &mut Self
+        where F: Fn(Value, Value, Value) -> Option<Value> + 'static
+    {
+        self.define(name, move |args: Args| {
+            if args.len() == 3 {
+                func(args[0].clone(), args[1].clone(), args[2].clone())
             } else {
                 None
             }
