@@ -86,6 +86,15 @@ impl Value {
             _ => None,
         }
     }
+    pub fn to_bool_value(&self) -> Option<Value> {
+        match *self {
+            Value::String(ref s) => s.parse::<bool>().ok().map(Value::Boolean),
+            Value::Integer(i) => Some(Value::Boolean(i != 0)),
+            Value::Float(f) => Some(Value::Boolean(f != 0.0)),
+            Value::Boolean(_) => Some(self.clone()),
+            _ => None,
+        }
+    }
 }
 
 

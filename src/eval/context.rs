@@ -85,6 +85,7 @@ impl Functions {
         fs.define_unary("str", |value| value.to_string_value());
         fs.define_unary("int", |value| value.to_int_value());
         fs.define_unary("float", |value| value.to_float_value());
+        fs.define_unary("bool", |value| value.to_bool_value());
 
         fs.define_binary("at", |idx, value| {
             match (idx, value) {
