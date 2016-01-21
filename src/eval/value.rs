@@ -21,7 +21,7 @@ pub enum Value {
     Integer(i64),
     Float(f64),
     String(String),
-    // TODO(xion): array type
+    Array(Vec<Value>),
     // TODO(xion): function type
 }
 
@@ -47,13 +47,21 @@ impl Value {
     }
     pub fn map_float<F: FnOnce(f64) -> f64>(&self, func: F) -> Option<Value> {
         if let Value::Float(f) = *self {
-            return Some(Value::Float(func(f)))
+            return Some(Value::Float(func(f)));
         }
         None
     }
     pub fn map_bool<F: FnOnce(bool) -> bool>(&self, func: F) -> Option<Value> {
         if let Value::Boolean(b) = *self {
             return Some(Value::Boolean(func(b)));
+        }
+        None
+    }
+    pub fn map_array<F>(self, func: F) -> Option<Value>
+        where F: FnOnce(Vec<Value>) -> Vec<Value>
+    {
+        if let Value::Array(a) = self {
+            return Some(Value::Array(func(a)));
         }
         None
     }
@@ -93,6 +101,13 @@ impl Value {
             Value::Integer(i) => Some(Value::Boolean(i != 0)),
             Value::Float(f) => Some(Value::Boolean(f != 0.0)),
             Value::Boolean(_) => Some(self.clone()),
+            Value::Array(ref a) => Some(Value::Boolean(a.len() > 0)),
+            _ => None,
+        }
+    }
+    pub fn to_array_value(&self) -> Option<Value> {
+        match *self {
+            Value::Array(_) => Some(self.clone()),
             _ => None,
         }
     }
@@ -130,6 +145,11 @@ impl fmt::Debug for Value {
             Value::Integer(ref i) => write!(fmt, "{}i", i),
             Value::Float(ref f) => write!(fmt, "{}f", f),
             Value::String(ref s) => write!(fmt, "\"{}\"", s),
+            Value::Array(ref a) => {
+                write!(fmt, "[{}]", a.iter()
+                    .map(|v| format!("{:?}", v)).collect::<Vec<String>>()
+                    .join(","))
+            },
         }
     }
 }
@@ -154,6 +174,12 @@ impl fmt::Display for Value {
                 write!(fmt, "{}", res)
             },
             Value::String(ref s) => write!(fmt, "{}", s),
+            Value::Array(ref a) => {
+                // for final display, an array is assummed to contain lines of output
+                write!(fmt, "{}", a.iter()
+                    .map(|v| format!("{:?}", v)).collect::<Vec<String>>()
+                    .join("\n"))
+            },
         }
     }
 }
