@@ -177,7 +177,7 @@ impl fmt::Display for Value {
             Value::Array(ref a) => {
                 // for final display, an array is assummed to contain lines of output
                 write!(fmt, "{}", a.iter()
-                    .map(|v| format!("{:?}", v)).collect::<Vec<String>>()
+                    .map(|v| format!("{}", v)).collect::<Vec<String>>()
                     .join("\n"))
             },
         }

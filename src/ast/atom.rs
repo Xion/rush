@@ -1,4 +1,4 @@
-//! Module implementing the AST that represents an expression "atom".
+//! Module implementing the AST node that represents an expression "atom".
 
 use std::fmt;
 use std::str::FromStr;

@@ -91,7 +91,7 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
     }
 ));
 
-/// factor ::== [UNARY_OP] (identifier '(' args ')' | atom)
+/// factor ::== [UNARY_OP] (identifier '(' args ')' | '[' elems ']' | atom)
 named!(factor( &[u8] ) -> Box<Eval>, map!(
     pair!(
         opt!(string!(multispaced!(is_a!(UNARY_OPS)))),
@@ -103,13 +103,19 @@ named!(factor( &[u8] ) -> Box<Eval>, map!(
             // as error (and thus try the `atom` branch) rather than bubble it up.
             complete!(chain!(
                 name: identifier ~
-                args: delimited!(multispaced!(tag!("(")), args, multispaced!(tag!(")"))),
+                args: delimited!(multispaced!(tag!("(")), items, multispaced!(tag!(")"))),
                 move || {
                     Box::new(
                         FunctionCallNode{name: name, args: args}
                     ) as Box<Eval>
                 }
-            )) | atom
+            )) |
+            map!(
+                delimited!(multispaced!(tag!("[")), items, multispaced!(tag!("]"))),
+                move |items| {
+                    Box::new(ArrayNode{elements: items}) as Box<Eval>
+                }
+            ) | atom
         )
     ),
     |(maybe_op, factor): (_, Box<Eval>)| match maybe_op {
@@ -118,8 +124,8 @@ named!(factor( &[u8] ) -> Box<Eval>, map!(
     }
 ));
 
-/// args ::== expression (',' expression)*
-named!(args( &[u8] ) -> Vec<Box<Eval>>,
+/// items ::== expression (',' expression)*
+named!(items( &[u8] ) -> Vec<Box<Eval>>,
        separated_list!(multispaced!(tag!(",")), argument));
 
 /// atom ::== BOOLEAN | SYMBOL | FLOAT | INTEGER | STRING | '(' expression ')'
