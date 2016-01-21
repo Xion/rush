@@ -79,6 +79,7 @@ impl Functions {
         fs.define_unary("len", |value| {
             match value {
                 Value::String(ref s) => Some(Value::Integer(s.len() as i64)),
+                Value::Array(ref a) => Some(Value::Integer(a.len() as i64)),
                 _ => None,
             }
         });

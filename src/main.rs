@@ -26,8 +26,7 @@ fn main() {
     let mut options = Options::new();
     options.optflag("h", "help", "Show this usage message");
     options.optflag("p", "parse", "Only parse the expression, printing AST");
-    // TODO(xion): -l flag that causes input to be interpreted as single array of lines
-    // rather make the expression execute againts each line individually
+    options.optflag("l", "lines", "Apply the expression once to the array of lines of text in input");
 
     let args = options.parse(&argv[1..]).unwrap();
     if args.opt_present("h") {
@@ -48,7 +47,11 @@ fn main() {
             Err(error) => { error!("{:?}", error); exit(1); },
         }
     } else {
-        if let Err(error) = ap::apply(expr, io::stdin(), &mut io::stdout()) {
+        // apply the expression either to every line separately,
+        // or the whole input as an array of lines
+        let apply: fn(_, _, _) -> _ =
+            if args.opt_present("l") { ap::reduce } else { ap:: map };
+        if let Err(error) = apply(expr, io::stdin(), &mut io::stdout()) {
             error!("{:?}", error);
             exit(1);
         }
