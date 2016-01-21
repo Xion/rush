@@ -26,6 +26,8 @@ fn main() {
     let mut options = Options::new();
     options.optflag("h", "help", "Show this usage message");
     options.optflag("p", "parse", "Only parse the expression, printing AST");
+    // TODO(xion): -l flag that causes input to be interpreted as single array of lines
+    // rather make the expression execute againts each line individually
 
     let args = options.parse(&argv[1..]).unwrap();
     if args.opt_present("h") {

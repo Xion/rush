@@ -10,7 +10,7 @@ use super::value::Value;
 /// Evaluation context for an expression.
 ///
 /// Contains all the variable and function bindings that are used
-/// when evaluation an expression.
+/// when evaluating an expression.
 pub struct Context {
     vars: Variables,
     funcs: Functions,

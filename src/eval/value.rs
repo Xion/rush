@@ -21,6 +21,7 @@ pub enum Value {
     Integer(i64),
     Float(f64),
     String(String),
+    // TODO(xion): array type
     // TODO(xion): function type
 }
 
@@ -119,6 +120,8 @@ impl FromStr for Value {
 
 
 impl fmt::Debug for Value {
+    /// Format a Value for debugging purposes.
+    /// This representation is not meant for consumption by end users.
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Value::Empty => write!(fmt, "{}", "<empty>"),
@@ -133,8 +136,10 @@ impl fmt::Debug for Value {
 
 
 impl fmt::Display for Value {
+    /// Format a Value for outputing it as a result of the computation.
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match *self {
+            // TODO(xion): make Empty a formatting error
             Value::Empty => write!(fmt, "{}", "<empty>"),
             Value::Symbol(ref t) => write!(fmt, "{}", t),
             Value::Boolean(ref b) => write!(fmt, "{}", b),
