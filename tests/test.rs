@@ -76,6 +76,64 @@ fn constant_boolean() {
 }
 
 #[test]
+fn constant_array_empty() {
+    const EXPR: &'static str = "[]";
+    let expected = "";
+    assert_eq!(expected, eval(EXPR));
+}
+
+#[test]
+fn constant_array_1element() {
+    const ELEMENT: &'static str = "foo";
+    let expr = format!("[{}]", ELEMENT);
+    assert_eq!(ELEMENT, eval(&expr));
+}
+
+#[test]
+fn constant_array_integers() {
+    const ELEMENTS: &'static [i64] = &[13, 42, 100, 256];
+    let expr = format!("[{}]", join(ELEMENTS, ","));
+    let actual: Vec<_> = eval(&expr)
+        .split('\n').map(|s| s.parse::<i64>().unwrap()).collect();
+    assert_eq!(ELEMENTS, &actual[..]);
+}
+
+#[test]
+fn constant_array_floats() {
+    const ELEMENTS: &'static [f64] = &[-13.5, 0.00002, 42.007, 999999999.7];
+    let expr = format!("[{}]", join(ELEMENTS, ","));
+    let actual: Vec<_> = eval(&expr)
+        .split('\n').map(|s| s.parse::<f64>().unwrap()).collect();
+    assert_eq!(ELEMENTS, &actual[..]);
+}
+
+#[test]
+fn constant_array_strings() {
+    const ELEMENTS: &'static [&'static str] = &["foo", "bar", "baz"];
+    let expr = format!("[{}]", join(ELEMENTS, ","));
+    let actual: Vec<_> = eval(&expr).split('\n').map(str::to_string).collect();
+    assert_eq!(ELEMENTS, &actual[..]);
+}
+
+#[test]
+fn constant_array_quoted_strings() {
+    const ELEMENTS: &'static [&'static str] = &["Alice", "has", "a", "cat"];
+    let expr = format!("[{}]", ELEMENTS.iter()
+        .map(|s| format!("\"{}\"", s)).collect::<Vec<_>>().join(","));
+    let actual: Vec<_> = eval(&expr).split('\n').map(str::to_string).collect();
+    assert_eq!(ELEMENTS, &actual[..]);
+}
+
+#[test]
+fn constant_array_booleans() {
+    const ELEMENTS: &'static [bool] = &[true, false, false, true, true];
+    let expr = format!("[{}]", join(ELEMENTS, ","));
+    let actual: Vec<_> = eval(&expr)
+        .split('\n').map(|s| s.parse::<bool>().unwrap()).collect();
+    assert_eq!(ELEMENTS, &actual[..]);
+}
+
+#[test]
 fn identity_on_string() {
     assert_noop_apply("_", "foo");
 }
@@ -200,6 +258,13 @@ fn binary_plus_constant_strings() {
 }
 
 
+// Utility functions.
+
+fn join<T: ToString>(array: &[T], sep: &str) -> String {
+    array.iter().map(T::to_string).collect::<Vec<_>>().join(sep)
+}
+
+
 // Assertions.
 // TODO(xion): allow for more fine grained error assertions
 
@@ -220,7 +285,7 @@ fn assert_eval_error(expr: &str) {
 }
 
 
-// Utility functions.
+// Wrappers around tested code.
 
 /// Applies an expression to input given as a string.
 ///
