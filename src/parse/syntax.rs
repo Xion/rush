@@ -91,7 +91,7 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
     }
 ));
 
-/// factor ::== [UNARY_OP] (identifier '(' args ')' | '[' elems ']' | atom)
+/// factor ::== [UNARY_OP] (identifier '(' args ')' | atom)
 named!(factor( &[u8] ) -> Box<Eval>, map!(
     pair!(
         opt!(string!(multispaced!(is_a!(UNARY_OPS)))),
@@ -109,13 +109,7 @@ named!(factor( &[u8] ) -> Box<Eval>, map!(
                         FunctionCallNode{name: name, args: args}
                     ) as Box<Eval>
                 }
-            )) |
-            map!(
-                delimited!(multispaced!(tag!("[")), items, multispaced!(tag!("]"))),
-                move |items| {
-                    Box::new(ArrayNode{elements: items}) as Box<Eval>
-                }
-            ) | atom
+            )) | atom
         )
     ),
     |(maybe_op, factor): (_, Box<Eval>)| match maybe_op {
@@ -128,10 +122,17 @@ named!(factor( &[u8] ) -> Box<Eval>, map!(
 named!(items( &[u8] ) -> Vec<Box<Eval>>,
        separated_list!(multispaced!(tag!(",")), argument));
 
-/// atom ::== BOOLEAN | SYMBOL | FLOAT | INTEGER | STRING | '(' expression ')'
+/// atom ::== ARRAY | BOOLEAN | SYMBOL | FLOAT | INTEGER | STRING | '(' expression ')'
 named!(atom( &[u8] ) -> Box<Eval>, alt!(
-    bool_value | symbol_value | float_value | int_value | string_value |
+    array_value | bool_value | symbol_value | float_value | int_value | string_value |
     delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
+));
+
+named!(array_value( &[u8] ) -> Box<Eval>, map!(
+    delimited!(multispaced!(tag!("[")), items, multispaced!(tag!("]"))),
+    move |items| {
+        Box::new(ArrayNode{elements: items}) as Box<Eval>
+    }
 ));
 
 named!(bool_value( &[u8] ) -> Box<Eval>, alt!(
