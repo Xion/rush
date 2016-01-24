@@ -58,8 +58,12 @@ pub fn apply<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> Result<
 pub fn reduce<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> Result<(), io::Error> {
     let ast = try!(parse_expr(expr));
 
+    // parse input lines into a vector of Value objects
     let lines = BufReader::new(input).lines()
-        .map(|r| r.ok().expect("failed to read input line").parse::<Value>().unwrap_or(Value::Empty))
+        .map(|r| {
+            r.ok().expect("failed to read input line")
+                .parse::<Value>().unwrap_or(Value::Empty)
+        })
         .filter(|v| *v != Value::Empty)
         .collect::<Vec<_>>();
     let count = lines.len();
