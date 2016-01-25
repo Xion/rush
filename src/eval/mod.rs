@@ -14,6 +14,7 @@ use std::fmt;
 /// Error that may have occurred during evaluation.
 #[derive(Clone,Debug)]
 pub struct Error {
+    // TODO(xion): include the representation of the eval'd AST node
     pub message: String,
 }
 
@@ -37,6 +38,7 @@ impl error::Error for Error {
 
 /// Result of an evaluation attempt.
 pub type EvalResult = Result<Value, Error>;
+// TODO(xion): rename it to just Result, so it'll be used as eval::Result
 
 
 /// Trait for objects that can be evaluated within given Context.

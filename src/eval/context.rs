@@ -88,7 +88,7 @@ impl Functions {
         fs.define_unary("float", |value| value.to_float_value());
         fs.define_unary("bool", |value| value.to_bool_value());
 
-        // TODO(xion): replace this function with subscript notation (x[i])
+        // TODO(xion): remove this function after implement subscript parsing
         fs.define_binary("at", |idx, value| {
             match (idx, value) {
                 (Value::Integer(i),
