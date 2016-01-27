@@ -91,23 +91,36 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
     }
 ));
 
-/// factor ::== [UNARY_OP] (function_call | atom)
-named!(factor( &[u8] ) -> Box<Eval>, map!(
-    pair!(
-        opt!(string!(multispaced!(is_a!(UNARY_OPS)))),
-        alt!(
-            // complete!(...) is necessary because `atom` can be a prefix
-            // of `function_call`. Otherwise, trying to parse an atom
-            // as function call will result  in incomplete input
-            // (because the pair of parentheses is "missing").
-            // Using complete! forces the parses to interpret this IResult::Incomplete
-            // as error (and thus try the `atom` branch) rather than bubble it up.
-            complete!(function_call) | atom
-        )
+/// factor ::== [UNARY_OP] (function_call | atom) subscript*
+named!(factor( &[u8] ) -> Box<Eval>, chain!(
+    maybe_op: opt!(string!(multispaced!(is_a!(UNARY_OPS)))) ~
+    factor: alt!(
+        // complete!(...) is necessary because `atom` can be a prefix
+        // of `function_call`. Otherwise, trying to parse an atom
+        // as function call will result  in incomplete input
+        // (because the pair of parentheses is "missing").
+        // Using complete! forces the parses to interpret this IResult::Incomplete
+        // as error (and thus try the `atom` branch) rather than bubble it up.
+        complete!(function_call) | atom
+    ) ~
+    // TODO(xion): when functions are first-class values, we'll need to roll
+    // parenthesized arguments from `function_call` into here
+    subscripts: many0!(
+        delimited!(multispaced!(tag!("[")), argument, multispaced!(tag!("]")))
     ),
-    |(maybe_op, factor): (_, Box<Eval>)| match maybe_op {
-        Some(op) => Box::new(UnaryOpNode{op: op, arg: factor}) as Box<Eval>,
-        None => factor,
+    move || {
+        // subscripting has higher priority than any possible unary operators,
+        // so we build the AST node(s) for that first
+        let mut factor = factor;
+        for subscript in subscripts {
+            factor = Box::new(
+                SubscriptNode{object: factor, index: subscript}
+            ) as Box<Eval>
+        }
+        match maybe_op {
+            Some(op) => Box::new(UnaryOpNode{op: op, arg: factor}) as Box<Eval>,
+            None => factor,
+        }
     }
 ));
 

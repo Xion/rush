@@ -88,26 +88,6 @@ impl Functions {
         fs.define_unary("float", |value| value.to_float_value());
         fs.define_unary("bool", |value| value.to_bool_value());
 
-        // TODO(xion): remove this function after implement subscript parsing
-        fs.define_binary("at", |idx, value| {
-            match (idx, value) {
-                (Value::Integer(i),
-                 Value::String(s)) => s.chars().nth(i as usize).map(|c| {
-                    let mut result = String::new();
-                    result.push(c);
-                    Value::String(result)
-                }),
-                (Value::Integer(i), Value::Array(a)) => {
-                    if i < 0 { return None; }
-                    let idx = i as usize;
-                    // TODO(xion): the clone below is very inefficient for
-                    // multi-dimensional arrays; return some Value pointer instead
-                    if idx < a.len() { Some(a[idx].clone()) } else { None }
-                },
-                _ => None,
-            }
-        });
-
         // TODO(xion): allow this function to accept just two arguments,
         // with the third one being an implicit reference to the default var
         // (requires allowing functions to access the Context)
