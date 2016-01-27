@@ -257,6 +257,27 @@ fn binary_plus_constant_strings() {
     assert_eq!("barbaz", eval("bar + \"baz\""));
 }
 
+// TODO(xion): tests for binary minus, multiplication, division, string formatting
+
+#[test]
+fn subscript_of_array_constant() {
+    assert_eq!("42", eval("[42][0]"));
+    assert_eq!("42", eval("[13, 42][1]"));
+    assert_eq!("42", eval("[[42]][0][0]"));
+    assert_eval_error("[][0]");
+    assert_eval_error("[42][1]");
+}
+
+#[test]
+fn subscript_of_array_input() {
+    const INPUT: &'static [&'static str] = &["foo", "bar"];
+    assert_eq!("foo", reduce("_[0]", INPUT));
+    assert_eq!("bar", reduce("_[1]", INPUT));
+    assert_eq!("foo", reduce("[_][0][0]", INPUT));
+    assert_eq!("other", reduce("[_, [other]][1][0]", INPUT));
+    assert_reduce_error("_[42]", INPUT);
+}
+
 
 // Utility functions.
 
@@ -268,24 +289,40 @@ fn join<T: ToString>(array: &[T], sep: &str) -> String {
 // Assertions.
 // TODO(xion): allow for more fine grained error assertions
 
-fn assert_noop_apply(expr: &str, input: &str) {
-    assert_eq!(input, apply(expr, input));
-}
-
 fn assert_noop_eval(expr: &str) {
     assert_eq!(expr, eval(expr));
 }
 
-fn assert_apply_error(expr: &str, input: &str) {
-    assert!(apply_ex(expr, input).is_err());
+fn assert_noop_apply(expr: &str, input: &str) {
+    assert_eq!(input, apply(expr, input));
 }
 
 fn assert_eval_error(expr: &str) {
     assert!(eval_ex(expr).is_err());
 }
 
+fn assert_apply_error(expr: &str, input: &str) {
+    assert!(apply_ex(expr, input).is_err());
+}
+
+fn assert_reduce_error<'a>(expr: &str, input: &'a [&'a str]) {
+    assert!(reduce_ex(expr, input).is_err());
+}
+
 
 // Wrappers around tested code.
+
+/// Evaluate the expression without any input.
+fn eval(expr: &str) -> String {
+    match eval_ex(expr) {
+        Ok(output) => output,
+        Err(err) => { panic!("eval() error: {}", err); }
+    }
+}
+
+fn eval_ex(expr: &str) -> Result<String, io::Error> {
+    apply_ex(expr, "unused")
+}
 
 /// Applies an expression to input given as a string.
 ///
@@ -319,16 +356,31 @@ fn apply_ex(expr: &str, input: &str) -> Result<String, io::Error> {
     Ok(result)
 }
 
-/// Evaluate the expression without any input.
-fn eval(expr: &str) -> String {
-    match eval_ex(expr) {
+/// Applies an expression to input given as slice of strings.
+/// This input is interpreted as an array by the given expression.
+fn reduce<'a>(expr: &str, input: &'a [&'a str]) -> String {
+    match reduce_ex(expr, input) {
         Ok(output) => output,
-        Err(err) => { panic!("eval() error: {}", err); }
+        Err(err) => { panic!("reduce() error: {}", err); }
     }
 }
 
-fn eval_ex(expr: &str) -> Result<String, io::Error> {
-    apply_ex(expr, "unused")
+fn reduce_ex<'a>(expr: &str, input: &'a [&'a str]) -> Result<String, io::Error> {
+    let input = input.join("\n").to_string();
+
+    let mut output: Vec<u8> = Vec::new();
+    try!(ap::reduce(expr, input.as_bytes(), &mut output));
+
+    // if the result turns out to be just a single line,
+    // remove the trailing \n
+    let mut result = try!(
+        from_utf8(&output)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
+    ).to_string();
+    if result.chars().filter(|c| *c == '\n').count() == 1 {
+        result.pop();
+    }
+    Ok(result)
 }
 
 /// Return the string representation of Value::Empty.

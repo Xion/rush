@@ -47,7 +47,7 @@ impl SubscriptNode {
                     ));
                 }
                 let idx = i as usize;
-                if idx > array.len() {
+                if idx >= array.len() {
                     return Err(eval::Error::new(
                         &format!("array index out of range ({})", i)
                     ));
