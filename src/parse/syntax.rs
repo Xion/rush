@@ -91,30 +91,34 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
     }
 ));
 
-/// factor ::== [UNARY_OP] (identifier '(' args ')' | atom)
+/// factor ::== [UNARY_OP] (function_call | atom)
 named!(factor( &[u8] ) -> Box<Eval>, map!(
     pair!(
         opt!(string!(multispaced!(is_a!(UNARY_OPS)))),
         alt!(
-            // complete!(...) is necessary because `atom` branch below can be a prefix
-            // of this branch, so trying to parse an atom as function call will result
-            // in incomplete input (because the pair of parentheses is "missing").
+            // complete!(...) is necessary because `atom` can be a prefix
+            // of `function_call`. Otherwise, trying to parse an atom
+            // as function call will result  in incomplete input
+            // (because the pair of parentheses is "missing").
             // Using complete! forces the parses to interpret this IResult::Incomplete
             // as error (and thus try the `atom` branch) rather than bubble it up.
-            complete!(chain!(
-                name: identifier ~
-                args: delimited!(multispaced!(tag!("(")), items, multispaced!(tag!(")"))),
-                move || {
-                    Box::new(
-                        FunctionCallNode{name: name, args: args}
-                    ) as Box<Eval>
-                }
-            )) | atom
+            complete!(function_call) | atom
         )
     ),
     |(maybe_op, factor): (_, Box<Eval>)| match maybe_op {
         Some(op) => Box::new(UnaryOpNode{op: op, arg: factor}) as Box<Eval>,
         None => factor,
+    }
+));
+
+/// function_call ::== identifier '(' ARGS ')'
+named!(function_call( &[u8] ) -> Box<Eval>, chain!(
+    name: identifier ~
+    args: delimited!(multispaced!(tag!("(")), items, multispaced!(tag!(")"))),
+    move || {
+        Box::new(
+            FunctionCallNode{name: name, args: args}
+        ) as Box<Eval>
     }
 ));
 
