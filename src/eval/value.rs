@@ -27,6 +27,20 @@ pub enum Value {
 
 
 impl Value {
+    /// Return the type of this value as string.
+    /// These names are user-facing, e.g. they can occur inside error messages.
+    pub fn typename(&self) -> &str {
+        match *self {
+            Value::Empty => "empty",
+            Value::Symbol(..) => "symbol",
+            Value::Boolean(..) => "bool",
+            Value::Integer(..) => "int",
+            Value::Float(..) => "float",
+            Value::String(..) => "str",
+            Value::Array(..) => "array",
+        }
+    }
+
     pub fn map_str<F: FnOnce(&str) -> String>(&self, func: F) -> Option<Value> {
         if let &Value::String(ref s) = self {
             return Some(Value::String(func(s)));
@@ -109,6 +123,37 @@ impl Value {
         match *self {
             Value::Array(_) => Some(self.clone()),
             _ => None,
+        }
+    }
+
+    pub fn unwrap_string(self) -> String {
+        match self {
+            Value::String(s) => s,
+            _ => { panic!("unwrap_string() on {} value", self.typename()) },
+        }
+    }
+    pub fn unwrap_int(self) -> i64 {
+        match self {
+            Value::Integer(i) => i,
+            _ => { panic!("unwrap_int() on {} value", self.typename()) },
+        }
+    }
+    pub fn unwrap_float(self) -> f64 {
+        match self {
+            Value::Float(f) => f,
+            _ => { panic!("unwrap_float() on {} value", self.typename()) },
+        }
+    }
+    pub fn unwrap_bool(self) -> bool {
+        match self {
+            Value::Boolean(b) => b,
+            _ => { panic!("unwrap_bool() on {} value", self.typename()) },
+        }
+    }
+    pub fn unwrap_array(self) -> Vec<Value> {
+        match self {
+            Value::Array(a) => a,
+            _ => { panic!("unwrap_array() on {} value", self.typename()) },
         }
     }
 }
