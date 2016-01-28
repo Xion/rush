@@ -1,6 +1,7 @@
 //! Module implementing evaluation of parsed expressions.
 
 mod context;
+mod functions;
 mod value;
 
 pub use self::context::Context;
