@@ -38,6 +38,8 @@ impl Eval for SubscriptNode {
 
 
 impl SubscriptNode {
+    // TODO(xion): consider supporting Python-style negative indices
+
     fn eval_on_array(array: &Vec<Value>, index: &Value) -> EvalResult {
         match *index {
             Value::Integer(i) => {

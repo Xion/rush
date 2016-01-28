@@ -88,6 +88,28 @@ impl Functions {
         fs.define_unary("float", |value| value.to_float_value());
         fs.define_unary("bool", |value| value.to_bool_value());
 
+        fs.define_binary("split", |string, delim| {
+            if let (Value::String(ref s), Value::String(ref d)) = (string, delim) {
+                let segments: Vec<_> = s.split(d)
+                    .map(str::to_owned).map(Value::String)
+                    .collect();
+                return Some(Value::Array(segments));
+            }
+            None
+        });
+        fs.define_binary("join", |array, delim| {
+            if let (Value::Array(ref a), Value::String(ref d)) = (array, delim) {
+                let strings: Vec<_> =  a.iter()
+                    .map(Value::to_string_value).filter(Option::is_some)
+                    .map(Option::unwrap).map(Value::unwrap_string)
+                    .collect();
+                if strings.len() == a.len() {
+                    return Some(Value::String(strings.join(&d)));
+                }
+            }
+            None
+        });
+
         // TODO(xion): allow this function to accept just two arguments,
         // with the third one being an implicit reference to the default var
         // (requires allowing functions to access the Context)
