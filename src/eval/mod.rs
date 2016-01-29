@@ -3,6 +3,7 @@
 mod context;
 mod functions;
 mod value;
+mod util;
 
 pub use self::context::Context;
 pub use self::value::Value;
@@ -21,7 +22,7 @@ pub struct Error {
 
 impl Error {
     pub fn new(msg: &str) -> Error {
-        Error{message: msg.to_string()}
+        Error{message: msg.to_owned()}
     }
 }
 
@@ -40,6 +41,7 @@ impl error::Error for Error {
 /// Result of an evaluation attempt.
 pub type EvalResult = Result<Value, Error>;
 // TODO(xion): rename it to just Result, so it'll be used as eval::Result
+// (open question: how to refer to it within the eval package itself?)
 
 
 /// Trait for objects that can be evaluated within given Context.

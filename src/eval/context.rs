@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+use super::EvalResult;
 use super::functions::{Args, Functions};
 use super::value::Value;
 
@@ -47,7 +48,7 @@ impl Context {
 
     /// Call a function of given name with given arguments.
     /// Returns Some(result), or None if the function couldn't be found.
-    pub fn call_func(&self, name: &str, args: Args) -> Option<Value> {
+    pub fn call_func(&self, name: &str, args: Args) -> EvalResult {
         self.funcs.call(name, args)
     }
 }

@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use eval::{self, Eval, EvalResult, Context};
+use eval::{Eval, EvalResult, Context};
 
 
 /// Represents a call to a function with given name and arguments.
@@ -36,7 +36,6 @@ impl Eval for FunctionCallNode {
 
         // extract the argument values and call the function
         let args = evals.iter().map(|r| r.clone().ok().unwrap()).collect();
-        context.call_func(&self.name, args).ok_or(
-            eval::Error::new(&format!("unknown function: {}", self.name)))
+        context.call_func(&self.name, args)
     }
 }
