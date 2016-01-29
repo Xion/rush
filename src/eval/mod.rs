@@ -1,5 +1,8 @@
 //! Module implementing evaluation of parsed expressions.
 
+#[macro_use]
+mod util;
+
 mod context;
 mod functions;
 mod value;

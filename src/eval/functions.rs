@@ -1,6 +1,7 @@
 /// Functions available to the expressions.
 
 use std::collections::HashMap;
+use std::ptr;
 
 use rand;
 
@@ -28,26 +29,27 @@ impl Functions {
         fs.define_nullary("rand", || Ok(Value::Float(rand::random::<f64>())));
 
         fs.define_unary("rev", |value| {
-            value.map_str(|s: &str| {
-                // TODO(xion): since this reverses chars not graphemes,
-                // it mangles some non-Latin strings;
-                // fix with unicode-segmentation crate
-                s.chars().rev().collect::<String>()
-            }).ok_or(Error::new(&format!("rev() requires a string")))
+            // TODO(xion): since this reverses chars not graphemes,
+            // it mangles some non-Latin strings;
+            // fix with unicode-segmentation crate
+            eval1!(value : &String { value.chars().rev().collect() });
+            Err(Error::new(&format!(
+                "rev() requires a string, got {}", value.typename()
+            )))
         });
         fs.define_unary("abs", |value| {
-            match value {
-                Value::Integer(i) => Ok(Value::Integer(i.abs())),
-                Value::Float(f) => Ok(Value::Float(f.abs())),
-                _ => Err(Error::new(&format!("abs() requires a number"))),
-            }
+            eval1!(value : Integer { value.abs() });
+            eval1!(value : Float { value.abs() });
+            Err(Error::new(&format!(
+                "abs() requires a number, got {}", value.typename()
+            )))
         });
         fs.define_unary("len", |value| {
-            match value {
-                Value::String(ref s) => Ok(Value::Integer(s.len() as i64)),
-                Value::Array(ref a) => Ok(Value::Integer(a.len() as i64)),
-                _ => Err(Error::new(&format!("len() requires string or array"))),
-            }
+            eval1!((value: &String) -> Integer { value.len() as i64 });
+            eval1!((value: &Array) -> Integer { value.len() as i64 });
+            Err(Error::new(&format!(
+                "len() requires string or array, got {}", value.typename()
+            )))
         });
         fs.define_unary("str", |value| {
             value.to_string_value().ok_or_else(|| Error::new(
@@ -71,13 +73,9 @@ impl Functions {
         });
 
         fs.define_binary("split", |string, delim| {
-            if let (&Value::String(ref s),
-                    &Value::String(ref d)) = (&string, &delim) {
-                let segments: Vec<_> = s.split(d)
-                    .map(str::to_owned).map(Value::String)
-                    .collect();
-                return Ok(Value::Array(segments));
-            }
+            eval2!((string: &String, delim: &String) -> Array {
+                string.split(delim).map(str::to_owned).map(Value::String).collect()
+            });
             Err(Error::new(&format!(
                 "split() expects two strings, got: {}, {}",
                 string.typename(), delim.typename()
@@ -140,12 +138,19 @@ impl Functions {
         })
     }
 
+    // The `unsafe` blocks in the functions below are in fact
+    // perfectly safe, thanks to ensure_argcount() and the fact that we're
+    // not using the `args` for anything else after calling `func`.
+
     fn define_unary<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn(Value) -> eval::Result + 'static
     {
         self.define(name, move |args: Args| {
             try!(ensure_argcount(name, &args, 1, 1));
-            func(args[0].clone())
+            unsafe {
+                let args = args.as_ptr();
+                func(ptr::read(args.offset(0)))
+            }
         })
     }
 
@@ -154,7 +159,10 @@ impl Functions {
     {
         self.define(name, move |args: Args| {
             try!(ensure_argcount(name, &args, 2, 2));
-            func(args[0].clone(), args[1].clone())
+            unsafe {
+                let args = args.as_ptr();
+                func(ptr::read(args.offset(0)), ptr::read(args.offset(1)))
+            }
         })
     }
 
@@ -163,7 +171,12 @@ impl Functions {
     {
         self.define(name, move |args: Args| {
             try!(ensure_argcount(name, &args, 3, 3));
-            func(args[0].clone(), args[1].clone(), args[2].clone())
+            unsafe {
+                let args = args.as_ptr();
+                func(ptr::read(args.offset(0)),
+                     ptr::read(args.offset(1)),
+                     ptr::read(args.offset(2)))
+            }
         })
     }
 }
