@@ -3,7 +3,7 @@
 use std::fmt;
 use std::iter;
 
-use eval::{self, Eval, EvalResult, Context, Value};
+use eval::{self, Eval, Context, Value};
 
 
 /// Represents an operation involving binary operators and their arguments.
@@ -29,7 +29,7 @@ impl fmt::Debug for BinaryOpNode {
 
 
 impl Eval for BinaryOpNode {
-    fn eval(&self, context: &Context) -> EvalResult {
+    fn eval(&self, context: &Context) -> eval::Result {
         let mut result = try!(self.first.eval(&context));
         for &(ref op, ref arg) in &self.rest {
             let arg = try!(arg.eval(&context));
@@ -128,7 +128,7 @@ macro_rules! eval {
 
 impl BinaryOpNode {
     /// Evaluate the "+" operator for two values.
-    fn eval_plus(left: &Value, right: &Value) -> EvalResult {
+    fn eval_plus(left: &Value, right: &Value) -> eval::Result {
         eval!(left, right : &String { left.clone() + &*right });
         eval!(left, right : Integer { left + right });
         eval!(left, right : Float { left + right });
@@ -138,7 +138,7 @@ impl BinaryOpNode {
     }
 
     /// Evaluate the "-" operator for two values.
-    fn eval_minus(left: &Value, right: &Value) -> EvalResult {
+    fn eval_minus(left: &Value, right: &Value) -> eval::Result {
         eval!(left, right : Integer { left - right });
         eval!(left, right : Float { left - right });
         eval!((left: Integer, right: Float) -> Float { left as f64 - right });
@@ -147,7 +147,7 @@ impl BinaryOpNode {
     }
 
     /// Evaluate the "*" operator for two values.
-    fn eval_times(left: &Value, right: &Value) -> EvalResult {
+    fn eval_times(left: &Value, right: &Value) -> eval::Result {
         eval!(left, right : Integer { left * right });
         eval!(left, right : Float { left * right });
         eval!((left: &String, right: Integer) -> String where right > 0 {
@@ -157,14 +157,14 @@ impl BinaryOpNode {
     }
 
     /// Evaluate the "/" operator for two values.
-    fn eval_by(left: &Value, right: &Value) -> EvalResult {
+    fn eval_by(left: &Value, right: &Value) -> eval::Result {
         eval!(left, right : Integer { left / right });
         eval!(left, right : Float { left / right });
         BinaryOpNode::err("/", &left, &right)
     }
 
     /// Evaluate the "%" operator for two values.
-    fn eval_modulo(left: &Value, right: &Value) -> EvalResult {
+    fn eval_modulo(left: &Value, right: &Value) -> eval::Result {
         // modulo/remainder
         eval!(left, right : Integer { left % right });
         eval!(left, right : Float { left % right });
@@ -195,7 +195,7 @@ impl BinaryOpNode {
     }
 
     /// Produce an error about invalid arguments for an operator.
-    fn err(op: &str, left: &Value, right: &Value) -> EvalResult {
+    fn err(op: &str, left: &Value, right: &Value) -> eval::Result {
         Err(eval::Error::new(&format!(
             "invalid arguments for `{}` operator: `{:?}` and `{:?}`",
             op, left, right)))

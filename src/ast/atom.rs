@@ -3,7 +3,7 @@
 use std::fmt;
 use std::str::FromStr;
 
-use eval::{Eval, EvalResult, Context, Value};
+use eval::{self, Eval, Context, Value};
 
 
 /// Represents the smallest, indivisible unit of an expression: a single value.
@@ -29,7 +29,7 @@ impl FromStr for AtomNode {
 
 
 impl Eval for AtomNode {
-    fn eval(&self, context: &Context) -> EvalResult {
+    fn eval(&self, context: &Context) -> eval::Result {
         Ok(self.resolve(&context))
     }
 }

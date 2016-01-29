@@ -4,7 +4,8 @@ use std::collections::HashMap;
 
 use rand;
 
-use super::{EvalResult, Error};
+use eval;
+use super::Error;
 use super::value::Value;
 
 
@@ -12,7 +13,7 @@ use super::value::Value;
 pub type Args = Vec<Value>;
 
 /// Function type.
-pub type Function = Fn(Args) -> EvalResult;
+pub type Function = Fn(Args) -> eval::Result;
 
 
 /// Container of functions available within the evaluation context.
@@ -117,21 +118,21 @@ impl Functions {
         return fs;
     }
 
-    pub fn call(&self, name: &str, args: Args) -> EvalResult  {
+    pub fn call(&self, name: &str, args: Args) -> eval::Result  {
         self.funcs.get(&name.to_string())
             .ok_or(Error::new(&format!("{}() function not found", name)))
             .and_then(|func| func(args))
     }
 
     fn define<F>(&mut self, name: &str, func: F) -> &mut Self
-        where F: Fn(Args) -> EvalResult + 'static
+        where F: Fn(Args) -> eval::Result + 'static
     {
         self.funcs.insert(name.to_owned(), Box::new(func));
         self
     }
 
     fn define_nullary<F>(&mut self, name: &'static str, func: F) -> &mut Self
-        where F: Fn() -> EvalResult + 'static
+        where F: Fn() -> eval::Result + 'static
     {
         self.define(name, move |args: Args| {
             try!(ensure_argcount(name, &args, 0, 0));
@@ -140,7 +141,7 @@ impl Functions {
     }
 
     fn define_unary<F>(&mut self, name: &'static str, func: F) -> &mut Self
-        where F: Fn(Value) -> EvalResult + 'static
+        where F: Fn(Value) -> eval::Result + 'static
     {
         self.define(name, move |args: Args| {
             try!(ensure_argcount(name, &args, 1, 1));
@@ -149,7 +150,7 @@ impl Functions {
     }
 
     fn define_binary<F>(&mut self, name: &'static str, func: F) -> &mut Self
-        where F: Fn(Value, Value) -> EvalResult + 'static
+        where F: Fn(Value, Value) -> eval::Result + 'static
     {
         self.define(name, move |args: Args| {
             try!(ensure_argcount(name, &args, 2, 2));
@@ -158,7 +159,7 @@ impl Functions {
     }
 
     fn define_ternary<F>(&mut self, name: &'static str, func: F) -> &mut Self
-        where F: Fn(Value, Value, Value) -> EvalResult + 'static
+        where F: Fn(Value, Value, Value) -> eval::Result + 'static
     {
         self.define(name, move |args: Args| {
             try!(ensure_argcount(name, &args, 3, 3));

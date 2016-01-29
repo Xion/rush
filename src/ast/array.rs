@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use eval::{Eval, EvalResult, Context, Value};
+use eval::{self, Eval, Context, Value};
 
 
 pub struct ArrayNode {
@@ -20,7 +20,7 @@ impl fmt::Debug for ArrayNode {
 
 
 impl Eval for ArrayNode {
-    fn eval(&self, context: &Context) -> EvalResult {
+    fn eval(&self, context: &Context) -> eval::Result {
         // evaluate all the elements first and bail if any of that fails
         let evals: Vec<_> =
             self.elements.iter().map(|x| x.eval(&context)).collect();

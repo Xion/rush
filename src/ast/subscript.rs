@@ -3,7 +3,7 @@
 
 use std::fmt;
 
-use eval::{self, Eval, EvalResult, Context, Value};
+use eval::{self, Eval, Context, Value};
 
 
 /// Represents an operation of taking a subscript of an object ("indexing").
@@ -22,7 +22,7 @@ impl fmt::Debug for SubscriptNode {
 
 
 impl Eval for SubscriptNode {
-    fn eval(&self, context: &Context) -> EvalResult {
+    fn eval(&self, context: &Context) -> eval::Result {
         let object = try!(self.object.eval(&context));
         let index = try!(self.index.eval(&context));
 
@@ -40,7 +40,7 @@ impl Eval for SubscriptNode {
 impl SubscriptNode {
     // TODO(xion): consider supporting Python-style negative indices
 
-    fn eval_on_array(array: &Vec<Value>, index: &Value) -> EvalResult {
+    fn eval_on_array(array: &Vec<Value>, index: &Value) -> eval::Result {
         match *index {
             Value::Integer(i) => {
                 if i < 0 {
@@ -67,7 +67,7 @@ impl SubscriptNode {
         }
     }
 
-    fn eval_on_string(string: &String, index: &Value) -> EvalResult {
+    fn eval_on_string(string: &String, index: &Value) -> eval::Result {
         match *index {
             Value::Integer(i) => {
                 string.chars().nth(i as usize)

@@ -11,6 +11,7 @@ pub use self::value::Value;
 
 use std::error;
 use std::fmt;
+use std::result;
 
 
 /// Error that may have occurred during evaluation.
@@ -27,7 +28,7 @@ impl Error {
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Eval error: {}", self.message)
     }
 }
@@ -39,12 +40,10 @@ impl error::Error for Error {
 
 
 /// Result of an evaluation attempt.
-pub type EvalResult = Result<Value, Error>;
-// TODO(xion): rename it to just Result, so it'll be used as eval::Result
-// (open question: how to refer to it within the eval package itself?)
+pub type Result = result::Result<Value, Error>;
 
 
 /// Trait for objects that can be evaluated within given Context.
 pub trait Eval : fmt::Debug {
-    fn eval(&self, context: &Context) -> EvalResult;
+    fn eval(&self, context: &Context) -> Result;
 }

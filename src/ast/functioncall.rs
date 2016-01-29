@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use eval::{Eval, EvalResult, Context};
+use eval::{self, Eval, Context};
 
 
 /// Represents a call to a function with given name and arguments.
@@ -26,7 +26,7 @@ impl fmt::Debug for FunctionCallNode {
 
 
 impl Eval for FunctionCallNode {
-    fn eval(&self, context: &Context) -> EvalResult {
+    fn eval(&self, context: &Context) -> eval::Result {
         // evaluate all the arguments first, bail if any of that fails
         let evals: Vec<_> =
             self.args.iter().map(|x| x.eval(&context)).collect();
