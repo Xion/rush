@@ -26,7 +26,7 @@ fn main() {
     let mut options = Options::new();
     options.optflag("h", "help", "Show this usage message");
     options.optflag("p", "parse", "Only parse the expression, printing AST");
-    options.optflag("l", "lines", "Apply the expression once to the array of lines of text in input");
+    options.optflag("a", "array", "Treat the input as array of lines to apply the expression to");
 
     let args = options.parse(&argv[1..]).unwrap();
     if args.opt_present("h") {
@@ -50,7 +50,7 @@ fn main() {
         // apply the expression either to every line separately,
         // or the whole input as an array of lines
         let apply: fn(_, _, _) -> _ =
-            if args.opt_present("l") { ap::reduce } else { ap:: map };
+            if args.opt_present("a") { ap::reduce } else { ap:: map };
         if let Err(error) = apply(expr, io::stdin(), &mut io::stdout()) {
             error!("{:?}", error);
             exit(1);
