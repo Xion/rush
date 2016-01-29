@@ -132,7 +132,7 @@ macro_rules! eval2 {
     // (left: Foo, right: Bar) -> Baz where (pre()) { foo(left, right) }
     (($x:ident: $t1:ident, $y:ident: $t2:ident) -> $rt:ident where ($pre:expr) { $e:expr }) => {
         if let Value::$t1($x) = $x {
-            if let Value::$t2($y) = *$y {
+            if let Value::$t2($y) = $y {
                 if $pre {
                     return Ok(Value::$rt($e));
                 }
