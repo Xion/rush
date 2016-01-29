@@ -134,11 +134,8 @@ impl Functions {
         where F: Fn() -> EvalResult + 'static
     {
         self.define(name, move |args: Args| {
-            if args.len() == 0 {
-                func()
-            } else {
-                Err(Error::new(&format!("invalid number of arguments to {}()", name)))
-            }
+            try!(ensure_argcount(name, &args, 0, 0));
+            func()
         })
     }
 
@@ -146,11 +143,8 @@ impl Functions {
         where F: Fn(Value) -> EvalResult + 'static
     {
         self.define(name, move |args: Args| {
-            if args.len() == 1 {
-                func(args[0].clone())
-            } else {
-                Err(Error::new(&format!("invalid number of arguments to {}()", name)))
-            }
+            try!(ensure_argcount(name, &args, 1, 1));
+            func(args[0].clone())
         })
     }
 
@@ -158,11 +152,8 @@ impl Functions {
         where F: Fn(Value, Value) -> EvalResult + 'static
     {
         self.define(name, move |args: Args| {
-            if args.len() == 2 {
-                func(args[0].clone(), args[1].clone())
-            } else {
-                Err(Error::new(&format!("invalid number of arguments to {}()", name)))
-            }
+            try!(ensure_argcount(name, &args, 2, 2));
+            func(args[0].clone(), args[1].clone())
         })
     }
 
@@ -170,11 +161,25 @@ impl Functions {
         where F: Fn(Value, Value, Value) -> EvalResult + 'static
     {
         self.define(name, move |args: Args| {
-            if args.len() == 3 {
-                func(args[0].clone(), args[1].clone(), args[2].clone())
-            } else {
-                Err(Error::new(&format!("invalid number of arguments to {}()", name)))
-            }
+            try!(ensure_argcount(name, &args, 3, 3));
+            func(args[0].clone(), args[1].clone(), args[2].clone())
         })
     }
+}
+
+/// Make sure a function got the correct number of arguments.
+/// Usage:
+///     try!(ensure_argcount("function", min, max));
+///
+fn ensure_argcount(name: &'static str, args: &Args, min: usize, max: usize) -> Result<(), Error> {
+    let count = args.len();
+    if min <= count && count <= max {
+        return Ok(());
+    }
+
+    let expected = if min == max { format!("{}", min) }
+                   else { format!("{} to {}", min, max) };
+    Err(Error::new(&format!(
+        "invalid number of arguments to {}(): expected {}, got {}", name, expected, count
+    )))
 }
