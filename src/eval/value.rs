@@ -41,45 +41,8 @@ impl Value {
         }
     }
 
-    pub fn map_str<F: FnOnce(&str) -> String>(&self, func: F) -> Option<Value> {
-        if let &Value::String(ref s) = self {
-            return Some(Value::String(func(s)));
-        }
-        None
-    }
-    pub fn map_string<F: FnOnce(String) -> String>(self, func: F) -> Option<Value> {
-        if let Value::String(s) = self {
-            return Some(Value::String(func(s)));
-        }
-        None
-    }
-    pub fn map_int<F: FnOnce(i64) -> i64>(&self, func: F) -> Option<Value> {
-        if let Value::Integer(i) = *self {
-            return Some(Value::Integer(func(i)));
-        }
-        None
-    }
-    pub fn map_float<F: FnOnce(f64) -> f64>(&self, func: F) -> Option<Value> {
-        if let Value::Float(f) = *self {
-            return Some(Value::Float(func(f)));
-        }
-        None
-    }
-    pub fn map_bool<F: FnOnce(bool) -> bool>(&self, func: F) -> Option<Value> {
-        if let Value::Boolean(b) = *self {
-            return Some(Value::Boolean(func(b)));
-        }
-        None
-    }
-    pub fn map_array<F>(self, func: F) -> Option<Value>
-        where F: FnOnce(Vec<Value>) -> Vec<Value>
-    {
-        if let Value::Array(a) = self {
-            return Some(Value::Array(func(a)));
-        }
-        None
-    }
-
+    // TODO(xion): roll those methods into str, int, float, bool builtins
+    // which are their only users
     pub fn to_string_value(&self) -> Option<Value> {
         match *self {
             Value::String(_) => Some(self.clone()),

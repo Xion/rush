@@ -61,4 +61,6 @@ impl AtomNode {
         }
         result
     }
+    // TODO(xion): make a Variables struct (like Functions) owned by Context
+    // and move this method there
 }
