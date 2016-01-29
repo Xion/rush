@@ -107,7 +107,7 @@ impl Functions {
             if let (&Value::String(ref n),
                     &Value::String(ref r),
                     &Value::String(ref h)) = (&needle, &replacement, &haystack) {
-                return Ok(Value::String(h.replace(&n, &r)));
+                return Ok(Value::String(h.replace(n, r)));
             }
             Err(Error::new(&format!(
                 "sub() expects three strings, got: {}, {}, {}",
