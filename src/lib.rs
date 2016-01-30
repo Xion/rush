@@ -11,7 +11,6 @@ extern crate rand;
 extern crate regex;
 
 
-mod ast;
 mod eval;
 mod parse;
 

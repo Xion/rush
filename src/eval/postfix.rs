@@ -1,8 +1,7 @@
 //! Module implementing the evaluation of postfix operators.
 
-use ast::{FunctionCallNode, SubscriptNode};
-
 use eval::{self, Context, Eval, Value};
+use parse::ast::{FunctionCallNode, SubscriptNode};
 
 
 /// Evaluate the function call AST node.
@@ -37,6 +36,7 @@ impl Eval for SubscriptNode {
         }
     }
 }
+
 impl SubscriptNode {
     // TODO(xion): consider supporting Python-style negative indices
 

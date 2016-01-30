@@ -1,9 +1,8 @@
 //! Module implementing evaluation of the "atomic" expressions,
 //! i.e. those that create the values that are then operated upon.
 
-use ast::{ArrayNode, AtomNode};
-
 use eval::{self, Context, Eval, Value};
+use parse::ast::{ArrayNode, AtomNode};
 
 
 /// Evaluate the AST node representing a scalar value.

@@ -2,8 +2,8 @@
 
 use std::iter;
 
-use ast::{BinaryOpNode, UnaryOpNode};
 use eval::{self, Context, Eval, Value};
+use parse::ast::{BinaryOpNode, UnaryOpNode};
 
 
 /// Evaluate the unary operator AST node.
@@ -20,6 +20,7 @@ impl Eval for UnaryOpNode {
         }
     }
 }
+
 impl UnaryOpNode {
     /// Evaluate the "+" operator for one value.
     fn eval_plus(arg: Value) -> eval::Result {
@@ -70,6 +71,7 @@ impl Eval for BinaryOpNode {
         Ok(result)
     }
 }
+
 impl BinaryOpNode {
     /// Evaluate the "+" operator for two values.
     fn eval_plus(left: Value, right: Value) -> eval::Result {

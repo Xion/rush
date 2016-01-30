@@ -7,7 +7,7 @@ use std::str::from_utf8;
 
 use nom::{self, alpha, alphanumeric, multispace, IResult};
 
-use ast::*;
+use super::ast::*;
 use eval::{Eval, Value};
 
 

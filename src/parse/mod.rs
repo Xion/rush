@@ -3,6 +3,7 @@
 mod error;
 mod syntax;
 
+pub mod ast;
 pub use self::error::ParseError;
 
 
