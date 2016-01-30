@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use eval::{self, Eval, Context};
+use eval::Eval;
 
 
 /// Represents a call to a function with given name and arguments.
@@ -14,7 +14,6 @@ pub struct FunctionCallNode {
     pub args: Vec<Box<Eval>>,
 }
 
-
 impl fmt::Debug for FunctionCallNode {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "<Call: {}({})>", self.name,
@@ -24,18 +23,3 @@ impl fmt::Debug for FunctionCallNode {
     }
 }
 
-
-impl Eval for FunctionCallNode {
-    fn eval(&self, context: &Context) -> eval::Result {
-        // evaluate all the arguments first, bail if any of that fails
-        let evals: Vec<_> =
-            self.args.iter().map(|x| x.eval(&context)).collect();
-        if let Some(res) = evals.iter().find(|r| r.is_err()) {
-            return res.clone();
-        }
-
-        // extract the argument values and call the function
-        let args = evals.iter().map(|r| r.clone().ok().unwrap()).collect();
-        context.call_func(&self.name, args)
-    }
-}

@@ -3,7 +3,7 @@
 use std::fmt;
 use std::str::FromStr;
 
-use eval::{self, Eval, Context, Value};
+use eval::Value;
 
 
 /// Represents the smallest, indivisible unit of an expression: a single value.
@@ -11,25 +11,16 @@ pub struct AtomNode {
     pub value: Value,
 }
 
-
 impl fmt::Debug for AtomNode {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "<Atom: {:?}>", self.value)
     }
 }
 
-
 impl FromStr for AtomNode {
     type Err = <Value as FromStr>::Err;
 
     fn from_str(s: &str) -> Result<AtomNode, Self::Err> {
         s.parse::<Value>().map(|v| AtomNode{value: v})
-    }
-}
-
-
-impl Eval for AtomNode {
-    fn eval(&self, context: &Context) -> eval::Result {
-        Ok(context.resolve(&self.value))
     }
 }

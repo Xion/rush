@@ -2,6 +2,10 @@
 
 mod model;
 
+mod atoms;
+mod infix;
+mod postfix;
+
 pub use self::model::{Context, Value};
 
 
