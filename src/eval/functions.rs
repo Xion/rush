@@ -1,4 +1,5 @@
-/// Functions available to the expressions.
+/// Module implementing data structures for holding functions
+/// that available to the expressions.
 
 use std::collections::HashMap;
 use std::ptr;

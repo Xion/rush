@@ -30,37 +30,6 @@ impl FromStr for AtomNode {
 
 impl Eval for AtomNode {
     fn eval(&self, context: &Context) -> eval::Result {
-        Ok(self.resolve(&context))
+        Ok(context.resolve(&self.value))
     }
-}
-
-
-impl AtomNode {
-    /// Create the node from a Value.
-    pub fn new(value: Value) -> AtomNode {
-        AtomNode{value: value}
-    }
-
-    /// Resolve a possible variable reference against given context.
-    ///
-    /// Returns the variable's Value (which may be just variable name as string),
-    /// or a copy of the original Value if it wasn't a reference.
-    fn resolve(&self, context: &Context) -> Value {
-        let mut result = self.value.clone();
-
-        // follow the chain of references until it bottoms out
-        loop {
-            match result {
-                Value::Symbol(sym) => {
-                    result = context.get_var(&sym)
-                        .map(Value::clone)
-                        .unwrap_or_else(move || Value::String(sym));
-                }
-                _ => { break; }
-            }
-        }
-        result
-    }
-    // TODO(xion): make a Variables struct (like Functions) owned by Context
-    // and move this method there
 }

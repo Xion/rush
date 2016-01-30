@@ -1,13 +1,8 @@
 //! Evaluation context.
 
-use std::collections::HashMap;
-
 use super::functions::{Args, Functions};
 use super::value::Value;
-
-
-/// Type for a container of variables within a scope.
-type Variables = HashMap<String, Value>;
+use super::variables::Variables;
 
 
 /// Evaluation context for an expression.
@@ -32,17 +27,13 @@ impl Context {
     /// Set a value for a variable.
     /// If the variable didn't exist before, it is created.
     pub fn set_var(&mut self, name: &str, value: Value) {
-        let name = name.to_string();
-        if let Some(val) = self.vars.get_mut(&name) {
-            *val = value;
-            return
-        }
-        self.vars.insert(name, value);
+        self.vars.set(name, value)
     }
 
-    /// Set a string value for a variable.
-    pub fn set_str_var(&mut self, name: &str, value: &str) {
-        self.set_var(name, Value::String(value.to_string()))
+    /// Resolve given value, producing either it's copy
+    /// or a value of a variable it's referring to.
+    pub fn resolve(&self, value: &Value) -> Value {
+        self.vars.resolve(value)
     }
 
     /// Call a function of given name with given arguments.

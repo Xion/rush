@@ -153,12 +153,12 @@ named!(array_value( &[u8] ) -> Box<Eval>, map!(
 ));
 
 named!(bool_value( &[u8] ) -> Box<Eval>, alt!(
-    tag!("false") => { |_| Box::new(AtomNode::new(Value::Boolean(false))) } |
-    tag!("true") => { |_| Box::new(AtomNode::new(Value::Boolean(true))) }
+    tag!("false") => { |_| Box::new(AtomNode{value: Value::Boolean(false)}) } |
+    tag!("true") => { |_| Box::new(AtomNode{value: Value::Boolean(true)}) }
 ));
 
 named!(symbol_value( &[u8] ) -> Box<Eval>, map!(identifier, |value: String| {
-    Box::new(AtomNode::new(Value::Symbol(value)))
+    Box::new(AtomNode{value: Value::Symbol(value)})
 }));
 named!(identifier( &[u8] ) -> String, alt!(
     map!(
@@ -186,7 +186,7 @@ named!(identifier( &[u8] ) -> String, alt!(
 ));
 
 named!(int_value( &[u8] ) -> Box<Eval>, map_res!(int_literal, |value: String| {
-    value.parse::<i64>().map(|i| Box::new(AtomNode::new(Value::Integer(i))))
+    value.parse::<i64>().map(|i| Box::new(AtomNode{value: Value::Integer(i)}))
 }));
 named!(int_literal( &[u8] ) -> String, alt!(
     map_res!(
@@ -201,7 +201,7 @@ named!(int_literal( &[u8] ) -> String, alt!(
 ));
 
 named!(float_value( &[u8] ) -> Box<Eval>, map_res!(float_literal, |value: String| {
-    value.parse::<f64>().map(|f| Box::new(AtomNode::new(Value::Float(f))))
+    value.parse::<f64>().map(|f| Box::new(AtomNode{value: Value::Float(f)}))
 }));
 fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
     let (_, input) = try_parse!(input, expr_res!(from_utf8(input)));
@@ -227,7 +227,7 @@ fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
 
 // TODO(xion): quote escaping
 named!(string_value( &[u8] ) -> Box<Eval>, map!(string_literal, |value: String| {
-    Box::new(AtomNode::new(Value::String(value)))
+    Box::new(AtomNode{value: Value::String(value)})
 }));
 named!(string_literal( &[u8] ) -> String, string!(
     preceded!(tag!("\""), take_until_and_consume!("\""))
