@@ -9,6 +9,27 @@ use std::str::FromStr;
 use eval::{Eval, Value};
 
 
+/// AST node representing the smallest, indivisible unit of an expression:
+/// a single scalar value.
+pub struct ScalarNode {
+    pub value: Value,
+}
+
+impl fmt::Debug for ScalarNode {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "<Atom: {:?}>", self.value)
+    }
+}
+
+impl FromStr for ScalarNode {
+    type Err = <Value as FromStr>::Err;
+
+    fn from_str(s: &str) -> Result<ScalarNode, Self::Err> {
+        s.parse::<Value>().map(|v| ScalarNode{value: v})
+    }
+}
+
+
 /// AST node representing the expression for creating a new array of values.
 pub struct ArrayNode {
     pub elements: Vec<Box<Eval>>
@@ -19,27 +40,6 @@ impl fmt::Debug for ArrayNode {
         write!(fmt, "<Array: [{}]>", self.elements.iter()
             .map(|ref elem| format!("{:?}", elem))
             .collect::<Vec<String>>().join(","))
-    }
-}
-
-
-/// AST node representing the smallest, indivisible unit of an expression:
-/// a single scalar value.
-pub struct AtomNode {
-    pub value: Value,
-}
-
-impl fmt::Debug for AtomNode {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "<Atom: {:?}>", self.value)
-    }
-}
-
-impl FromStr for AtomNode {
-    type Err = <Value as FromStr>::Err;
-
-    fn from_str(s: &str) -> Result<AtomNode, Self::Err> {
-        s.parse::<Value>().map(|v| AtomNode{value: v})
     }
 }
 

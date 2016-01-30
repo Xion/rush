@@ -2,11 +2,11 @@
 //! i.e. those that create the values that are then operated upon.
 
 use eval::{self, Context, Eval, Value};
-use parse::ast::{ArrayNode, AtomNode};
+use parse::ast::{ArrayNode, ScalarNode};
 
 
 /// Evaluate the AST node representing a scalar value.
-impl Eval for AtomNode {
+impl Eval for ScalarNode {
     fn eval(&self, context: &Context) -> eval::Result {
         Ok(context.resolve(&self.value))
     }
