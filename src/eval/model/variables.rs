@@ -1,5 +1,5 @@
-/// Module implementing data structures for holding variables
-/// that are available to -- and can be modified by -- the evaluated expressions.
+//! Module implementing data structures for holding variables
+//! that are available to -- and can be modified by -- the evaluated expressions.
 
 use std::collections::HashMap;
 

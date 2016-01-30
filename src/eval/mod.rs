@@ -1,12 +1,8 @@
 //! Module implementing evaluation of parsed expressions.
 
-mod context;
-mod functions;
-mod value;
-mod variables;
+mod model;
 
-pub use self::context::Context;
-pub use self::value::Value;
+pub use self::model::{Context, Value};
 
 
 use std::error;

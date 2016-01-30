@@ -1,13 +1,12 @@
-/// Module implementing data structures for holding functions
-/// that available to the expressions.
+//! Module implementing data structures for holding functions
+//! that available to the expressions.
 
 use std::collections::HashMap;
 use std::ptr;
 
 use rand;
 
-use eval;
-use super::Error;
+use eval::{self, Error};
 use super::value::Value;
 
 

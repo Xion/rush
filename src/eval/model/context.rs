@@ -1,5 +1,6 @@
 //! Evaluation context.
 
+use eval;
 use super::functions::{Args, Functions};
 use super::value::Value;
 use super::variables::Variables;
@@ -38,7 +39,7 @@ impl Context {
 
     /// Call a function of given name with given arguments.
     /// Returns Some(result), or None if the function couldn't be found.
-    pub fn call_func(&self, name: &str, args: Args) -> super::Result {
+    pub fn call_func(&self, name: &str, args: Args) -> eval::Result {
         self.funcs.call(name, args)
     }
 }
