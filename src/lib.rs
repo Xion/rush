@@ -10,10 +10,6 @@ extern crate log;
 extern crate rand;
 extern crate regex;
 
-// TODO(xion): once evaluation of AST nodes is part of `eval` and not `ast`,
-// move this `util` module back into `eval`
-#[macro_use]
-mod util;
 
 mod ast;
 mod eval;
