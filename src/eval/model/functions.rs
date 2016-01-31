@@ -26,90 +26,18 @@ impl Functions {
 
         fs.define_nullary("rand", api::rand);
 
-        fs.define_unary("rev", |value| {
-            // TODO(xion): since this reverses chars not graphemes,
-            // it mangles some non-Latin strings;
-            // fix with unicode-segmentation crate
-            eval1!(value : &String { value.chars().rev().collect() });
-            Err(Error::new(&format!(
-                "rev() requires a string, got {}", value.typename()
-            )))
-        });
-        fs.define_unary("abs", |value| {
-            eval1!(value : Integer { value.abs() });
-            eval1!(value : Float { value.abs() });
-            Err(Error::new(&format!(
-                "abs() requires a number, got {}", value.typename()
-            )))
-        });
-        fs.define_unary("len", |value| {
-            eval1!((value: &String) -> Integer { value.len() as i64 });
-            eval1!((value: &Array) -> Integer { value.len() as i64 });
-            Err(Error::new(&format!(
-                "len() requires string or array, got {}", value.typename()
-            )))
-        });
-        fs.define_unary("str", |value| {
-            value.to_string_value().ok_or_else(|| Error::new(
-                &format!("cannot convert {} to string", value.typename())
-            ))
-        });
-        fs.define_unary("int", |value| {
-             value.to_int_value().ok_or_else(|| Error::new(
-                &format!("cannot convert {} to int", value.typename())
-            ))
-        });
-        fs.define_unary("float", |value| {
-            value.to_float_value().ok_or_else(|| Error::new(
-                &format!("cannot convert {} to float", value.typename())
-            ))
-        });
-        fs.define_unary("bool", |value| {
-            value.to_bool_value().ok_or_else(|| Error::new(
-                &format!("cannot convert {} to bool", value.typename())
-            ))
-        });
+        fs.define_unary("rev", api::rev);
+        fs.define_unary("abs", api::abs);
+        fs.define_unary("len", api::len);
+        fs.define_unary("str", api::str);
+        fs.define_unary("int", api::int);
+        fs.define_unary("float", api::float);
+        fs.define_unary("bool", api::bool);
 
-        fs.define_binary("split", |string, delim| {
-            eval2!((string: &String, delim: &String) -> Array {
-                string.split(delim).map(str::to_owned).map(Value::String).collect()
-            });
-            Err(Error::new(&format!(
-                "split() expects two strings, got: {}, {}",
-                string.typename(), delim.typename()
-            )))
-        });
-        fs.define_binary("join", |array, delim| {
-            if let (&Value::Array(ref a),
-                    &Value::String(ref d)) = (&array, &delim) {
-                let strings: Vec<_> =  a.iter()
-                    .map(Value::to_string_value).filter(Option::is_some)
-                    .map(Option::unwrap).map(Value::unwrap_string)
-                    .collect();
-                if strings.len() == a.len() {
-                    return Ok(Value::String(strings.join(&d)));
-                }
-            }
-            Err(Error::new(&format!(
-                "join() expects an array and string, got: {}, {}",
-                array.typename(), delim.typename()
-            )))
-        });
+        fs.define_binary("split", api::split);
+        fs.define_binary("join", api::join);
 
-        // TODO(xion): allow this function to accept just two arguments,
-        // with the third one being an implicit reference to the default var
-        // (requires allowing functions to access the Context)
-        fs.define_ternary("sub", |needle, replacement, haystack| {
-            if let (&Value::String(ref n),
-                    &Value::String(ref r),
-                    &Value::String(ref h)) = (&needle, &replacement, &haystack) {
-                return Ok(Value::String(h.replace(n, r)));
-            }
-            Err(Error::new(&format!(
-                "sub() expects three strings, got: {}, {}, {}",
-                needle.typename(), replacement.typename(), haystack.typename()
-            )))
-        });
+        fs.define_ternary("sub", api::sub);
 
         return fs;
     }
@@ -183,7 +111,7 @@ impl Functions {
 /// Usage:
 ///     try!(ensure_argcount("function", min, max));
 ///
-fn ensure_argcount(name: &'static str, args: &Args, min: usize, max: usize) -> Result<(), Error> {
+fn ensure_argcount(name: &str, args: &Args, min: usize, max: usize) -> Result<(), Error> {
     let count = args.len();
     if min <= count && count <= max {
         return Ok(());
