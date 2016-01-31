@@ -4,9 +4,7 @@
 use std::collections::HashMap;
 use std::ptr;
 
-use rand;
-
-use eval::{self, Error};
+use eval::{self, api, Error};
 use super::value::Value;
 
 
@@ -26,7 +24,7 @@ impl Functions {
     pub fn new() -> Functions {
         let mut fs = Functions{funcs: HashMap::new()};
 
-        fs.define_nullary("rand", || Ok(Value::Float(rand::random::<f64>())));
+        fs.define_nullary("rand", api::rand);
 
         fs.define_unary("rev", |value| {
             // TODO(xion): since this reverses chars not graphemes,

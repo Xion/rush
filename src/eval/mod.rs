@@ -4,6 +4,7 @@
 mod util;
 mod model;
 
+mod api;
 mod atoms;
 mod infix;
 mod postfix;
