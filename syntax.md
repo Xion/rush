@@ -6,8 +6,8 @@ Expression syntax overview
 
 * string (default if no explicit annotation/function/coercion is used)
 * number: int or float
+* booleans (true or false)
 
-TODO(xion): arrays?
 TODO(xion): hashmaps?? (for JSON maybe)
 
 ## Identifiers & values
@@ -64,7 +64,7 @@ TODO(xion): Haskell-like syntax for (partial application of) operator functions:
 All "special" characters (incl. braces, brackets, all symbols on the numeric row, and semicolon)
 are reserved for possible future use. If string is to contain them, it must be surrounded by quotes.
 
-TODO(xion): reserve some keywords, e.g.: if else while for do.
+Some possible future keywords are also reserved, e.g.: if else while for do.
 
 ## Execution
 
