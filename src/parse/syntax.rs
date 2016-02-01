@@ -93,6 +93,9 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
 
 /// factor ::== [UNARY_OP] (function_call | atom) subscript*
 named!(factor( &[u8] ) -> Box<Eval>, chain!(
+    // TODO(xion): is_a! causes the parser to greedily consume all operator chars,
+    // interpreting `---a` as `---` operator rather than 3x`-`;
+    // one_of! could fix that but it seems incompatible with &[u8]-based parsers
     maybe_op: opt!(string!(multispaced!(is_a!(UNARY_OPS)))) ~
     factor: alt!(
         // complete!(...) is necessary because `atom` can be a prefix

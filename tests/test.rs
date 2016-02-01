@@ -257,8 +257,6 @@ fn binary_plus_constant_strings() {
     assert_eq!("barbaz", eval("bar + \"baz\""));
 }
 
-// TODO(xion): tests for multiplication, division, string formatting
-
 #[test]
 fn binary_minus_constant_integers() {
     assert_eq!("0", eval("0 - 0"));
@@ -278,6 +276,8 @@ fn binary_minus_constant_floats() {
     assert_eq!("-2.0", eval("-1.0 - 1.0"));
     assert_eq!("1.0", eval("-3.0 - -4.0"));
 }
+
+// TODO(xion): tests for multiplication, division, string formatting
 
 #[test]
 fn subscript_of_array_constant() {
