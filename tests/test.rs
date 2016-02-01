@@ -211,15 +211,15 @@ fn unary_plus_boolean() {
 #[test]
 fn unary_minus_integer() {
     const INPUT: &'static str = "42";
-    let expected = format!("-{}", INPUT);
-    assert_eq!(expected, apply("-_", INPUT));
+    let negated = format!("-{}", INPUT);
+    assert_eq!(negated, apply("-_", INPUT));
 }
 
 #[test]
 fn unary_minus_float() {
     const INPUT: &'static str = "42.42";
-    let expected = format!("-{}", INPUT);
-    assert_eq!(expected, apply("-_", INPUT));
+    let negated = format!("-{}", INPUT);
+    assert_eq!(negated, apply("-_", INPUT));
 }
 
 #[test]
@@ -257,7 +257,27 @@ fn binary_plus_constant_strings() {
     assert_eq!("barbaz", eval("bar + \"baz\""));
 }
 
-// TODO(xion): tests for binary minus, multiplication, division, string formatting
+// TODO(xion): tests for multiplication, division, string formatting
+
+#[test]
+fn binary_minus_constant_integers() {
+    assert_eq!("0", eval("0 - 0"));
+    assert_eq!("2", eval("2 - 0"));
+    assert_eq!("3", eval("5 - 2"));
+    assert_eq!("-4", eval("1 - 5"));
+    assert_eq!("-2", eval("-1 - 1"));
+    assert_eq!("1", eval("-3 - -4"));
+}
+
+#[test]
+fn binary_minus_constant_floats() {
+    assert_eq!("0.0", eval("0.0 - 0.0"));
+    assert_eq!("2.0", eval("2.0 - 0.0"));
+    assert_eq!("3.0", eval("5.0 - 2.0"));
+    assert_eq!("-4.0", eval("1.0 - 5.0"));
+    assert_eq!("-2.0", eval("-1.0 - 1.0"));
+    assert_eq!("1.0", eval("-3.0 - -4.0"));
+}
 
 #[test]
 fn subscript_of_array_constant() {
