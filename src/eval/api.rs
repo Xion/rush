@@ -1,7 +1,7 @@
 //! API that's available out-of-the-box to the expressions.
 //! It is essentially the standard library of the language.
 
-use rand as _rand;
+use rand::random;
 
 use eval::{self, Error};
 use super::model::Value;
@@ -27,42 +27,75 @@ pub fn abs(value: Value) -> eval::Result {
 
 /// Generate a random floating point number from the 0..1 range.
 pub fn rand() -> eval::Result {
-    Ok(Value::Float(_rand::random::<f64>()))
+    Ok(Value::Float(random()))
 }
 
 
 // Conversions
 
 /// Convert a value to string.
-pub fn str(value: Value) -> eval::Result {
-    value.to_string_value().ok_or_else(|| Error::new(
-        &format!("cannot convert {} to string", value.typename())
-    ))
+pub fn str_(value: Value) -> eval::Result {
+    match value {
+        Value::String(_) => Ok(value),
+        Value::Integer(i) => Ok(Value::String(i.to_string())),
+        Value::Float(f) => Ok(Value::String(f.to_string())),
+        Value::Boolean(b) => Ok(Value::String((
+            if b { "true" } else { "false" }
+        ).to_string())),
+        _ => Err(Error::new(
+            &format!("cannot convert {} to string", value.typename())
+        )),
+    }
 }
 
 /// Convert a value to an integer.
 pub fn int(value: Value) -> eval::Result {
-     value.to_int_value().ok_or_else(|| Error::new(
-        &format!("cannot convert {} to int", value.typename())
-    ))
+    match value {
+        Value::String(ref s) => s.parse::<i64>()
+            .map_err(|_| Error::new(&format!("invalid integer value: {}", s)))
+            .map(Value::Integer),
+        Value::Integer(_) => Ok(value),
+        Value::Float(f) => Ok(Value::Integer(f as i64)),
+        Value::Boolean(b) => Ok(Value::Integer(if b { 1 } else { 0 })),
+        _ => Err(Error::new(
+            &format!("cannot convert {} to int", value.typename())
+        )),
+    }
 }
 
 /// Convert a value to a float.
 pub fn float(value: Value) -> eval::Result {
-    value.to_float_value().ok_or_else(|| Error::new(
-        &format!("cannot convert {} to float", value.typename())
-    ))
+    match value {
+        Value::String(ref s) => s.parse::<f64>()
+            .map_err(|_| Error::new(&format!("invalid float value: {}", s)))
+            .map(Value::Float),
+        Value::Integer(i) => Ok(Value::Float(i as f64)),
+        Value::Float(_) => Ok(value),
+        Value::Boolean(b) => Ok(Value::Float(if b { 1.0 } else { 0.0 })),
+        _ => Err(Error::new(
+            &format!("cannot convert {} to float", value.typename())
+        )),
+    }
 }
 
 /// Convert a value to a boolean, based on its "truthy" value.
 pub fn bool(value: Value) -> eval::Result {
-    value.to_bool_value().ok_or_else(|| Error::new(
-        &format!("cannot convert {} to bool", value.typename())
-    ))
+    match value {
+        Value::String(ref s) => s.parse::<bool>()
+            .map_err(|_| Error::new(&format!("invalid bool value: {}", s)))
+            .map(Value::Boolean),
+        Value::Integer(i) => Ok(Value::Boolean(i != 0)),
+        Value::Float(f) => Ok(Value::Boolean(f != 0.0)),
+        Value::Boolean(_) => Ok(value),
+        Value::Array(ref a) => Ok(Value::Boolean(a.len() > 0)),
+        _ => Err(Error::new(
+            &format!("cannot convert {} to bool", value.typename())
+        )),
+    }
 }
 
 
-// Strings
+// String functions
 
 /// Reverse the character in a string.
 pub fn rev(string: Value) -> eval::Result {
@@ -92,13 +125,17 @@ pub fn join(array: Value, delim: Value) -> eval::Result {
     if let (&Value::Array(ref a),
             &Value::String(ref d)) = (&array, &delim) {
         let strings: Vec<_> =  a.iter()
-            .map(Value::to_string_value).filter(Option::is_some)
-            .map(Option::unwrap).map(Value::unwrap_string)
+            .map(|v| str_(v.clone())).filter(Result::is_ok)
+            .map(Result::unwrap).map(Value::unwrap_string)
             .collect();
-        if strings.len() == a.len() {
+        let error_count = strings.len() - a.len();
+        if error_count == 0 {
             return Ok(Value::String(strings.join(&d)));
+        } else {
+            return Err(Error::new(&format!(
+                "join() failed to stringify {} element(s) of the input array",
+                error_count)));
         }
-        // TODO(xion): error if not every element stringifies correctly
     }
     Err(Error::new(&format!(
         "join() expects an array and string, got: {}, {}",

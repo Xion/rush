@@ -29,7 +29,7 @@ impl Functions {
         fs.define_unary("rev", api::rev);
         fs.define_unary("abs", api::abs);
         fs.define_unary("len", api::len);
-        fs.define_unary("str", api::str);
+        fs.define_unary("str", api::str_);
         fs.define_unary("int", api::int);
         fs.define_unary("float", api::float);
         fs.define_unary("bool", api::bool);

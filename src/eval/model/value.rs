@@ -41,54 +41,6 @@ impl Value {
         }
     }
 
-    // TODO(xion): roll those methods into str, int, float, bool builtins
-    // which are their only users
-    pub fn to_string_value(&self) -> Option<Value> {
-        match *self {
-            Value::String(_) => Some(self.clone()),
-            Value::Integer(i) => Some(Value::String(i.to_string())),
-            Value::Float(f) => Some(Value::String(f.to_string())),
-            Value::Boolean(b) => Some(Value::String((
-                if b { "true" } else { "false" }
-            ).to_string())),
-            _ => None,
-        }
-    }
-    pub fn to_int_value(&self) -> Option<Value> {
-        match *self {
-            Value::String(ref s) => s.parse::<i64>().ok().map(Value::Integer),
-            Value::Integer(_) => Some(self.clone()),
-            Value::Float(f) => Some(Value::Integer(f as i64)),
-            Value::Boolean(b) => Some(Value::Integer(if b { 1 } else { 0 })),
-            _ => None,
-        }
-    }
-    pub fn to_float_value(&self) -> Option<Value> {
-        match *self {
-            Value::String(ref s) => s.parse::<f64>().ok().map(Value::Float),
-            Value::Integer(i) => Some(Value::Float(i as f64)),
-            Value::Float(_) => Some(self.clone()),
-            Value::Boolean(b) => Some(Value::Float(if b { 1.0 } else { 0.0 })),
-            _ => None,
-        }
-    }
-    pub fn to_bool_value(&self) -> Option<Value> {
-        match *self {
-            Value::String(ref s) => s.parse::<bool>().ok().map(Value::Boolean),
-            Value::Integer(i) => Some(Value::Boolean(i != 0)),
-            Value::Float(f) => Some(Value::Boolean(f != 0.0)),
-            Value::Boolean(_) => Some(self.clone()),
-            Value::Array(ref a) => Some(Value::Boolean(a.len() > 0)),
-            _ => None,
-        }
-    }
-    pub fn to_array_value(&self) -> Option<Value> {
-        match *self {
-            Value::Array(_) => Some(self.clone()),
-            _ => None,
-        }
-    }
-
     pub fn unwrap_string(self) -> String {
         match self {
             Value::String(s) => s,
