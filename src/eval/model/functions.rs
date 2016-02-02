@@ -2,7 +2,6 @@
 //! that available to the expressions.
 
 use std::collections::HashMap;
-use std::ptr;
 
 use eval::{self, api, Error};
 use super::value::Value;
@@ -64,45 +63,35 @@ impl Functions {
         })
     }
 
-    // The `unsafe` blocks in the functions below are in fact
-    // perfectly safe, thanks to ensure_argcount() and the fact that we're
-    // not using the `args` for anything else after calling `func`.
-
     fn define_unary<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn(Value) -> eval::Result + 'static
     {
-        self.define(name, move |args: Args| {
+        self.define(name, move |mut args: Args| {
             try!(ensure_argcount(name, &args, 1, 1));
-            unsafe {
-                let args = args.as_ptr();
-                func(ptr::read(args.offset(0)))
-            }
+            let mut args = args.drain(..);
+            func(args.next().unwrap())
         })
     }
 
     fn define_binary<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn(Value, Value) -> eval::Result + 'static
     {
-        self.define(name, move |args: Args| {
+        self.define(name, move |mut args: Args| {
             try!(ensure_argcount(name, &args, 2, 2));
-            unsafe {
-                let args = args.as_ptr();
-                func(ptr::read(args.offset(0)), ptr::read(args.offset(1)))
-            }
+            let mut args = args.drain(..);
+            func(args.next().unwrap(), args.next().unwrap())
         })
     }
 
     fn define_ternary<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn(Value, Value, Value) -> eval::Result + 'static
     {
-        self.define(name, move |args: Args| {
+        self.define(name, move |mut args: Args| {
             try!(ensure_argcount(name, &args, 3, 3));
-            unsafe {
-                let args = args.as_ptr();
-                func(ptr::read(args.offset(0)),
-                     ptr::read(args.offset(1)),
-                     ptr::read(args.offset(2)))
-            }
+            let mut args = args.drain(..);
+            func(args.next().unwrap(),
+                 args.next().unwrap(),
+                 args.next().unwrap())
         })
     }
 }
