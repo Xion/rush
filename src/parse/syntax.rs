@@ -39,6 +39,27 @@ macro_rules! multispaced (
     );
 );
 
+/// Matches exactly one character from the specified string.
+/// This is like one_of!, but returns the matched char as &[u8] (assumming UTF8).
+macro_rules! char_of {
+    ($i:expr, $inp:expr) => ({
+        // For some inexplicable reasons, implementing this straightforwardly
+        // as a macro doesn't provide enough type information in certain cases
+        // (e.g. string!(multispaced!(char_of!(UNARY_OPS)))).
+        // However, defining an auxiliary function and just calling it
+        // seems to do the trick.
+
+        #[inline(always)]
+        fn _char_of(ops: &'static str) -> Box<Fn(&[u8]) -> IResult<&[u8], &[u8]>> {
+            Box::new(move |input| {
+                let (rest, c) = try_parse!(input, one_of!(ops));
+                IResult::Done(rest, &input[0..c.len_utf8()])
+            })
+        }
+        _char_of($inp)($i)
+    });
+}
+
 
 // Grammar constants.
 
@@ -65,7 +86,7 @@ named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: argument, || { e }));
 named!(argument( &[u8] ) -> Box<Eval>, chain!(
     first: term ~
     rest: many0!(pair!(
-        string!(multispaced!(is_a!(ADDITIVE_BINARY_OPS))),
+        string!(multispaced!(char_of!(ADDITIVE_BINARY_OPS))),
         term
     )),
     move || {
@@ -80,7 +101,7 @@ named!(argument( &[u8] ) -> Box<Eval>, chain!(
 named!(term( &[u8] ) -> Box<Eval>, chain!(
     first: factor ~
     rest: many0!(pair!(
-        string!(multispaced!(is_a!(MULTIPLICATIVE_BINARY_OPS))),
+        string!(multispaced!(char_of!(MULTIPLICATIVE_BINARY_OPS))),
         factor
     )),
     move || {
@@ -93,14 +114,11 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
 
 /// factor ::== [UNARY_OP] (function_call | atom) subscript*
 named!(factor( &[u8] ) -> Box<Eval>, chain!(
-    // TODO(xion): is_a! causes the parser to greedily consume all operator chars,
-    // interpreting `---a` as `---` operator rather than 3x`-`;
-    // one_of! could fix that but it seems incompatible with &[u8]-based parsers
     maybe_op: opt!(string!(multispaced!(is_a!(UNARY_OPS)))) ~
     factor: alt!(
         // complete!(...) is necessary because `atom` can be a prefix
         // of `function_call`. Otherwise, trying to parse an atom
-        // as function call will result  in incomplete input
+        // as function call will result in incomplete input
         // (because the pair of parentheses is "missing").
         // Using complete! forces the parses to interpret this IResult::Incomplete
         // as error (and thus try the `atom` branch) rather than bubble it up.
@@ -165,6 +183,9 @@ named!(symbol_value( &[u8] ) -> Box<Eval>, map!(identifier, |value: String| {
 }));
 named!(identifier( &[u8] ) -> String, alt!(
     map!(
+        // TODO(xion): we should use char_of! instead of is_a! here
+        // to prohibit nonsensical suffixes longer than one char,
+        // but it inexplicably fails; investigate
         pair!(string!(tag!("_")), opt!(string!(is_a!(UNDERSCORE_SUFFIXES)))),
         |(uscore, maybe_suffix) : (String, Option<String>)| {
             let mut result = uscore;
