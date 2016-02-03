@@ -114,8 +114,8 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
 
 /// factor ::== [UNARY_OP] (function_call | atom) subscript*
 named!(factor( &[u8] ) -> Box<Eval>, chain!(
-    maybe_op: opt!(string!(multispaced!(is_a!(UNARY_OPS)))) ~
-    factor: alt!(
+    mut ops: many0!(string!(multispaced!(char_of!(UNARY_OPS)))) ~
+    mut factor: alt!(
         // complete!(...) is necessary because `atom` can be a prefix
         // of `function_call`. Otherwise, trying to parse an atom
         // as function call will result in incomplete input
@@ -132,16 +132,19 @@ named!(factor( &[u8] ) -> Box<Eval>, chain!(
     move || {
         // subscripting has higher priority than any possible unary operators,
         // so we build the AST node(s) for that first
-        let mut factor = factor;
         for subscript in subscripts {
             factor = Box::new(
                 SubscriptNode{object: factor, index: subscript}
-            ) as Box<Eval>
+            ) as Box<Eval>gst
         }
-        match maybe_op {
-            Some(op) => Box::new(UnaryOpNode{op: op, arg: factor}) as Box<Eval>,
-            None => factor,
+        // then, we build nodes for any unary operators that may have been
+        // prepended to the factor (in reverse order, so that `---foo` means
+        // `-(-(-foo))`)
+        ops.reverse();
+        for op in ops.drain(..) {
+            factor = Box::new(UnaryOpNode{op: op, arg: factor}) as Box<Eval>
         }
+        factor
     }
 ));
 
