@@ -135,7 +135,7 @@ named!(factor( &[u8] ) -> Box<Eval>, chain!(
         for subscript in subscripts {
             factor = Box::new(
                 SubscriptNode{object: factor, index: subscript}
-            ) as Box<Eval>gst
+            ) as Box<Eval>
         }
         // then, we build nodes for any unary operators that may have been
         // prepended to the factor (in reverse order, so that `---foo` means
