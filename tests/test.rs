@@ -258,7 +258,7 @@ fn binary_plus_constant_integers() {
 fn binary_plus_constant_floats() {
     assert_eq!("0.0", eval("0.0 + 0.0"));
     assert_eq!("2.0", eval("0 + 2.0"));
-    assert_eq!("4.0", eval("2.0 + 2"));
+    assert_eq!("4.0", eval("2.0 + 2.0"));
     assert_eq!("42.0", eval("-2.5 + 44.5"));
 }
 

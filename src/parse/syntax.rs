@@ -28,6 +28,43 @@ macro_rules! string {
     );
 }
 
+/// Parse a sequence that matches the first parser followed by the second parser.
+/// Return consumed input as the result (like recognize! does).
+macro_rules! seq(
+    ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => ({
+        // TODO(xion): once recognize! is fixed upstream to properly handle empty
+        // residual input, use it in place of this code
+        use nom::HexDisplay;
+        match $submac!($i, $($args)*) {
+            IResult::Error(a)      => IResult::Error(a),
+            IResult::Incomplete(i) => IResult::Incomplete(i),
+            IResult::Done(i1,_)   => {
+                match $submac2!(i1, $($args2)*) {
+                    IResult::Error(a)      => IResult::Error(a),
+                    IResult::Incomplete(i) => IResult::Incomplete(i),
+                    IResult::Done(i2,_)   => {
+                        if i2.is_empty() {
+                            IResult::Done(i2, $i)
+                        } else {
+                            let index = ($i).offset(i2);
+                            IResult::Done(i2, &($i)[..index])
+                        }
+                    }
+                }
+            },
+        }
+    });
+    ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    seq!($i, $submac!($($args)*), call!($g));
+    );
+    ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    seq!($i, call!($f), $submac!($($args)*));
+    );
+    ($i:expr, $f:expr, $g:expr) => (
+    seq!($i, call!($f), call!($g));
+    );
+);
+
 /// Parses values that are optionally surrounded by arbitrary number of
 /// any of the whitespace characters.
 macro_rules! multispaced (
@@ -215,17 +252,9 @@ named!(identifier( &[u8] ) -> String, alt!(
 named!(int_value( &[u8] ) -> Box<Eval>, map_res!(int_literal, |value: String| {
     value.parse::<i64>().map(|i| Box::new(ScalarNode{value: Value::Integer(i)}))
 }));
-named!(int_literal( &[u8] ) -> String, alt!(
-    map_res!(
-        pair!(is_a!(&DIGITS[1..]), many0!(is_a!(DIGITS))),
-        |(first, rest): (_, Vec<&[u8]>)| {
-            let mut rest = rest;
-            rest.insert(0, first);
-            from_utf8(&rest.concat()[..]).map(str::to_string)
-        }
-    ) |
-    string!(tag!("0"))
-));
+named!(int_literal( &[u8] ) -> String, string!(alt!(
+    seq!(is_a!(&DIGITS[1..]), many0!(is_a!(DIGITS))) | tag!("0")
+)));
 
 named!(float_value( &[u8] ) -> Box<Eval>, map_res!(float_literal, |value: String| {
     value.parse::<f64>().map(|f| Box::new(ScalarNode{value: Value::Float(f)}))
