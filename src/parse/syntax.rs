@@ -33,7 +33,7 @@ macro_rules! string {
 macro_rules! seq(
     ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => ({
         // TODO(xion): once recognize! is fixed upstream to properly handle empty
-        // residual input, use it in place of this code
+        // residual input, use it recognize!(pair!(...)) in place of this code
         use nom::HexDisplay;
         match $submac!($i, $($args)*) {
             IResult::Error(a)      => IResult::Error(a),
@@ -233,20 +233,18 @@ named!(identifier( &[u8] ) -> String, alt!(
             result
         }
     ) |
-    map_res!(
-        pair!(alpha, many0!(alphanumeric)), |(first, rest): (_, Vec<&[u8]>)| {
-            let mut rest = rest;
-            rest.insert(0, first);
-            // TODO(xion): better error handling for the reserved word case
-            // (note that map_res! generally discards errors so we may have
-            // to use fix_error!, add_error!, or error!)
-            from_utf8(&rest.concat()[..])
-                .map_err(|_| ())
-                .and_then(|s| { if RESERVED_WORDS.contains(&s) { Err(()) }
-                                else { Ok(s) } })
-                .map(str::to_string)
+    map_res!(string!(seq!(alpha, many0!(alphanumeric))), |ident: String| {
+        {
+            let id: &str = &ident;
+            if RESERVED_WORDS.contains(&id) {
+                // TODO(xion): better error handling for the reserved word case
+                // (note that map_res! generally discards errors so we may have
+                // to use fix_error!, add_error!, or error!)
+                return Err(());
+            }
         }
-    )
+        Ok(ident)
+    })
 ));
 
 named!(int_value( &[u8] ) -> Box<Eval>, map_res!(int_literal, |value: String| {
