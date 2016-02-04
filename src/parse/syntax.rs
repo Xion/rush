@@ -222,17 +222,10 @@ named!(symbol_value( &[u8] ) -> Box<Eval>, map!(identifier, |value: String| {
     Box::new(ScalarNode{value: Value::Symbol(value)})
 }));
 named!(identifier( &[u8] ) -> String, alt!(
-    map!(
-        // TODO(xion): we should use char_of! instead of is_a! here
-        // to prohibit nonsensical suffixes longer than one char,
-        // but it inexplicably fails; investigate
-        pair!(string!(tag!("_")), opt!(string!(is_a!(UNDERSCORE_SUFFIXES)))),
-        |(uscore, maybe_suffix) : (String, Option<String>)| {
-            let mut result = uscore;
-            result.push_str(&maybe_suffix.unwrap_or(String::new()));
-            result
-        }
-    ) |
+    // TODO(xion): we should use char_of! instead of is_a! here
+    // to prohibit nonsensical suffixes longer than one char,
+    // but it inexplicably fails; investigate
+    string!(seq!(tag!("_"), opt!(is_a!(UNDERSCORE_SUFFIXES)))) |
     map_res!(string!(seq!(alpha, many0!(alphanumeric))), |ident: String| {
         {
             let id: &str = &ident;
