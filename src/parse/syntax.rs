@@ -189,11 +189,7 @@ named!(factor( &[u8] ) -> Box<Eval>, chain!(
 named!(function_call( &[u8] ) -> Box<Eval>, chain!(
     name: identifier ~
     args: delimited!(multispaced!(tag!("(")), items, multispaced!(tag!(")"))),
-    move || {
-        Box::new(
-            FunctionCallNode{name: name, args: args}
-        ) as Box<Eval>
-    }
+    || { Box::new(FunctionCallNode{name: name, args: args}) as Box<Eval> }
 ));
 
 /// items ::== expression (',' expression)*
@@ -208,9 +204,7 @@ named!(atom( &[u8] ) -> Box<Eval>, alt!(
 
 named!(array_value( &[u8] ) -> Box<Eval>, map!(
     delimited!(multispaced!(tag!("[")), items, multispaced!(tag!("]"))),
-    move |items| {
-        Box::new(ArrayNode{elements: items}) as Box<Eval>
-    }
+    |items| { Box::new(ArrayNode{elements: items}) as Box<Eval> }
 ));
 
 named!(bool_value( &[u8] ) -> Box<Eval>, alt!(
