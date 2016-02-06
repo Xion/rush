@@ -270,6 +270,18 @@ fn binary_plus_constant_strings() {
 }
 
 #[test]
+fn binary_plus_input_integers() {
+    assert_noop_apply("_ + 0", "42");
+    assert_noop_apply("0 + _", "42");
+    assert_eq!("42", apply("_ + 40", "2"));
+    assert_eq!("42", apply("40 + _", "2"));
+    assert_eq!("6", apply("_ + _", "3"));
+    assert_eq!("12", apply("_ + _ + _", "4"));
+}
+// TODO(xion): binary_plus_input_floats
+// TODO(xion): binary_plus_inpit_strings
+
+#[test]
 fn binary_minus_constant_integers() {
     assert_eq!("0", eval("0 - 0"));
     assert_eq!("2", eval("2 - 0"));
@@ -289,7 +301,37 @@ fn binary_minus_constant_floats() {
     assert_eq!("1.0", eval("-3.0 - -4.0"));
 }
 
-// TODO(xion): tests for multiplication, division, string formatting
+#[test]
+fn binary_minus_input_integers() {
+    assert_noop_apply("_ - 0", "42");
+    assert_eq!("-42", apply("0 - _", "42"));
+    assert_eq!("40", apply("42 - _", "2"));
+    assert_eq!("-2", apply("40 - _", "42"));
+    assert_eq!("0", apply("_ - _", "42"));
+    assert_eq!("-42", apply("_ - _ - _", "42"));
+    assert_noop_apply("_ - (_ - _)", "42");
+}
+// TODO(xion): binary_minus_input_floats
+
+#[test]
+fn multiplication_constant_integers() {
+    assert_eq!("0", eval("0 * 0"));
+    assert_eq!("0", eval("2 * 0"));
+    assert_eq!("3", eval("3 * 1"));
+    assert_eq!("-4", eval("4 * -1"));
+    assert_eq!("2", eval("-2 * -1"));
+}
+
+#[test]
+fn multiplication_constant_floats() {
+    assert_eq!("0.0", eval("0.0 * 0.0"));
+    assert_eq!("0.0", eval("2.0 * 0.0"));
+    assert_eq!("3.0", eval("3.0 * 1.0"));
+    assert_eq!("-4.0", eval("4.0 * -1.0"));
+    assert_eq!("2.0", eval("-2.0 * -1.0"));
+}
+
+// TODO(xion): tests for division, string formatting
 
 #[test]
 fn subscript_of_array_constant() {
@@ -327,6 +369,23 @@ fn subscript_on_string_input() {
     assert_apply_error("_[42]", INPUT);
     assert_apply_error("_[-1]", INPUT);
 }
+
+#[test]
+fn function_call_1arg_input() {
+    assert_noop_apply("abs(_)", "42");
+    assert_eq!("5", apply("len(_)", "hello"));
+}
+// TODO(xion): function_call_1arg_constant
+// TODO(xion): function_call_2args_constant
+
+#[test]
+fn function_call_2args_input() {
+    const INPUT: &'static str = "hello";
+    const EXPR: &'static str = "split(_, l)";
+    assert_eq!("he\n\no", apply(EXPR, INPUT));
+}
+// TODO(xion): function_call_3args_constant
+// TODO(xion): function_call_3args_input
 
 
 // Utility functions.

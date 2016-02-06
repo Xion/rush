@@ -24,8 +24,11 @@ pub fn parse_from_argv<'a, I, T>(argv: I) -> ArgMatches<'a>
 /// Creates the argument parser
 /// (which is called an "App" in clap's silly nomenclature).
 fn create_parser<'a>() -> clap::App<'a, 'a> {
-    clap::App::new("ap")
-        .version("0.1")
+    let mut parser = clap::App::new("ap");
+    if let Some(version) = option_env!("CARGO_PKG_VERSION") {
+        parser = parser.version(version);
+    }
+    parser
         .about("sed/awk for Humans (tm)")
         .author("Karol Kuczmarski")
 
