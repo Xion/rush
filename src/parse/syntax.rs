@@ -1,7 +1,5 @@
 //! Expression syntax.
 //! Uses nom's parser combinators to define the grammar.
-//!
-//! alongside the parsing code that assembles the AST.
 
 use std::str::from_utf8;
 
@@ -32,8 +30,6 @@ macro_rules! string {
 /// Return consumed input as the result (like recognize! does).
 macro_rules! seq(
     ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => ({
-        // TODO(xion): once recognize! is fixed upstream to properly handle empty
-        // residual input, use it recognize!(pair!(...)) in place of this code
         use nom::HexDisplay;
         match $submac!($i, $($args)*) {
             IResult::Error(a)      => IResult::Error(a),
@@ -64,6 +60,9 @@ macro_rules! seq(
     seq!($i, call!($f), call!($g));
     );
 );
+// TODO(xion): once recognize! is fixed upstream to properly handle empty
+// residual input, use it recognize!(pair!(...)) in place of the above macro
+// (relevant pull request: https://github.com/Geal/nom/pull/213)
 
 /// Parses values that are optionally surrounded by arbitrary number of
 /// any of the whitespace characters.

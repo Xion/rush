@@ -2,7 +2,7 @@
 name = "ap"
 version = "0.1.0"
 dependencies = [
- "getopts 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "clap 2.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "nom 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.3.12 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -27,9 +27,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "getopts"
-version = "0.2.14"
+name = "ansi_term"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "bitflags"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "clap"
+version = "2.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "ansi_term 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bitflags 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "strsim 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "vec_map 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "libc"
@@ -83,6 +99,16 @@ dependencies = [
 [[package]]
 name = "regex-syntax"
 version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "strsim"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "vec_map"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
