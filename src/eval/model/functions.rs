@@ -28,6 +28,7 @@ impl Functions {
         fs.define_unary("rev", api::rev);
         fs.define_unary("abs", api::abs);
         fs.define_unary("sgn", api::sgn);
+        fs.define_unary("sqrt", api::sqrt);
         fs.define_unary("len", api::len);
         fs.define_unary("str", api::str_);
         fs.define_unary("int", api::int);
