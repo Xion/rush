@@ -371,21 +371,38 @@ fn subscript_on_string_input() {
 }
 
 #[test]
+fn function_call_1arg_constant() {
+    assert_eq!("42", eval("abs(42)"));
+    assert_eq!("5", eval("len(hello)"));
+}
+
+#[test]
 fn function_call_1arg_input() {
     assert_noop_apply("abs(_)", "42");
     assert_eq!("5", apply("len(_)", "hello"));
 }
-// TODO(xion): function_call_1arg_constant
-// TODO(xion): function_call_2args_constant
+
+#[test]
+fn function_call_2args_constant() {
+    assert_eq!("he\n\no", eval("split(hello, l)"));
+}
 
 #[test]
 fn function_call_2args_input() {
-    const INPUT: &'static str = "hello";
-    const EXPR: &'static str = "split(_, l)";
-    assert_eq!("he\n\no", apply(EXPR, INPUT));
+    assert_eq!("he\n\no", apply("split(_, l)", "hello"));
 }
-// TODO(xion): function_call_3args_constant
-// TODO(xion): function_call_3args_input
+
+#[test]
+fn function_call_3args_constant() {
+    assert_eq!("pot", eval("sub(i, o, pit)"));
+    assert_eq!("", eval("sub(a, \"\", aaa)"));
+}
+
+#[test]
+fn function_call_3args_input() {
+    assert_eq!("pot", apply("sub(i, o, _)", "pit"));
+    assert_eq!("", apply("sub(a, \"\", _)", "aaa"));
+}
 
 
 // Utility functions.
