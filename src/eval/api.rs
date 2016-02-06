@@ -25,6 +25,27 @@ pub fn abs(value: Value) -> eval::Result {
     )))
 }
 
+/// Compute the signum function.
+pub fn sgn(value : Value) -> eval::Result {
+    eval1!(value : Integer {
+        match value {
+            v@_ if v < 0 => -1,
+            v@_ if v > 0 => 1,
+            _ => 0,
+        }
+    });
+    eval1!(value : Float {
+       match value {
+            v@_ if v < 0.0 => -1.0,
+            v@_ if v > 0.0 => 1.0,
+            _ => 0.0,
+        }
+    });
+    Err(Error::new(&format!(
+        "sgn() requires a number, got {}", value.typename()
+    )))
+}
+
 /// Generate a random floating point number from the 0..1 range.
 pub fn rand() -> eval::Result {
     Ok(Value::Float(random()))
