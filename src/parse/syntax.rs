@@ -117,7 +117,27 @@ const UNDERSCORE_SUFFIXES: &'static str = "bifs";
 // Grammar definition.
 
 /// Root symbol of the grammar.
-named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: argument, || { e }));
+named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: comparison, || { e }));
+
+/// comparison ::== argument [COMPARISON_OP argument]
+named!(comparison( &[u8] ) -> Box<Eval>, chain!(
+    // TODO(xion): consider supporting chained comparisons a'la Python
+    left: argument ~
+    maybe_right: opt!(complete!(pair!(
+        string!(multispaced!(alt!(
+            tag!("<=") | tag!(">=") | tag!("!=") | char_of!("<>=")
+        ))),
+        argument
+    ))),
+    move || {
+        match maybe_right {
+            None => left,
+            Some(right) => Box::new(
+                BinaryOpNode{first: left, rest: vec![right]}
+            ) as Box<Eval>,
+        }
+    }
+));
 
 /// argument ::== term (ADDITIVE_BIN_OP term)*
 named!(argument( &[u8] ) -> Box<Eval>, chain!(
