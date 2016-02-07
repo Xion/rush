@@ -338,9 +338,10 @@ fn subscript_of_array_constant() {
     assert_eq!("42", eval("[42][0]"));
     assert_eq!("42", eval("[13, 42][1]"));
     assert_eq!("42", eval("[[42]][0][0]"));
-    assert_eval_error("[a, b, c][-1]");
+    assert_eq!("c", eval("[a, b, c][-1]"));
     assert_eval_error("[][0]");
     assert_eval_error("[42][1]");
+    assert_eval_error("[42][-2]");
 }
 
 #[test]
@@ -366,8 +367,10 @@ fn subscript_on_string_input() {
     const INPUT: &'static str = "hello";
     assert_eq!("h", apply("_[0]", INPUT));
     assert_eq!("l", apply("_[2]", INPUT));
+    assert_eq!("o", apply("_[-1]", INPUT));
+    assert_eq!("e", apply("_[-4]", INPUT));
     assert_apply_error("_[42]", INPUT);
-    assert_apply_error("_[-1]", INPUT);
+    assert_apply_error("_[-42]", INPUT);
 }
 
 #[test]

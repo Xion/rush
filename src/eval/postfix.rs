@@ -38,25 +38,14 @@ impl Eval for SubscriptNode {
 }
 
 impl SubscriptNode {
-    // TODO(xion): consider supporting Python-style negative indices
-
     fn eval_on_array(array: &Vec<Value>, index: &Value) -> eval::Result {
         match *index {
             Value::Integer(i) => {
-                if i < 0 {
-                    return Err(eval::Error::new(
-                        &format!("array index cannot be negative; got {}", i)
-                    ));
-                }
-                let idx = i as usize;
-                if idx >= array.len() {
-                    return Err(eval::Error::new(
-                        &format!("array index out of range ({})", i)
-                    ));
-                }
-                // TODO(xion): the clone below is very inefficient for
-                // multi-dimensional arrays; return some Value pointer instead
-                Ok(array[idx].clone())
+                SubscriptNode::resolve_index(i as isize, array.len()).map(|idx| {
+                    // TODO(xion): this clone() call is very inefficient for
+                    // multi-dimensional arrays; return some Value pointer instead
+                    array[idx].clone()
+                })
             },
             Value::Float(..) => Err(eval::Error::new(
                 &format!("array indices must be integers")
@@ -70,19 +59,39 @@ impl SubscriptNode {
     fn eval_on_string(string: &String, index: &Value) -> eval::Result {
         match *index {
             Value::Integer(i) => {
-                string.chars().nth(i as usize)
-                    .ok_or_else(|| eval::Error::new(
-                        &format!("character index out of range: {}", i)
-                    ))
-                    .map(|c| {
-                        let mut result = String::new();
-                        result.push(c);
-                        Value::String(result)
-                    })
+                SubscriptNode::resolve_index(i as isize, string.len()).map(|idx| {
+                    let c = string.chars().nth(idx).unwrap();
+                    let mut result = String::new();
+                    result.push(c);
+                    Value::String(result)
+                })
             },
+            Value::Float(..) => Err(eval::Error::new(
+                &format!("character indices must be integers")
+            )),
             _ => Err(eval::Error::new(
                 &format!("can't index a string with {:?}", index)
             )),
+        }
+    }
+
+    /// Resolve index against the total length of a sequence.
+    /// If negative, it will be interpreted as counting from the end.
+    fn resolve_index(index: isize, len: usize) -> Result<usize, eval::Error> {
+        if index >= 0 {
+            let index = index as usize;
+            if index >= len {
+                Err(eval::Error::new(&format!("index out of range ({})", index)))
+            } else {
+                Ok(index as usize)
+            }
+        } else {
+            let index = (-index) as usize;
+            if index > len {
+                Err(eval::Error::new(&format!("index out of range (-{})", index)))
+            } else {
+                Ok(len - index)
+            }
         }
     }
 }
