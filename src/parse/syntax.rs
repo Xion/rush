@@ -26,6 +26,17 @@ macro_rules! string {
     );
 }
 
+/// Make the underlying parser optional,
+/// but unlike opt! it is treating incomplete input as parse error.
+macro_rules! maybe {
+    ($i:expr, $submac:ident!( $($args:tt)* )) => (
+        opt!($i, complete!($submac!($($args)*)));
+    );
+    ($i:expr, $f:expr) => (
+        maybe!($i, call!($f));
+    );
+}
+
 /// Parse a sequence that matches the first parser followed by the second parser.
 /// Return consumed input as the result (like recognize! does).
 macro_rules! seq(
@@ -123,12 +134,12 @@ named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: comparison, || { e }));
 named!(comparison( &[u8] ) -> Box<Eval>, chain!(
     // TODO(xion): consider supporting chained comparisons a'la Python
     left: argument ~
-    maybe_right: opt!(complete!(pair!(
+    maybe_right: maybe!(pair!(
         string!(multispaced!(alt!(
-            tag!("<=") | tag!(">=") | tag!("!=") | char_of!("<>=")
+            tag!("<=") | tag!(">=") | tag!("==") | tag!("!=") | char_of!("<>")
         ))),
         argument
-    ))),
+    )),
     move || {
         match maybe_right {
             None => left,
@@ -251,10 +262,7 @@ named!(symbol_value( &[u8] ) -> Box<Eval>, map!(identifier, |value: String| {
     Box::new(ScalarNode{value: Value::Symbol(value)})
 }));
 named!(identifier( &[u8] ) -> String, alt!(
-    // TODO(xion): we should use char_of! instead of is_a! here
-    // to prohibit nonsensical suffixes longer than one char,
-    // but it inexplicably fails; investigate
-    string!(seq!(tag!("_"), opt!(is_a!(UNDERSCORE_SUFFIXES)))) |
+    string!(seq!(tag!("_"), maybe!(char_of!(UNDERSCORE_SUFFIXES)))) |
     map_res!(string!(seq!(alpha, many0!(alphanumeric))), |ident: String| {
         {
             let id: &str = &ident;

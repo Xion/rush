@@ -246,6 +246,8 @@ fn unary_bang_input() {
     assert_eq!("true", apply("!_", "false"));
 }
 
+// TODO(xion): tests for comparison operators
+
 #[test]
 fn binary_plus_constant_integers() {
     assert_eq!("0", eval("0 + 0"));

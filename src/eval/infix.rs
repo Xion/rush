@@ -58,6 +58,12 @@ impl Eval for BinaryOpNode {
         for &(ref op, ref arg) in &self.rest {
             let arg = try!(arg.eval(&context));
             match &op[..] {
+                "<" => result = try!(BinaryOpNode::eval_lt(result, arg)),
+                "<=" => result = try!(BinaryOpNode::eval_le(result, arg)),
+                ">" => result = try!(BinaryOpNode::eval_gt(result, arg)),
+                ">=" => result = try!(BinaryOpNode::eval_ge(result, arg)),
+                "==" => result = try!(BinaryOpNode::eval_eq(result, arg)),
+                "!=" => result = try!(BinaryOpNode::eval_ne(result, arg)),
                 "+" => result = try!(BinaryOpNode::eval_plus(result, arg)),
                 "-" => result = try!(BinaryOpNode::eval_minus(result, arg)),
                 "*" => result = try!(BinaryOpNode::eval_times(result, arg)),
@@ -74,6 +80,74 @@ impl Eval for BinaryOpNode {
 }
 
 impl BinaryOpNode {
+    /// Evaluate the "<" operator for two values.
+    fn eval_lt(left: Value, right: Value) -> eval::Result {
+        eval2!((left: Integer, right: Integer) -> Boolean { left < right });
+        eval2!((left: Integer, right: Float) -> Boolean { (left as f64) < right });
+        eval2!((left: Float, right: Integer) -> Boolean { left < (right as f64) });
+        eval2!((left: Float, right: Float) -> Boolean { left < right });
+        BinaryOpNode::err("<", left, right)
+    }
+
+    /// Evaluate the "<=" operator for two values.
+    fn eval_le(left: Value, right: Value) -> eval::Result {
+        eval2!((left: Integer, right: Integer) -> Boolean { left <= right });
+        eval2!((left: Integer, right: Float) -> Boolean { (left as f64) <= right });
+        eval2!((left: Float, right: Integer) -> Boolean { left <= (right as f64) });
+        eval2!((left: Float, right: Float) -> Boolean { left <= right });
+        BinaryOpNode::err("<=", left, right)
+    }
+
+    /// Evaluate the ">" operator for two values.
+    fn eval_gt(left: Value, right: Value) -> eval::Result {
+        eval2!((left: Integer, right: Integer) -> Boolean { left > right });
+        eval2!((left: Integer, right: Float) -> Boolean { (left as f64) > right });
+        eval2!((left: Float, right: Integer) -> Boolean { left > (right as f64) });
+        eval2!((left: Float, right: Float) -> Boolean { left > right });
+        BinaryOpNode::err(">", left, right)
+    }
+
+    /// Evaluate the ">=" operator for two values.
+    fn eval_ge(left: Value, right: Value) -> eval::Result {
+        eval2!((left: Integer, right: Integer) -> Boolean { left >= right });
+        eval2!((left: Integer, right: Float) -> Boolean { (left as f64) >= right });
+        eval2!((left: Float, right: Integer) -> Boolean { left >= (right as f64) });
+        eval2!((left: Float, right: Float) -> Boolean { left >= right });
+        BinaryOpNode::err(">=", left, right)
+    }
+
+    /// Evaluate the "==" operator for two values.
+    fn eval_eq(left: Value, right: Value) -> eval::Result {
+        // numeric types
+        eval2!((left: Integer, right: Integer) -> Boolean { left == right });
+        eval2!((left: Integer, right: Float) -> Boolean { (left as f64) == right });
+        eval2!((left: Float, right: Integer) -> Boolean { left == (right as f64) });
+        eval2!((left: Float, right: Float) -> Boolean { left == right });
+
+        // others
+        eval2!((left: &Array, right: &Array) -> Boolean { left == right });
+        eval2!((left: Boolean, right: Boolean) -> Boolean { left == right });
+        eval2!((left: &String, right: &String) -> Boolean { left == right });
+
+        BinaryOpNode::err("==", left, right)
+    }
+
+    /// Evaluate the "!=" operator for two values.
+    fn eval_ne(left: Value, right: Value) -> eval::Result {
+        // numeric types
+        eval2!((left: Integer, right: Integer) -> Boolean { left != right });
+        eval2!((left: Integer, right: Float) -> Boolean { (left as f64) != right });
+        eval2!((left: Float, right: Integer) -> Boolean { left != (right as f64) });
+        eval2!((left: Float, right: Float) -> Boolean { left != right });
+
+        // others
+        eval2!((left: &Array, right: &Array) -> Boolean { left != right });
+        eval2!((left: Boolean, right: Boolean) -> Boolean { left != right });
+        eval2!((left: &String, right: &String) -> Boolean { left != right });
+
+        BinaryOpNode::err("!=", left, right)
+    }
+
     /// Evaluate the "+" operator for two values.
     fn eval_plus(left: Value, right: Value) -> eval::Result {
         eval2!(left, right : &String { left.clone() + &*right });
