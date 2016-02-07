@@ -63,6 +63,7 @@ impl Eval for BinaryOpNode {
                 "*" => result = try!(BinaryOpNode::eval_times(result, arg)),
                 "/" => result = try!(BinaryOpNode::eval_by(result, arg)),
                 "%" => result = try!(BinaryOpNode::eval_modulo(result, arg)),
+                "**" => result = try!(BinaryOpNode::eval_power(result, arg)),
                 _ => { return Err(
                     eval::Error::new(&format!("unknown binary operator: `{}`", op))
                 ); }
@@ -138,6 +139,21 @@ impl BinaryOpNode {
         });
 
         BinaryOpNode::err("%", left, right)
+    }
+
+    /// Evaluate the "**" operator for two values.
+    fn eval_power(left: Value, right: Value) -> eval::Result {
+        // TODO(xion): check that integer exponents are within range of u32/i32
+        // and return an error if they're not rather than clamping them
+        eval2!(left, right : Integer { left.pow(right as u32) });
+        eval2!(left, right : Float { left.powf(right) });
+        eval2!((left: Integer, right: Float) -> Float {
+            (left as f64).powf(right)
+        });
+        eval2!((left: Float, right: Integer) -> Float {
+            left.powi(right as i32)
+        });
+        BinaryOpNode::err("**", left, right)
     }
 
     /// Produce an error about invalid arguments for an operator.

@@ -101,6 +101,7 @@ macro_rules! char_of {
 
 const ADDITIVE_BINARY_OPS: &'static str = "+-";
 const MULTIPLICATIVE_BINARY_OPS: &'static str = "*/%";
+const POWER_OP: &'static str = "**";
 const UNARY_OPS: &'static str = "+-!";
 
 const RESERVED_WORDS: &'static [&'static str] = &[
@@ -148,10 +149,25 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
     }
 ));
 
-/// factor ::== [UNARY_OP] (function_call | atom) subscript*
+/// factor ::== power (POWER_OP power)*
 named!(factor( &[u8] ) -> Box<Eval>, chain!(
+    first: power ~
+    rest: many0!(pair!(
+        string!(multispaced!(tag!(POWER_OP))),
+        power
+    )),
+    move || {
+        if rest.is_empty() { first }
+        else { Box::new(
+            BinaryOpNode{first: first, rest: rest}
+        ) as Box<Eval> }
+    }
+));
+
+/// power ::== [UNARY_OP] (function_call | atom) subscript*
+named!(power( &[u8] ) -> Box<Eval>, chain!(
     mut ops: many0!(string!(multispaced!(char_of!(UNARY_OPS)))) ~
-    mut factor: alt!(
+    mut power: alt!(
         // complete!(...) is necessary because `atom` can be a prefix
         // of `function_call`. Otherwise, trying to parse an atom
         // as function call will result in incomplete input
@@ -169,18 +185,18 @@ named!(factor( &[u8] ) -> Box<Eval>, chain!(
         // subscripting has higher priority than any possible unary operators,
         // so we build the AST node(s) for that first
         for subscript in subscripts {
-            factor = Box::new(
-                SubscriptNode{object: factor, index: subscript}
+            power = Box::new(
+                SubscriptNode{object: power, index: subscript}
             ) as Box<Eval>
         }
         // then, we build nodes for any unary operators that may have been
-        // prepended to the factor (in reverse order, so that `---foo` means
-        // `-(-(-foo))`)
+        // prepended to the whole thing (in reverse order,
+        // so that `---foo` means `-(-(-foo))`)
         ops.reverse();
         for op in ops.drain(..) {
-            factor = Box::new(UnaryOpNode{op: op, arg: factor}) as Box<Eval>
+            power = Box::new(UnaryOpNode{op: op, arg: power}) as Box<Eval>
         }
-        factor
+        power
     }
 ));
 
