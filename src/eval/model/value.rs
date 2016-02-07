@@ -29,7 +29,7 @@ pub enum Value {
 impl Value {
     /// Return the type of this value as string.
     /// These names are user-facing, e.g. they can occur inside error messages.
-    pub fn typename(&self) -> &str {
+    pub fn typename(&self) -> &'static str {
         match *self {
             Value::Empty => "empty",
             Value::Symbol(..) => "symbol",

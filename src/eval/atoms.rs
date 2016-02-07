@@ -24,7 +24,7 @@ impl Eval for ArrayNode {
         }
 
         // extract the element values and create the array
-        let elems = evals.iter().map(|r| r.clone().ok().unwrap()).collect();
+        let elems = evals.into_iter().map(|r| r.ok().unwrap()).collect();
         Ok(Value::Array(elems))
     }
 }

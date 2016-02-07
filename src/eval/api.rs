@@ -161,13 +161,16 @@ pub fn split(string: Value, delim: Value) -> eval::Result {
 
 /// Join an array of values into a single delimited string.
 pub fn join(array: Value, delim: Value) -> eval::Result {
-    if let (&Value::Array(ref a),
-            &Value::String(ref d)) = (&array, &delim) {
-        let strings: Vec<_> =  a.iter()
-            .map(|v| str_(v.clone())).filter(Result::is_ok)
+    let array_type = array.typename();
+    let delim_type = delim.typename();
+
+    if let (Value::Array(a), Value::String(d)) = (array, delim) {
+        let elem_count = a.len();
+        let strings: Vec<_> =  a.into_iter()
+            .map(str_).filter(Result::is_ok)
             .map(Result::unwrap).map(Value::unwrap_string)
             .collect();
-        let error_count = strings.len() - a.len();
+        let error_count = strings.len() - elem_count;
         if error_count == 0 {
             return Ok(Value::String(strings.join(&d)));
         } else {
@@ -176,9 +179,10 @@ pub fn join(array: Value, delim: Value) -> eval::Result {
                 error_count)));
         }
     }
+
     Err(Error::new(&format!(
         "join() expects an array and string, got: {}, {}",
-        array.typename(), delim.typename()
+        array_type, delim_type
     )))
 }
 
