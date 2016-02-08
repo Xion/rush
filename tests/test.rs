@@ -246,7 +246,22 @@ fn unary_bang_input() {
     assert_eq!("true", apply("!_", "false"));
 }
 
-// TODO(xion): tests for comparison operators
+#[test]
+fn compare_less_constants() {
+    assert_eval_true("1 < 2");
+    assert_eval_true("-5 < 0");
+    assert_eval_true("1.5 < 2");
+    assert_eval_true("8 < 10.0");
+    assert_eval_true("-3.14 < 3.14");
+    assert_eval_false("1 < 1");
+    assert_eval_false("0 < -10");
+    assert_eval_error("0 < foo");
+    assert_eval_error("foo < 42");
+    assert_eval_error("bar < true");
+    assert_eval_error("[] < []");
+}
+// TODO(xion): compare_less_inputs
+// TODO(xion): tests for the rest of comparison operators
 
 #[test]
 fn binary_plus_constant_integers() {
@@ -429,15 +444,35 @@ fn assert_noop_apply(expr: &str, input: &str) {
 }
 
 fn assert_eval_error(expr: &str) {
-    assert!(eval_ex(expr).is_err());
+    if !eval_ex(expr).is_err() {
+        panic!("Expression `{}` didn't cause an error!", expr);
+    }
+}
+
+fn assert_eval_true(expr: &str) {
+    let result = eval(expr);
+    assert!(result.parse::<bool>().expect(&format!(
+        "Couldn't interpret result of `{}` as boolean: {}", expr, result
+    )));
+}
+
+fn assert_eval_false(expr: &str) {
+    let result = eval(expr);
+    assert!(!result.parse::<bool>().expect(&format!(
+        "Couldn't interpret result of `{}` as boolean: {}", expr, result
+    )));
 }
 
 fn assert_apply_error(expr: &str, input: &str) {
-    assert!(apply_ex(expr, input).is_err());
+    if !apply_ex(expr, input).is_err() {
+        panic!("Mapping `{}` for input `{}` didn't cause an error!", expr, input);
+    }
 }
 
 fn assert_reduce_error<'a>(expr: &str, input: &'a [&'a str]) {
-    assert!(reduce_ex(expr, input).is_err());
+    if !reduce_ex(expr, input).is_err() {
+        panic!("Reducing `{}` on input `{}` didn't cause an error!");
+    }
 }
 
 
