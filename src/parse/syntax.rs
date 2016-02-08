@@ -281,7 +281,7 @@ named!(int_value( &[u8] ) -> Box<Eval>, map_res!(int_literal, |value: String| {
     value.parse::<i64>().map(|i| Box::new(ScalarNode{value: Value::Integer(i)}))
 }));
 named!(int_literal( &[u8] ) -> String, string!(alt!(
-    seq!(is_a!(&DIGITS[1..]), many0!(is_a!(DIGITS))) | tag!("0")
+    seq!(char_of!(&DIGITS[1..]), many0!(char_of!(DIGITS))) | tag!("0")
 )));
 
 named!(float_value( &[u8] ) -> Box<Eval>, map_res!(float_literal, |value: String| {
@@ -292,7 +292,8 @@ fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
 
     // TODO(xion): use *_static! variant when regexp_macros feature
     // can be used in stable Rust
-    let result = re_find!(input, FLOAT_REGEX);
+    let regex = "^".to_string() + FLOAT_REGEX;  // 'coz we want immediate match
+    let result = re_find!(input, &regex);
 
     // This match has to be explicit (rather than try_parse! etc.)
     // because of the silly IResult::Error branch, which is seemingly no-op
