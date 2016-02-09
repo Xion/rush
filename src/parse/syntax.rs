@@ -128,7 +128,26 @@ const UNDERSCORE_SUFFIXES: &'static str = "bifs";
 // Grammar definition.
 
 /// Root symbol of the grammar.
-named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: comparison, || { e }));
+named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: conditional, || { e }));
+
+/// conditional ::== comparison ['?' comparison ':' conditional]
+named!(conditional( &[u8] ) -> Box<Eval>, map!(
+    pair!(comparison, maybe!(chain!(
+        multispaced!(tag!("?")) ~
+        then: comparison ~
+        multispaced!(tag!(":")) ~
+        else_: conditional,
+        move || (then, else_)
+    ))),
+    |(cond, maybe_then_else)| {
+        match maybe_then_else {
+            None => cond,
+            Some((then, else_)) => Box::new(
+                ConditionalNode{cond: cond, then: then, else_: else_}
+            ) as Box<Eval>,
+        }
+    }
+));
 
 /// comparison ::== argument [COMPARISON_OP argument]
 named!(comparison( &[u8] ) -> Box<Eval>, chain!(

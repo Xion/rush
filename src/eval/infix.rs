@@ -3,7 +3,7 @@
 use std::iter;
 
 use eval::{self, Context, Eval, Value};
-use parse::ast::{BinaryOpNode, UnaryOpNode};
+use parse::ast::{BinaryOpNode, ConditionalNode, UnaryOpNode};
 
 
 /// Evaluate the unary operator AST node.
@@ -51,7 +51,7 @@ impl UnaryOpNode {
 }
 
 
-/// Evaluate the binary operator AST node;
+/// Evaluate the binary operator AST node.
 impl Eval for BinaryOpNode {
     fn eval(&self, context: &Context) -> eval::Result {
         let mut result = try!(self.first.eval(&context));
@@ -235,5 +235,25 @@ impl BinaryOpNode {
         Err(eval::Error::new(&format!(
             "invalid arguments for `{}` operator: `{:?}` and `{:?}`",
             op, left, right)))
+    }
+}
+
+
+/// Evaluate the ternary operator / conditional node.
+impl Eval for ConditionalNode {
+    fn eval(&self, context: &Context) -> eval::Result {
+        let cond = try!(self.cond.eval(&context));
+        let cond_type = cond.typename();
+        if let Value::Boolean(condition) = cond {
+            if condition {
+                self.then.eval(&context)
+            } else {
+                self.else_.eval(&context)
+            }
+        } else {
+            Err(eval::Error::new(&format!(
+                "expected a boolean condition, got {} instead", cond_type
+            )))
+        }
     }
 }

@@ -349,6 +349,7 @@ fn multiplication_constant_floats() {
 }
 
 // TODO(xion): tests for division, string formatting
+// TODO(xion): tests for the conditional operator
 
 #[test]
 fn subscript_of_array_constant() {

@@ -112,3 +112,21 @@ impl fmt::Debug for FunctionCallNode {
                    .collect::<Vec<String>>().join(","))
     }
 }
+
+
+/// AST node representing a conditional choice based on a boolean value.
+///
+/// Syntactically, this could be a ternary operator (foo ? x : y)
+/// or even a full-blown `if` statement.
+pub struct ConditionalNode {
+    pub cond: Box<Eval>,
+    pub then: Box<Eval>,
+    pub else_: Box<Eval>,
+}
+
+impl fmt::Debug for ConditionalNode {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "<If: {:?} then {:?} else {:?}>",
+               self.cond, self.then, self.else_)
+    }
+}
