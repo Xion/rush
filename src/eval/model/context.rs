@@ -20,6 +20,7 @@ impl Context {
         Context{vars: Variables::new(), funcs: Functions::new()}
     }
 
+    #[allow(dead_code)]
     /// Retrieves the value for a variable if it exists.
     pub fn get_var(&self, name: &str) -> Option<&Value> {
         self.vars.get(&name.to_string())

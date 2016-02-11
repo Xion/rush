@@ -1,5 +1,6 @@
 //! Value type.
 
+use std::collections::HashMap;
 use std::fmt;
 use std::str::FromStr;
 
@@ -22,6 +23,7 @@ pub enum Value {
     Float(f64),
     String(String),
     Array(Vec<Value>),
+    Object(HashMap<String, Value>),
     // TODO(xion): function type
 }
 
@@ -38,6 +40,7 @@ impl Value {
             Value::Float(..) => "float",
             Value::String(..) => "str",
             Value::Array(..) => "array",
+            Value::Object(..) => "object",
         }
     }
 
@@ -71,9 +74,18 @@ impl Value {
             _ => { panic!("unwrap_array() on {} value", self.typename()) },
         }
     }
+    pub fn unwrap_object(self) -> HashMap<String, Value> {
+        match self {
+            Value::Object(o) => o,
+            _ => { panic!("unwrap_object() on {} value", self.typename()) },
+        }
+    }
 }
 
 
+// TODO(xion): given the numerous ways we can & want to interpret the input,
+// it makes less and less sense to has this as default;
+// consider removing this impl
 impl FromStr for Value {
     type Err = ();
 
@@ -110,6 +122,9 @@ impl fmt::Debug for Value {
                     .map(|v| format!("{:?}", v)).collect::<Vec<String>>()
                     .join(","))
             },
+            // TODO(xion): this will probably be _almost_ like JSON
+            // except that values should be formatted as {:?}, of course
+            Value::Object(ref o) => unimplemented!(),
         }
     }
 }
@@ -140,6 +155,8 @@ impl fmt::Display for Value {
                     .map(|v| format!("{}", v)).collect::<Vec<String>>()
                     .join("\n"))
             },
+            // TODO(xion): object should serialize as JSON
+            Value::Object(ref o) => unimplemented!(),
         }
     }
 }

@@ -21,6 +21,7 @@ impl fmt::Debug for ScalarNode {
     }
 }
 
+// TODO(xion): note from `impl FromStr for Value` applies here, too
 impl FromStr for ScalarNode {
     type Err = <Value as FromStr>::Err;
 
