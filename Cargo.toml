@@ -12,6 +12,7 @@ log = "0.3"
 nom = { version = "1.1.0", features = ["regexp"] }
 rand = "0.3"
 regex = "0.1"
+rustc-serialize = "0.3"
 
 # Note that "unit" tests (i.e. tests within code files) are not used,
 # so we disable them for both library and binary targets.

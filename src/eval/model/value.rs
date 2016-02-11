@@ -4,6 +4,8 @@ use std::collections::HashMap;
 use std::fmt;
 use std::str::FromStr;
 
+use rustc_serialize::json::{Json, ToJson};
+
 
 /// Typed value that's operated upon.
 #[derive(Clone,PartialEq)]
@@ -157,8 +159,28 @@ impl fmt::Display for Value {
                     .map(|v| format!("{}", v)).collect::<Vec<String>>()
                     .join("\n"))
             },
-            // TODO(xion): object should serialize as JSON; use rustc-serialize
-            Value::Object(ref o) => unimplemented!(),
+            Value::Object(..) => write!(fmt, "{}", self.to_json().to_string()),
+        }
+    }
+}
+
+impl ToJson for Value {
+    /// Format the value as JSON.
+    /// This is used for printing Object values as final output.
+    fn to_json(&self) -> Json {
+        match *self {
+            Value::Empty => Json::Null,
+            Value::Symbol(ref t) => Json::String(t.clone()),
+            Value::Boolean(b) => Json::Boolean(b),
+            Value::Integer(i) => Json::I64(i),
+            Value::Float(f) => Json::F64(f),
+            Value::String(ref s) => Json::String(s.clone()),
+            Value::Array(ref a) => Json::Array(
+                a.iter().map(|v| v.to_json()).collect()
+            ),
+            Value::Object(ref o) => Json::Object(
+                o.iter().map(|(k, v)| (k.clone(), v.to_json())).collect()
+            ),
         }
     }
 }
