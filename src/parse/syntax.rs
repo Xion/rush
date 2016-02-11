@@ -259,12 +259,25 @@ named!(function_call( &[u8] ) -> Box<Eval>, chain!(
 
 /// items ::== expression (',' expression)*
 named!(items( &[u8] ) -> Vec<Box<Eval>>,
-       separated_list!(multispaced!(tag!(",")), argument));
+       separated_list!(multispaced!(tag!(",")), expression));
 
-/// atom ::== ARRAY | BOOLEAN | SYMBOL | FLOAT | INTEGER | STRING | '(' expression ')'
+/// atom ::== OBJECT | ARRAY | BOOLEAN | SYMBOL | FLOAT | INTEGER | STRING | '(' expression ')'
 named!(atom( &[u8] ) -> Box<Eval>, alt!(
-    array_value | bool_value | symbol_value | float_value | int_value | string_value |
+    object_value | array_value |
+    bool_value | symbol_value | float_value | int_value | string_value |
     delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
+));
+
+named!(object_value( &[u8] ) -> Box<Eval>, map!(
+    delimited!(
+        multispaced!(tag!("{")),
+        separated_list!(
+            multispaced!(tag!(",")),
+            separated_pair!(expression, multispaced!(tag!(":")), expression)
+        ),
+        multispaced!(tag!("}"))
+    ),
+    |attrs| { Box::new(ObjectNode{attributes: attrs}) as Box<Eval> }
 ));
 
 named!(array_value( &[u8] ) -> Box<Eval>, map!(

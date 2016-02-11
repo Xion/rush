@@ -40,7 +40,27 @@ impl fmt::Debug for ArrayNode {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "<Array: [{}]>", self.elements.iter()
             .map(|ref elem| format!("{:?}", elem))
-            .collect::<Vec<String>>().join(","))
+            .collect::<Vec<String>>().join(", "))
+    }
+}
+
+
+/// AST node representing the expression for creating a new object.
+/// Objects are essentially hashmaps of strings to values.
+///
+/// The representation is a sequence of key-value pairs,
+/// in their order of appearance in the expression.
+pub struct ObjectNode {
+    pub attributes: Vec<(Box<Eval>, Box<Eval>)>,
+}
+
+impl fmt::Debug for ObjectNode {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        // The result is <Object: {$KEY: $VALUE}>, but braces have to be
+        // escaped in format strings by doubling them: {{ -> {
+        write!(fmt, "<Object: {{{}}}>", self.attributes.iter()
+            .map(|&(ref k, ref v)| format!("{:?}: {:?}", k, v))
+            .collect::<Vec<String>>().join(", "))
     }
 }
 
