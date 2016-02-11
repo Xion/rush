@@ -122,9 +122,11 @@ impl fmt::Debug for Value {
                     .map(|v| format!("{:?}", v)).collect::<Vec<String>>()
                     .join(","))
             },
-            // TODO(xion): this will probably be _almost_ like JSON
-            // except that values should be formatted as {:?}, of course
-            Value::Object(ref o) => unimplemented!(),
+            Value::Object(ref o) => {
+                write!(fmt, "{{{}}}", o.iter()
+                    .map(|(k, v)| format!("\"{}\": {:?}", k, v))
+                    .collect::<Vec<String>>().join(","))
+            },
         }
     }
 }
@@ -155,7 +157,7 @@ impl fmt::Display for Value {
                     .map(|v| format!("{}", v)).collect::<Vec<String>>()
                     .join("\n"))
             },
-            // TODO(xion): object should serialize as JSON
+            // TODO(xion): object should serialize as JSON; use rustc-serialize
             Value::Object(ref o) => unimplemented!(),
         }
     }
