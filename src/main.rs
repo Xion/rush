@@ -26,11 +26,18 @@ fn main() {
         return;
     }
 
-    // apply the expression either to every line separately,
-    // or the whole input as an array of lines
+    // choose a function to process the input with, depending on flags
     // TODO(xion): implement "words", where each line is an array of words
     let apply: fn(_, _, _) -> _ =
-        if args.is_present("all") { ap::apply_lines } else { ap:: map_lines };
+        if args.is_present("all") {
+            ap::apply_lines
+        } else if args.is_present("lines") {
+            ap::map_lines
+        } else if args.is_present("json") {
+            ap::apply_json
+        } else {
+            panic!("unable to determine the right way to process input");
+        };
     if let Err(error) = apply(expr, io::stdin(), &mut io::stdout()) {
         error!("{:?}", error);
         exit(1);

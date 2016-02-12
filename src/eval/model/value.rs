@@ -1,6 +1,7 @@
 //! Value type.
 
 use std::collections::HashMap;
+use std::convert::From;
 use std::fmt;
 use std::str::FromStr;
 
@@ -108,6 +109,8 @@ impl FromStr for Value {
 }
 
 
+// Debug & regular output
+
 impl fmt::Debug for Value {
     /// Format a Value for debugging purposes.
     /// This representation is not meant for consumption by end users.
@@ -132,7 +135,6 @@ impl fmt::Debug for Value {
         }
     }
 }
-
 
 impl fmt::Display for Value {
     /// Format a Value for outputing it as a result of the computation.
@@ -160,6 +162,34 @@ impl fmt::Display for Value {
                     .join("\n"))
             },
             Value::Object(..) => write!(fmt, "{}", self.to_json().to_string()),
+        }
+    }
+}
+
+
+// JSON conversions
+
+impl From<Json> for Value {
+    fn from(input: Json) -> Self {
+        match input {
+            Json::Null => Value::Empty,
+            Json::Boolean(b) => Value::Boolean(b),
+            Json::I64(i) => Value::Integer(i),
+            Json::U64(u) => {
+                // TODO(xion): implement optional parsing
+                if u > (i64::max_value() as u64) {
+                    panic!("JSON integer too large: {}", u);
+                }
+                Value::Integer(u as i64)
+            },
+            Json::F64(f) => Value::Float(f),
+            Json::String(s) => Value::String(s),
+            Json::Array(a) => Value::Array(
+                a.into_iter().map(Value::from).collect()
+            ),
+            Json::Object(o) => Value::Object(
+                o.into_iter().map(|(k, v)| (k, Value::from(v))).collect()
+            ),
         }
     }
 }

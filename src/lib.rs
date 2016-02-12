@@ -21,6 +21,8 @@ pub use self::parse::parse;
 
 use std::io::{self, Read, Write, BufRead, BufReader, BufWriter};
 
+use rustc_serialize::json::Json;
+
 use self::eval::{Eval, Context};
 
 
@@ -72,6 +74,27 @@ pub fn apply_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> i
     try!(write!(writer, "{}\n", result));
 
     info!("Processed {} line(s) of input", count);
+    Ok(())
+}
+
+/// Apply the expression to given input taken as single JSON object.
+pub fn apply_json<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
+    let ast = try!(parse_expr(expr));
+
+    // read the input as JSON string and interpret it as Value
+    let mut json_string = String::new();
+    try!(BufReader::new(input).read_to_string(&mut json_string));
+    let json_obj = try!(Json::from_str(&json_string)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e)));
+    let value = Value::from(json_obj);
+
+    let mut context = Context::new();
+    context.set_var("_", value);
+
+    let mut writer = BufWriter::new(output);
+    let result = try!(eval(&ast, &context));
+    try!(write!(writer, "{}\n", result));
+
     Ok(())
 }
 

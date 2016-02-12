@@ -133,6 +133,8 @@ fn constant_array_booleans() {
     assert_eq!(ELEMENTS, &actual[..]);
 }
 
+// TODO(xion): constant objects
+
 #[test]
 fn identity_on_string() {
     assert_noop_apply("_", "foo");
