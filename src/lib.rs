@@ -26,7 +26,7 @@ use self::eval::{Eval, Context};
 
 /// Apply the expression to given input stream, line by line,
 /// writing to the given output stream.
-pub fn map<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> Result<(), io::Error> {
+pub fn map_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
     let ast = try!(parse_expr(expr));
 
     let reader = BufReader::new(input);
@@ -49,14 +49,14 @@ pub fn map<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> Result<()
 }
 
 // TODO(xion): change all usages of apply() to map() and remove this function
-pub fn apply<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> Result<(), io::Error> {
-    map(expr, input, output)
+pub fn apply<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
+    map_lines(expr, input, output)
 }
 
 
 /// Apply the expression to given input taken as array of lines,
 /// writing result to the given output stream.
-pub fn reduce<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> Result<(), io::Error> {
+pub fn reduce_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
     let ast = try!(parse_expr(expr));
 
     // parse input lines into a vector of Value objects
@@ -80,10 +80,16 @@ pub fn reduce<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> Result
     Ok(())
 }
 
+// TODO(xion): change all usage of reduce() to reduce_lines()
+// and remove this function
+pub fn reduce<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
+    reduce_lines(expr, input, output)
+}
+
 
 // Utility functions.
 
-fn parse_expr(expr: &str) -> Result<Box<Eval>, io::Error> {
+fn parse_expr(expr: &str) -> io::Result<Box<Eval>> {
     debug!("Using expression: {}", expr);
     parse(expr).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
 }
@@ -98,6 +104,6 @@ fn update_context(ctx: &mut Context, input: &str) {
     ctx.set_var("_s", Value::String(input.to_string()));
 }
 
-fn eval(ast: &Box<Eval>, ctx: &Context) -> Result<Value, io::Error> {
+fn eval(ast: &Box<Eval>, ctx: &Context) -> io::Result<Value> {
     ast.eval(&ctx).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
 }
