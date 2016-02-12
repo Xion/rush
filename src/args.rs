@@ -35,6 +35,10 @@ fn create_parser<'a>() -> clap::App<'a, 'a> {
         .setting(AppSettings::ArgRequiredElseHelp)
         .setting(AppSettings::UnifiedHelpMessage)
 
+        // TODO(xion): sort this out; we probably need something like
+        // a separate arg to describe how the input is "split"
+        // (not at all, by lines, by words) and how it is received
+        // by the expression (as single string, as array, as JSON)
         .group(ArgGroup::with_name("action")
             .args(&["all", "lines", "words"]))
         .arg(Arg::with_name("all")

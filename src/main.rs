@@ -30,7 +30,7 @@ fn main() {
     // or the whole input as an array of lines
     // TODO(xion): implement "words", where each line is an array of words
     let apply: fn(_, _, _) -> _ =
-        if args.is_present("all") { ap::reduce_lines } else { ap:: map_lines };
+        if args.is_present("all") { ap::apply_lines } else { ap:: map_lines };
     if let Err(error) = apply(expr, io::stdin(), &mut io::stdout()) {
         error!("{:?}", error);
         exit(1);

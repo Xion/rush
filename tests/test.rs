@@ -365,11 +365,11 @@ fn subscript_of_array_constant() {
 #[test]
 fn subscript_of_array_input() {
     const INPUT: &'static [&'static str] = &["foo", "bar"];
-    assert_eq!("foo", reduce("_[0]", INPUT));
-    assert_eq!("bar", reduce("_[1]", INPUT));
-    assert_eq!("foo", reduce("[_][0][0]", INPUT));
-    assert_eq!("other", reduce("[_, [other]][1][0]", INPUT));
-    assert_reduce_error("_[42]", INPUT);
+    assert_eq!("foo", apply_lines("_[0]", INPUT));
+    assert_eq!("bar", apply_lines("_[1]", INPUT));
+    assert_eq!("foo", apply_lines("[_][0][0]", INPUT));
+    assert_eq!("other", apply_lines("[_, [other]][1][0]", INPUT));
+    assert_apply_lines_error("_[42]", INPUT);
 }
 
 #[test]
@@ -470,8 +470,8 @@ fn assert_apply_error(expr: &str, input: &str) {
     }
 }
 
-fn assert_reduce_error<'a>(expr: &str, input: &'a [&'a str]) {
-    if !reduce_ex(expr, input).is_err() {
+fn assert_apply_lines_error<'a>(expr: &str, input: &'a [&'a str]) {
+    if !apply_lines_ex(expr, input).is_err() {
         panic!("Reducing `{}` on input `{}` didn't cause an error!");
     }
 }
@@ -487,14 +487,14 @@ fn eval(expr: &str) -> String {
     }
 }
 
-fn eval_ex(expr: &str) -> Result<String, io::Error> {
+fn eval_ex(expr: &str) -> io::Result<String> {
     apply_ex(expr, "unused")
 }
 
-/// Applies an expression to input given as a string.
-///
-/// Single- and multiline strings are handled automatically:
-/// if the input didn't end with a newline, output won't either.
+
+/// Applies an expression to input given as (single line) string.
+/// This is a special variant of map_lines().
+/// Internally, this calls ap::map_lines.
 fn apply(expr: &str, input: &str) -> String {
     match apply_ex(expr, input) {
         Ok(output) => output,
@@ -502,7 +502,28 @@ fn apply(expr: &str, input: &str) -> String {
     }
 }
 
-fn apply_ex(expr: &str, input: &str) -> Result<String, io::Error> {
+fn apply_ex(expr: &str, input: &str) -> io::Result<String> {
+    assert!(!input.contains("\n"));
+    map_lines_ex(expr, input)
+}
+
+
+/// Applies an expression to input given as a string.
+///
+/// Single- and multiline strings are handled automatically:
+/// multiline strings are split into individual lines & mapped over with `expr`.
+/// Howeever, if the input didn't end with a newline, output won't either.
+///
+/// Internally, this calls ap::map_lines.
+#[allow(dead_code)]
+fn map_lines(expr: &str, input: &str) -> String {
+    match map_lines_ex(expr, input) {
+        Ok(output) => output,
+        Err(err) => { panic!("map_lines() error: {}", err); }
+    }
+}
+
+fn map_lines_ex(expr: &str, input: &str) -> io::Result<String> {
     let mut extra_newline = false;
     let mut input = input.to_string();
     if !input.ends_with("\n") {
@@ -511,7 +532,7 @@ fn apply_ex(expr: &str, input: &str) -> Result<String, io::Error> {
     }
 
     let mut output: Vec<u8> = Vec::new();
-    try!(ap::apply(expr, input.as_bytes(), &mut output));
+    try!(ap::map_lines(expr, input.as_bytes(), &mut output));
 
     let mut result = try!(
         from_utf8(&output)
@@ -523,20 +544,23 @@ fn apply_ex(expr: &str, input: &str) -> Result<String, io::Error> {
     Ok(result)
 }
 
+
 /// Applies an expression to input given as slice of strings.
 /// This input is interpreted as an array by the given expression.
-fn reduce<'a>(expr: &str, input: &'a [&'a str]) -> String {
-    match reduce_ex(expr, input) {
+///
+/// Internally, this calls ap::apply_lines.
+fn apply_lines<'a>(expr: &str, input: &'a [&'a str]) -> String {
+    match apply_lines_ex(expr, input) {
         Ok(output) => output,
-        Err(err) => { panic!("reduce() error: {}", err); }
+        Err(err) => { panic!("apply_lines() error: {}", err); }
     }
 }
 
-fn reduce_ex<'a>(expr: &str, input: &'a [&'a str]) -> Result<String, io::Error> {
+fn apply_lines_ex<'a>(expr: &str, input: &'a [&'a str]) -> io::Result<String> {
     let input = input.join("\n").to_string();
 
     let mut output: Vec<u8> = Vec::new();
-    try!(ap::reduce(expr, input.as_bytes(), &mut output));
+    try!(ap::apply_lines(expr, input.as_bytes(), &mut output));
 
     // if the result turns out to be just a single line,
     // remove the trailing \n

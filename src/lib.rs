@@ -48,25 +48,20 @@ pub fn map_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
     Ok(())
 }
 
-// TODO(xion): change all usages of apply() to map() and remove this function
-pub fn apply<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
-    map_lines(expr, input, output)
-}
-
 
 /// Apply the expression to given input taken as array of lines,
 /// writing result to the given output stream.
-pub fn reduce_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
+pub fn apply_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
     let ast = try!(parse_expr(expr));
 
     // parse input lines into a vector of Value objects
-    let lines = BufReader::new(input).lines()
+    let lines: Vec<_> = BufReader::new(input).lines()
         .map(|r| {
             r.ok().expect("failed to read input line")
                 .parse::<Value>().unwrap_or(Value::Empty)
         })
         .filter(|v| *v != Value::Empty)
-        .collect::<Vec<_>>();
+        .collect();
     let count = lines.len();
 
     let mut context = Context::new();
@@ -78,12 +73,6 @@ pub fn reduce_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> 
 
     info!("Processed {} line(s) of input", count);
     Ok(())
-}
-
-// TODO(xion): change all usage of reduce() to reduce_lines()
-// and remove this function
-pub fn reduce<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
-    reduce_lines(expr, input, output)
 }
 
 
