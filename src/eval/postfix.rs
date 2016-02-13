@@ -1,6 +1,7 @@
 //! Module implementing the evaluation of postfix operators.
 
 use eval::{self, Context, Eval, Value};
+use eval::model::value::{ArrayRepr, StringRepr};
 use parse::ast::{FunctionCallNode, SubscriptNode};
 
 
@@ -38,7 +39,7 @@ impl Eval for SubscriptNode {
 }
 
 impl SubscriptNode {
-    fn eval_on_array(array: &Vec<Value>, index: &Value) -> eval::Result {
+    fn eval_on_array(array: &ArrayRepr, index: &Value) -> eval::Result {
         match *index {
             Value::Integer(i) => {
                 SubscriptNode::resolve_index(i as isize, array.len()).map(|idx| {
@@ -56,7 +57,7 @@ impl SubscriptNode {
         }
     }
 
-    fn eval_on_string(string: &String, index: &Value) -> eval::Result {
+    fn eval_on_string(string: &StringRepr, index: &Value) -> eval::Result {
         match *index {
             Value::Integer(i) => {
                 SubscriptNode::resolve_index(i as isize, string.len()).map(|idx| {

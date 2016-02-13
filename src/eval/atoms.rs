@@ -1,9 +1,8 @@
 //! Module implementing evaluation of the "atomic" expressions,
 //! i.e. those that create the values that are then operated upon.
 
-use std::collections::HashMap;
-
 use eval::{self, Context, Eval, Value};
+use eval::model::value::ObjectRepr;
 use parse::ast::{ArrayNode, ObjectNode, ScalarNode};
 
 
@@ -37,7 +36,7 @@ impl Eval for ArrayNode {
 /// Evaluate the AST node representing an object value.
 impl Eval for ObjectNode {
     fn eval(&self, context: &Context) -> eval::Result {
-        let mut attrs: HashMap<String, Value> = HashMap::new();
+        let mut attrs = ObjectRepr::new();
         for &(ref k, ref v) in self.attributes.iter() {
             let key = try!(k.eval(&context));
             let value = try!(v.eval(&context));

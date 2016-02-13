@@ -3,8 +3,9 @@
 
 mod context;
 mod functions;
-mod value;
 mod variables;
+
+pub mod value;
 
 pub use self::context::Context;
 pub use self::value::Value;

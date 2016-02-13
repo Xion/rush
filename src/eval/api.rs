@@ -7,12 +7,13 @@ use rand::random;
 
 use eval::{self, Error};
 use super::model::Value;
+use super::model::value::{BooleanRepr, IntegerRepr, FloatRepr, StringRepr};
 
 
 /// Compute the length of given value (an array or a string).
 pub fn len(value: Value) -> eval::Result {
-    eval1!((value: &String) -> Integer { value.len() as i64 });
-    eval1!((value: &Array) -> Integer { value.len() as i64 });
+    eval1!((value: &String) -> Integer { value.len() as IntegerRepr });
+    eval1!((value: &Array) -> Integer { value.len() as IntegerRepr });
     Err(Error::new(&format!(
         "len() requires string or array, got {}", value.typename()
     )))
@@ -53,7 +54,7 @@ pub fn sqrt(value : Value) -> eval::Result {
     }
 
     eval1!((value: Integer) -> Float {
-        (try!(ensure_nonnegative(value)) as f64).sqrt()
+        (try!(ensure_nonnegative(value)) as FloatRepr).sqrt()
     });
     eval1!(value : Float {
         try!(ensure_nonnegative(value)).sqrt()
@@ -90,11 +91,11 @@ pub fn str_(value: Value) -> eval::Result {
 /// Convert a value to an integer.
 pub fn int(value: Value) -> eval::Result {
     match value {
-        Value::String(ref s) => s.parse::<i64>()
+        Value::String(ref s) => s.parse::<IntegerRepr>()
             .map_err(|_| Error::new(&format!("invalid integer value: {}", s)))
             .map(Value::Integer),
         Value::Integer(_) => Ok(value),
-        Value::Float(f) => Ok(Value::Integer(f as i64)),
+        Value::Float(f) => Ok(Value::Integer(f as IntegerRepr)),
         Value::Boolean(b) => Ok(Value::Integer(if b { 1 } else { 0 })),
         _ => Err(Error::new(
             &format!("cannot convert {} to int", value.typename())
@@ -105,10 +106,10 @@ pub fn int(value: Value) -> eval::Result {
 /// Convert a value to a float.
 pub fn float(value: Value) -> eval::Result {
     match value {
-        Value::String(ref s) => s.parse::<f64>()
+        Value::String(ref s) => s.parse::<FloatRepr>()
             .map_err(|_| Error::new(&format!("invalid float value: {}", s)))
             .map(Value::Float),
-        Value::Integer(i) => Ok(Value::Float(i as f64)),
+        Value::Integer(i) => Ok(Value::Float(i as FloatRepr)),
         Value::Float(_) => Ok(value),
         Value::Boolean(b) => Ok(Value::Float(if b { 1.0 } else { 0.0 })),
         _ => Err(Error::new(
@@ -120,7 +121,7 @@ pub fn float(value: Value) -> eval::Result {
 /// Convert a value to a boolean, based on its "truthy" value.
 pub fn bool(value: Value) -> eval::Result {
     match value {
-        Value::String(ref s) => s.parse::<bool>()
+        Value::String(ref s) => s.parse::<BooleanRepr>()
             .map_err(|_| Error::new(&format!("invalid bool value: {}", s)))
             .map(Value::Boolean),
         Value::Integer(i) => Ok(Value::Boolean(i != 0)),
@@ -151,7 +152,7 @@ pub fn rev(string: Value) -> eval::Result {
 /// Returns an array of strings.
 pub fn split(string: Value, delim: Value) -> eval::Result {
     eval2!((string: &String, delim: &String) -> Array {
-        string.split(delim).map(str::to_owned).map(Value::String).collect()
+        string.split(delim).map(StringRepr::from).map(Value::String).collect()
     });
     Err(Error::new(&format!(
         "split() expects two strings, got: {}, {}",

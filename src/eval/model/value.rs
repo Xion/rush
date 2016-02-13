@@ -8,6 +8,16 @@ use std::str::FromStr;
 use rustc_serialize::json::{Json, ToJson};
 
 
+// Representations of various possible types of Value.
+pub type SymbolRepr = String;
+pub type BooleanRepr = bool;
+pub type IntegerRepr = i64;
+pub type FloatRepr = f64;
+pub type StringRepr = String;
+pub type ArrayRepr = Vec<Value>;
+pub type ObjectRepr = HashMap<String, Value>;
+
+
 /// Typed value that's operated upon.
 #[derive(Clone,PartialEq)]
 pub enum Value {
@@ -18,15 +28,15 @@ pub enum Value {
     ///
     /// `Symbol("x")` shall evaluate to the value of variable `x` if one is in scope.
     /// Otherwise, it should be equivalent to String("x").
-    Symbol(String),
+    Symbol(SymbolRepr),
 
     // Various data types.
-    Boolean(bool),
-    Integer(i64),
-    Float(f64),
-    String(String),
-    Array(Vec<Value>),
-    Object(HashMap<String, Value>),
+    Boolean(BooleanRepr),
+    Integer(IntegerRepr),
+    Float(FloatRepr),
+    String(StringRepr),
+    Array(ArrayRepr),
+    Object(ObjectRepr),
     // TODO(xion): function type
 }
 
@@ -47,37 +57,37 @@ impl Value {
         }
     }
 
-    pub fn unwrap_string(self) -> String {
+    pub fn unwrap_string(self) -> StringRepr {
         match self {
             Value::String(s) => s,
             _ => { panic!("unwrap_string() on {} value", self.typename()) },
         }
     }
-    pub fn unwrap_int(self) -> i64 {
+    pub fn unwrap_int(self) -> IntegerRepr {
         match self {
             Value::Integer(i) => i,
             _ => { panic!("unwrap_int() on {} value", self.typename()) },
         }
     }
-    pub fn unwrap_float(self) -> f64 {
+    pub fn unwrap_float(self) -> FloatRepr {
         match self {
             Value::Float(f) => f,
             _ => { panic!("unwrap_float() on {} value", self.typename()) },
         }
     }
-    pub fn unwrap_bool(self) -> bool {
+    pub fn unwrap_bool(self) -> BooleanRepr {
         match self {
             Value::Boolean(b) => b,
             _ => { panic!("unwrap_bool() on {} value", self.typename()) },
         }
     }
-    pub fn unwrap_array(self) -> Vec<Value> {
+    pub fn unwrap_array(self) -> ArrayRepr {
         match self {
             Value::Array(a) => a,
             _ => { panic!("unwrap_array() on {} value", self.typename()) },
         }
     }
-    pub fn unwrap_object(self) -> HashMap<String, Value> {
+    pub fn unwrap_object(self) -> ObjectRepr {
         match self {
             Value::Object(o) => o,
             _ => { panic!("unwrap_object() on {} value", self.typename()) },
@@ -95,13 +105,13 @@ impl FromStr for Value {
     /// Create a Value from string, reinterpreting input as number
     /// if we find out it's in numeric form.
     fn from_str(s: &str) -> Result<Value, Self::Err> {
-        if let Ok(int) = s.parse::<i64>() {
+        if let Ok(int) = s.parse::<IntegerRepr>() {
             return Ok(Value::Integer(int));
         }
-        if let Ok(float) = s.parse::<f64>() {
+        if let Ok(float) = s.parse::<FloatRepr>() {
             return Ok(Value::Float(float));
         }
-        if let Ok(boolean) = s.parse::<bool>() {
+        if let Ok(boolean) = s.parse::<BooleanRepr>() {
             return Ok(Value::Boolean(boolean));
         }
         Ok(Value::String(s.to_string()))

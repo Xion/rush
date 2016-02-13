@@ -3,6 +3,7 @@
 use std::iter;
 
 use eval::{self, Context, Eval, Value};
+use eval::model::value::FloatRepr;
 use parse::ast::{BinaryOpNode, ConditionalNode, UnaryOpNode};
 
 
@@ -83,8 +84,8 @@ impl BinaryOpNode {
     /// Evaluate the "<" operator for two values.
     fn eval_lt(left: Value, right: Value) -> eval::Result {
         eval2!((left: Integer, right: Integer) -> Boolean { left < right });
-        eval2!((left: Integer, right: Float) -> Boolean { (left as f64) < right });
-        eval2!((left: Float, right: Integer) -> Boolean { left < (right as f64) });
+        eval2!((left: Integer, right: Float) -> Boolean { (left as FloatRepr) < right });
+        eval2!((left: Float, right: Integer) -> Boolean { left < (right as FloatRepr) });
         eval2!((left: Float, right: Float) -> Boolean { left < right });
         BinaryOpNode::err("<", left, right)
     }
@@ -92,8 +93,8 @@ impl BinaryOpNode {
     /// Evaluate the "<=" operator for two values.
     fn eval_le(left: Value, right: Value) -> eval::Result {
         eval2!((left: Integer, right: Integer) -> Boolean { left <= right });
-        eval2!((left: Integer, right: Float) -> Boolean { (left as f64) <= right });
-        eval2!((left: Float, right: Integer) -> Boolean { left <= (right as f64) });
+        eval2!((left: Integer, right: Float) -> Boolean { (left as FloatRepr) <= right });
+        eval2!((left: Float, right: Integer) -> Boolean { left <= (right as FloatRepr) });
         eval2!((left: Float, right: Float) -> Boolean { left <= right });
         BinaryOpNode::err("<=", left, right)
     }
@@ -101,8 +102,8 @@ impl BinaryOpNode {
     /// Evaluate the ">" operator for two values.
     fn eval_gt(left: Value, right: Value) -> eval::Result {
         eval2!((left: Integer, right: Integer) -> Boolean { left > right });
-        eval2!((left: Integer, right: Float) -> Boolean { (left as f64) > right });
-        eval2!((left: Float, right: Integer) -> Boolean { left > (right as f64) });
+        eval2!((left: Integer, right: Float) -> Boolean { (left as FloatRepr) > right });
+        eval2!((left: Float, right: Integer) -> Boolean { left > (right as FloatRepr) });
         eval2!((left: Float, right: Float) -> Boolean { left > right });
         BinaryOpNode::err(">", left, right)
     }
@@ -110,8 +111,8 @@ impl BinaryOpNode {
     /// Evaluate the ">=" operator for two values.
     fn eval_ge(left: Value, right: Value) -> eval::Result {
         eval2!((left: Integer, right: Integer) -> Boolean { left >= right });
-        eval2!((left: Integer, right: Float) -> Boolean { (left as f64) >= right });
-        eval2!((left: Float, right: Integer) -> Boolean { left >= (right as f64) });
+        eval2!((left: Integer, right: Float) -> Boolean { (left as FloatRepr) >= right });
+        eval2!((left: Float, right: Integer) -> Boolean { left >= (right as FloatRepr) });
         eval2!((left: Float, right: Float) -> Boolean { left >= right });
         BinaryOpNode::err(">=", left, right)
     }
@@ -120,8 +121,8 @@ impl BinaryOpNode {
     fn eval_eq(left: Value, right: Value) -> eval::Result {
         // numeric types
         eval2!((left: Integer, right: Integer) -> Boolean { left == right });
-        eval2!((left: Integer, right: Float) -> Boolean { (left as f64) == right });
-        eval2!((left: Float, right: Integer) -> Boolean { left == (right as f64) });
+        eval2!((left: Integer, right: Float) -> Boolean { (left as FloatRepr) == right });
+        eval2!((left: Float, right: Integer) -> Boolean { left == (right as FloatRepr) });
         eval2!((left: Float, right: Float) -> Boolean { left == right });
 
         // others
@@ -136,8 +137,8 @@ impl BinaryOpNode {
     fn eval_ne(left: Value, right: Value) -> eval::Result {
         // numeric types
         eval2!((left: Integer, right: Integer) -> Boolean { left != right });
-        eval2!((left: Integer, right: Float) -> Boolean { (left as f64) != right });
-        eval2!((left: Float, right: Integer) -> Boolean { left != (right as f64) });
+        eval2!((left: Integer, right: Float) -> Boolean { (left as FloatRepr) != right });
+        eval2!((left: Float, right: Integer) -> Boolean { left != (right as FloatRepr) });
         eval2!((left: Float, right: Float) -> Boolean { left != right });
 
         // others
@@ -153,8 +154,8 @@ impl BinaryOpNode {
         eval2!(left, right : &String { left.clone() + &*right });
         eval2!(left, right : Integer { left + right });
         eval2!(left, right : Float { left + right });
-        eval2!((left: Integer, right: Float) -> Float { left as f64 + right });
-        eval2!((left: Float, right: Integer) -> Float { left + right as f64 });
+        eval2!((left: Integer, right: Float) -> Float { left as FloatRepr + right });
+        eval2!((left: Float, right: Integer) -> Float { left + right as FloatRepr });
         BinaryOpNode::err("+", left, right)
     }
 
@@ -162,8 +163,8 @@ impl BinaryOpNode {
     fn eval_minus(left: Value, right: Value) -> eval::Result {
         eval2!(left, right : Integer { left - right });
         eval2!(left, right : Float { left - right });
-        eval2!((left: Integer, right: Float) -> Float { left as f64 - right });
-        eval2!((left: Float, right: Integer) -> Float { left - right as f64 });
+        eval2!((left: Integer, right: Float) -> Float { left as FloatRepr - right });
+        eval2!((left: Float, right: Integer) -> Float { left - right as FloatRepr });
         BinaryOpNode::err("-", left, right)
     }
 
