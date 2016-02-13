@@ -29,12 +29,8 @@ impl Variables {
     /// Set a value for a variable.
     /// If the variable didn't exist before, it is created.
     pub fn set(&mut self, name: &str, value: Value) {
-        let name = name.to_string();
-        if let Some(val) = self.vars.get_mut(&name) {
-            *val = value;
-            return
-        }
-        self.vars.insert(name, value);
+        // .insert() will update existing value if the key is already there
+        self.vars.insert(name.to_owned(), value);
     }
 
     /// Resolve a possible variable reference.
