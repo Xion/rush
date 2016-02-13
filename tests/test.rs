@@ -1,9 +1,14 @@
 //! Test crate.
 
 extern crate ap;
+extern crate rustc_serialize;
 
+
+use std::collections::HashMap;
 use std::io;
 use std::str::from_utf8;
+
+use rustc_serialize::json::Json;
 
 
 #[test]
@@ -133,7 +138,32 @@ fn constant_array_booleans() {
     assert_eq!(ELEMENTS, &actual[..]);
 }
 
-// TODO(xion): constant objects
+#[test]
+fn constant_object_empty() {
+    assert_noop_eval("{}");
+}
+
+#[test]
+fn constant_object_1attribute() {
+    assert_noop_eval("{\"a\":2}");
+    assert_eval_error("{2: 3}");  // because key has to be string
+}
+
+#[test]
+fn constant_object() {
+    let mut elems = HashMap::new();
+    {
+        elems.insert("a".to_owned(), "foo".to_owned());
+        elems.insert("b".to_owned(), "bar".to_owned());
+    }
+    let expr = format!("{{{}}}", elems.iter()
+        .map(|(ref k, ref v)| format!("{}:{}", k, v))
+        .collect::<Vec<_>>().join(","));
+    let actual = parse_json_stringmap(&eval(&expr));
+    assert_eq!(elems, actual);
+}
+
+// TODO(xion): more constant objects' tests
 
 #[test]
 fn identity_on_string() {
@@ -432,6 +462,16 @@ fn function_call_3args_input() {
 
 fn join<T: ToString>(array: &[T], sep: &str) -> String {
     array.iter().map(T::to_string).collect::<Vec<_>>().join(sep)
+}
+
+/// Parse JSON containing only string values.
+fn parse_json_stringmap(json: &str) -> HashMap<String, String> {
+    let json = Json::from_str(json).expect("failed to parse as JSON");
+    match json {
+        Json::Object(o) => o.into_iter()
+            .map(|(k, v)| (k, v.as_string().unwrap().to_owned())).collect(),
+        _ => { panic!("expected a JSON object literal") },
+    }
 }
 
 
