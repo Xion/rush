@@ -3,16 +3,13 @@
 // TODO(xion): this is a utility module, but it's executed as if it was
 // another module with tests (and therefore requires repetition of
 // these `extern crate` declarations); fix this
-extern crate ap;
-extern crate rustc_serialize;
-
 
 use std::collections::HashMap;
 use std::io;
 use std::str::from_utf8;
 
 use rustc_serialize::json::Json;
-
+use ::ap;
 
 pub fn join<T: ToString>(array: &[T], sep: &str) -> String {
     array.iter().map(T::to_string).collect::<Vec<_>>().join(sep)
