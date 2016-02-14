@@ -1,7 +1,7 @@
 //! Module implementing the evaluation of postfix operators.
 
 use eval::{self, Context, Eval, Value};
-use eval::model::value::{ArrayRepr, StringRepr};
+use eval::model::value::{ArrayRepr, ObjectRepr, StringRepr};
 use parse::ast::{FunctionCallNode, SubscriptNode};
 
 
@@ -22,15 +22,16 @@ impl Eval for FunctionCallNode {
 }
 
 
-/// Evaluate the array subscripting AST node.
+/// Evaluate the subscript AST node.
 impl Eval for SubscriptNode {
     fn eval(&self, context: &Context) -> eval::Result {
         let object = try!(self.object.eval(&context));
         let index = try!(self.index.eval(&context));
 
         match object {
-            Value::Array(ref a) => SubscriptNode::eval_on_array(&a, &index),
             Value::String(ref s) => SubscriptNode::eval_on_string(&s, &index),
+            Value::Array(ref a) => SubscriptNode::eval_on_array(&a, &index),
+            Value::Object(ref o) => SubscriptNode::eval_on_object(&o, &index),
             _ => Err(eval::Error::new(
                 &format!("can't index {:?} with {:?}", object, index)
             )),
@@ -39,24 +40,6 @@ impl Eval for SubscriptNode {
 }
 
 impl SubscriptNode {
-    fn eval_on_array(array: &ArrayRepr, index: &Value) -> eval::Result {
-        match *index {
-            Value::Integer(i) => {
-                SubscriptNode::resolve_index(i as isize, array.len()).map(|idx| {
-                    // TODO(xion): this clone() call is very inefficient for
-                    // multi-dimensional arrays; return some Value pointer instead
-                    array[idx].clone()
-                })
-            },
-            Value::Float(..) => Err(eval::Error::new(
-                &format!("array indices must be integers")
-            )),
-            _ => Err(eval::Error::new(
-                &format!("can't index an array with {:?}", index)
-            )),
-        }
-    }
-
     fn eval_on_string(string: &StringRepr, index: &Value) -> eval::Result {
         match *index {
             Value::Integer(i) => {
@@ -71,8 +54,40 @@ impl SubscriptNode {
                 &format!("character indices must be integers")
             )),
             _ => Err(eval::Error::new(
-                &format!("can't index a string with {:?}", index)
+                &format!("can't index a string with a {}", index.typename())
             )),
+        }
+    }
+
+    fn eval_on_array(array: &ArrayRepr, index: &Value) -> eval::Result {
+        match *index {
+            Value::Integer(i) => {
+                SubscriptNode::resolve_index(i as isize, array.len()).map(|idx| {
+                    // TODO(xion): this clone() call is very inefficient for
+                    // multi-dimensional arrays; return some Value pointer instead
+                    array[idx].clone()
+                })
+            },
+            Value::Float(..) => Err(eval::Error::new(
+                &format!("array indices must be integers")
+            )),
+            _ => Err(eval::Error::new(
+                &format!("can't index an array with a {}", index.typename())
+            )),
+        }
+    }
+
+    fn eval_on_object(object: &ObjectRepr, index: &Value) -> eval::Result {
+        match *index {
+            Value::Symbol(ref s) |
+            Value::String(ref s) => object.get(s)
+                .map(Value::clone)  // TODO(xion): same as in eval_on_array()
+                .ok_or_else(|| eval::Error::new(&format!(
+                    "object has no attribute `{}`", s
+                ))),
+            _ => Err(eval::Error::new(
+                &format!("can't index an object with a {}", index.typename())
+            ))
         }
     }
 
