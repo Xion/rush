@@ -67,7 +67,7 @@ pub fn apply_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> i
     let count = lines.len();
 
     let mut context = Context::new();
-    context.set_var("_", Value::Array(lines));
+    context.set("_", Value::Array(lines));
 
     let mut writer = BufWriter::new(output);
     let result = try!(eval(&ast, &context));
@@ -89,7 +89,7 @@ pub fn apply_json<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io
     let value = Value::from(json_obj);
 
     let mut context = Context::new();
-    context.set_var("_", value);
+    context.set("_", value);
 
     let mut writer = BufWriter::new(output);
     let result = try!(eval(&ast, &context));
@@ -107,13 +107,13 @@ fn parse_expr(expr: &str) -> io::Result<Box<Eval>> {
 }
 
 fn update_context(ctx: &mut Context, input: &str) {
-    ctx.set_var("_", input.parse::<Value>().unwrap_or_else(|_| Value::String(input.to_string())));
-    ctx.set_var("_b", input.parse::<bool>().map(Value::Boolean).unwrap_or(Value::Empty));
-    ctx.set_var("_f", input.parse::<f64>().map(Value::Float).unwrap_or(Value::Empty));
+    ctx.set("_", input.parse::<Value>().unwrap_or_else(|_| Value::String(input.to_string())));
+    ctx.set("_b", input.parse::<bool>().map(Value::Boolean).unwrap_or(Value::Empty));
+    ctx.set("_f", input.parse::<f64>().map(Value::Float).unwrap_or(Value::Empty));
     // TODO(xion): consider also trying to parse the input as f64
     // and exposing the rounded version as _i
-    ctx.set_var("_i", input.parse::<i64>().map(Value::Integer).unwrap_or(Value::Empty));
-    ctx.set_var("_s", Value::String(input.to_string()));
+    ctx.set("_i", input.parse::<i64>().map(Value::Integer).unwrap_or(Value::Empty));
+    ctx.set("_s", Value::String(input.to_string()));
 }
 
 fn eval(ast: &Box<Eval>, ctx: &Context) -> io::Result<Value> {

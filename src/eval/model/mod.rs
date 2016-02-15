@@ -4,7 +4,6 @@
 mod context;
 mod function;
 mod functions;
-mod variables;
 
 pub mod value;
 

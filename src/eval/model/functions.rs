@@ -4,19 +4,13 @@
 use std::collections::HashMap;
 
 use eval::{self, api, Error};
+use super::function::{Args, NativeFunction};
 use super::value::Value;
-
-
-/// Arguments to a function.
-pub type Args = Vec<Value>;
-
-/// Function type.
-pub type Function = Fn(Args) -> eval::Result;
 
 
 /// Container of functions available within the evaluation context.
 pub struct Functions {
-    funcs: HashMap<String, Box<Function>>,
+    pub funcs: HashMap<String, Box<NativeFunction>>,
 }
 
 impl Functions {
@@ -41,12 +35,6 @@ impl Functions {
         fs.define_ternary("sub", api::sub);
 
         return fs;
-    }
-
-    pub fn call(&self, name: &str, args: Args) -> eval::Result  {
-        self.funcs.get(&name.to_string())
-            .ok_or(Error::new(&format!("{}() function not found", name)))
-            .and_then(|func| func(args))
     }
 
     fn define<F>(&mut self, name: &str, func: F) -> &mut Self

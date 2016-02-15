@@ -17,7 +17,7 @@ impl Eval for FunctionCallNode {
 
         // extract the argument values and call the function
         let args = evals.into_iter().map(|r| r.ok().unwrap()).collect();
-        context.call_func(&self.name, args)
+        context.call(&self.name, args)
     }
 }
 

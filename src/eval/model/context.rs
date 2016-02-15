@@ -1,59 +1,97 @@
 //! Evaluation context.
 
+use std::collections::HashMap;
+
 use eval;
-use super::functions::{Args, Functions};
+use super::function::{Args, Function, Invoke};
+use super::functions::Functions;
 use super::value::Value;
-use super::variables::Variables;
 
 
 /// Evaluation context for an expression.
 ///
 /// Contains all the variable and function bindings that are used
 /// when evaluating an expression.
+///
+/// This is roughly equivalent to a stack frame.
 pub struct Context<'a> {
+    /// Optional parent Context, i.e. a lower "frame" on the "stack".
     parent: Option<&'a Context<'a>>,
-    vars: Variables,
-    funcs: Functions,
+
+    /// Names & values present in the context.
+    scope: HashMap<String, Value>,
 }
 
 impl<'a> Context<'a> {
+    /// Create a new root context.
     pub fn new() -> Context<'a> {
-        Context{parent: None, vars: Variables::new(), funcs: Functions::new()}
+        let mut context = Context{parent: None, scope: HashMap::new()};
+        context.init_builtins();
+        context
     }
+
+    /// Create a new Context that's a child of given parent.
     pub fn with_parent(parent: &'a Context<'a>) -> Context<'a> {
-        Context{
-            parent: Some(parent), vars: Variables::new(), funcs: Functions::new()
+        Context{parent: Some(parent), scope: HashMap::new()}
+    }
+
+    // TODO(xion): rather than crudely reusing the logic from Functions struct,
+    // have Context register the builtin API functions on itself
+    // (e.g. by having `impl Context` block in a new api/mod.rs).
+    fn init_builtins(&mut self) {
+        let mut funcs = Functions::new();
+        for (name, api_func) in funcs.funcs.drain() {
+            self.set(&name, Value::Function(Function::from_boxed_native(api_func)));
         }
     }
 
-    #[allow(dead_code)]
-    /// Retrieves the value for a variable if it exists.
-    pub fn get_var(&self, name: &str) -> Option<&Value> {
-        self.vars.get(&name.to_string())
-            .or_else(|| self.parent.and_then(|ctx| ctx.get_var(name)))
+    /// Retrieves a value by name from the scope of the context
+    /// or any of its parents.
+    pub fn get(&self, name: &str) -> Option<&Value> {
+        self.scope.get(&name.to_string())
+            .or_else(|| self.parent.and_then(|ctx| ctx.get(name)))
     }
 
-    /// Set a value for a variable.
-    /// If the variable didn't exist before, it is created.
-    pub fn set_var(&mut self, name: &str, value: Value) {
-        self.vars.set(name, value)
+    /// Set a value for a variable inside the context's scope.
+    /// If the name already exists in the parent scope (if any),
+    /// it will be shadowed.
+    pub fn set(&mut self, name: &str, value: Value) {
+        self.scope.insert(name.to_owned(), value);
     }
 
-    /// Resolve given value, producing either it's copy
-    /// or a value of a variable it's referring to.
+    /// Resolve a possible variable reference.
+    ///
+    /// Returns the variable's Value (which may be just variable name as string),
+    /// or a copy of the original Value if it wasn't a reference.
     pub fn resolve(&self, value: &Value) -> Value {
-        let value = self.vars.resolve(value);
-        match self.parent {
-            Some(ctx) => ctx.resolve(&value),
-            _ => value,
+        let mut result = value;
+
+        // follow the chain of references until it bottoms out
+        loop {
+            match result {
+                &Value::Symbol(ref sym) => {
+                    if let Some(target) = self.get(sym) {
+                        result = target;
+                    } else {
+                        return Value::String(sym.clone())
+                    }
+                }
+                _ => { break; }
+            }
         }
+        result.clone()
     }
 
     /// Call a function of given name with given arguments.
-    /// Returns Some(result), or None if the function couldn't be found.
-    pub fn call_func(&self, name: &str, args: Args) -> eval::Result {
-        // TODO(xion): if function can't be found in current context,
-        // try the parent (merge var & func namespaces first, though)
-        self.funcs.call(name, args)
+    pub fn call(&self, name: &str, args: Args) -> eval::Result {
+        match self.get(name) {
+            Some(&Value::Function(ref f)) => f.invoke(args, &self),
+            // Note that when both this & parent context have `name` in scope,
+            // and in parent this is a function while in this context it's not,
+            // the result is in error.
+            // This is perfectly consistent with the way shadowing should work,
+            // and would be VERY confusing otherwise.
+            _ => Err(eval::Error::new(&format!("`{}` is not a function", name))),
+        }
     }
 }

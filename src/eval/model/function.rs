@@ -25,10 +25,27 @@ pub trait Invoke {
 #[derive(Clone)]
 pub enum Function {
     /// Native function that's implemented in the interpreter.
-    Native(Rc<NativeFunction>),
+    Native(Rc<Box<NativeFunction>>),
 
     /// Custom function that's been defined as part of the expression itself.
     Custom(CustomFunction),
+}
+
+#[allow(dead_code)]
+impl Function {
+    pub fn from_native<F>(f: F) -> Function
+        where F: Fn(Args) -> eval::Result + 'static
+    {
+        Function::Native(Rc::new(Box::new(f)))
+    }
+
+    pub fn from_boxed_native(f: Box<NativeFunction>) -> Function {
+        Function::Native(Rc::new(f))
+    }
+
+    pub fn from_lambda(argnames: &[&str], expr: Box<Eval>) -> Function {
+        Function::Custom(CustomFunction::new(argnames, expr))
+    }
 }
 
 impl PartialEq for Function {
@@ -108,7 +125,7 @@ impl Invoke for CustomFunction {
 
         let mut context = Context::with_parent(context);
         for (name, value) in self.argnames.iter().zip(args.drain(..)) {
-            context.set_var(name, value);
+            context.set(name, value);
         }
         self.expr.eval(&context)
     }
