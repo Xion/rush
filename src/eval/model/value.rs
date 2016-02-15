@@ -7,6 +7,8 @@ use std::str::FromStr;
 
 use rustc_serialize::json::{Json, ToJson};
 
+use super::function::Function;
+
 
 // Representations of various possible types of Value.
 pub type SymbolRepr = String;
@@ -16,6 +18,7 @@ pub type FloatRepr = f64;
 pub type StringRepr = String;
 pub type ArrayRepr = Vec<Value>;
 pub type ObjectRepr = HashMap<String, Value>;
+pub type FunctionRepr = Function;
 
 
 /// Typed value that's operated upon.
@@ -37,7 +40,7 @@ pub enum Value {
     String(StringRepr),
     Array(ArrayRepr),
     Object(ObjectRepr),
-    // TODO(xion): function type
+    Function(FunctionRepr),
 }
 
 
@@ -54,6 +57,7 @@ impl Value {
             Value::String(..) => "str",
             Value::Array(..) => "array",
             Value::Object(..) => "object",
+            Value::Function(..) => "function",
         }
     }
 
@@ -91,6 +95,12 @@ impl Value {
         match self {
             Value::Object(o) => o,
             _ => { panic!("unwrap_object() on {} value", self.typename()) },
+        }
+    }
+    pub fn unwrap_function(self) -> FunctionRepr {
+        match self {
+            Value::Function(f) => f,
+            _ => { panic!("unwrap_function() on {} value", self.typename()) },
         }
     }
 }
@@ -142,6 +152,7 @@ impl fmt::Debug for Value {
                     .map(|(k, v)| format!("\"{}\": {:?}", k, v))
                     .collect::<Vec<String>>().join(","))
             },
+            Value::Function(ref f) => write!(fmt, "{:?}", f),
         }
     }
 }
@@ -172,6 +183,8 @@ impl fmt::Display for Value {
                     .join("\n"))
             },
             Value::Object(..) => write!(fmt, "{}", self.to_json().to_string()),
+            // TODO(xion): make Function a formatting error
+            Value::Function(..) => write!(fmt, "{}", "<function>"),
         }
     }
 }
@@ -221,6 +234,7 @@ impl ToJson for Value {
             Value::Object(ref o) => Json::Object(
                 o.iter().map(|(k, v)| (k.clone(), v.to_json())).collect()
             ),
+            Value::Function(..) => panic!("function cannot be serialized as JSON"),
         }
     }
 }
