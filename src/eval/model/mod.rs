@@ -3,9 +3,9 @@
 
 mod context;
 mod function;
-mod functions;
 
 pub mod value;
 
 pub use self::context::Context;
+pub use self::function::{Args, Function};
 pub use self::value::Value;

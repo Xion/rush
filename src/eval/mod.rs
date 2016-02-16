@@ -10,6 +10,7 @@ mod infix;
 mod postfix;
 
 pub use self::model::{Context, Value};
+pub use self::model::value;  // for *Repr typedefs
 
 
 use std::error;

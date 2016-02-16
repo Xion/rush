@@ -3,8 +3,7 @@
 use std::collections::HashMap;
 
 use eval;
-use super::function::{Args, Function, Invoke};
-use super::functions::Functions;
+use super::function::{Args, Invoke};
 use super::value::Value;
 
 
@@ -35,14 +34,9 @@ impl<'a> Context<'a> {
         Context{parent: Some(parent), scope: HashMap::new()}
     }
 
-    // TODO(xion): rather than crudely reusing the logic from Functions struct,
-    // have Context register the builtin API functions on itself
-    // (e.g. by having `impl Context` block in a new api/mod.rs).
-    fn init_builtins(&mut self) {
-        let mut funcs = Functions::new();
-        for (name, api_func) in funcs.funcs.drain() {
-            self.set(&name, Value::Function(Function::from_boxed_native(api_func)));
-        }
+    /// Whether this is a root context (one without a parent).
+    pub fn is_root(&self) -> bool {
+        self.parent.is_none()
     }
 
     /// Retrieves a value by name from the scope of the context
