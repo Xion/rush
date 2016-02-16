@@ -8,6 +8,7 @@ use eval::value::IntegerRepr;
 pub fn len(value: Value) -> eval::Result {
     eval1!((value: &String) -> Integer { value.len() as IntegerRepr });
     eval1!((value: &Array) -> Integer { value.len() as IntegerRepr });
+    eval1!((value: &Object) -> Integer { value.len() as IntegerRepr });
     Err(Error::new(&format!(
         "len() requires string or array, got {}", value.typename()
     )))
