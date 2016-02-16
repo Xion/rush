@@ -12,7 +12,7 @@ pub fn str_(value: Value) -> eval::Result {
         Value::Float(f) => Ok(Value::String(f.to_string())),
         Value::Boolean(b) => Ok(Value::String((
             if b { "true" } else { "false" }
-        ).to_string())),
+        ).to_owned())),
         _ => Err(Error::new(
             &format!("cannot convert {} to string", value.typename())
         )),

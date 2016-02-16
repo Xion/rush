@@ -27,9 +27,9 @@ pub fn parse(input: &str) -> Result<Box<Eval>, ParseError> {
                 Ok(node)
             } else {
                 Err(match from_utf8(input) {
-                    Ok(i) => ParseError::Excess(i.to_string()),
+                    Ok(i) => ParseError::Excess(i.to_owned()),
                     // TODO(xion): bubble the error from the various
-                    // from_utf8 calls in gramamr rules
+                    // from_utf8 calls in gramamar rules
                     _ => ParseError::Corrupted,
                 })
             }

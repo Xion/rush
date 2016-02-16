@@ -42,7 +42,7 @@ impl<'a> Context<'a> {
     /// Retrieves a value by name from the scope of the context
     /// or any of its parents.
     pub fn get(&self, name: &str) -> Option<&Value> {
-        self.scope.get(&name.to_string())
+        self.scope.get(&name.to_owned())
             .or_else(|| self.parent.and_then(|ctx| ctx.get(name)))
     }
 

@@ -110,7 +110,7 @@ fn constant_array_floats() {
 fn constant_array_strings() {
     const ELEMENTS: &'static [&'static str] = &["foo", "bar", "baz"];
     let expr = format!("[{}]", join(ELEMENTS, ","));
-    let actual: Vec<_> = eval(&expr).split('\n').map(str::to_string).collect();
+    let actual: Vec<_> = eval(&expr).split('\n').map(String::from).collect();
     assert_eq!(ELEMENTS, &actual[..]);
 }
 
@@ -119,7 +119,7 @@ fn constant_array_quoted_strings() {
     const ELEMENTS: &'static [&'static str] = &["Alice", "has", "a", "cat"];
     let expr = format!("[{}]", ELEMENTS.iter()
         .map(|s| format!("\"{}\"", s)).collect::<Vec<_>>().join(","));
-    let actual: Vec<_> = eval(&expr).split('\n').map(str::to_string).collect();
+    let actual: Vec<_> = eval(&expr).split('\n').map(String::from).collect();
     assert_eq!(ELEMENTS, &actual[..]);
 }
 

@@ -115,7 +115,7 @@ pub fn map_lines(expr: &str, input: &str) -> String {
 
 pub fn map_lines_ex(expr: &str, input: &str) -> io::Result<String> {
     let mut extra_newline = false;
-    let mut input = input.to_string();
+    let mut input = input.to_owned();
     if !input.ends_with("\n") {
         input.push('\n');
         extra_newline = true;
@@ -127,7 +127,7 @@ pub fn map_lines_ex(expr: &str, input: &str) -> io::Result<String> {
     let mut result = try!(
         from_utf8(&output)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
-    ).to_string();
+    ).to_owned();
     if extra_newline {
         result.pop();  // remove trailing \n
     }
@@ -147,7 +147,7 @@ pub fn apply_lines<'a>(expr: &str, input: &'a [&'a str]) -> String {
 }
 
 pub fn apply_lines_ex<'a>(expr: &str, input: &'a [&'a str]) -> io::Result<String> {
-    let input = input.join("\n").to_string();
+    let input = input.join("\n").to_owned();
 
     let mut output: Vec<u8> = Vec::new();
     try!(ap::apply_lines(expr, input.as_bytes(), &mut output));
@@ -157,7 +157,7 @@ pub fn apply_lines_ex<'a>(expr: &str, input: &'a [&'a str]) -> io::Result<String
     let mut result = try!(
         from_utf8(&output)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
-    ).to_string();
+    ).to_owned();
     if result.chars().filter(|c| *c == '\n').count() == 1 {
         result.pop();
     }

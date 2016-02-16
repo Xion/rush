@@ -19,7 +19,7 @@ use eval::{Eval, Value};
 /// and output String objects.
 macro_rules! string {
     ($i:expr, $submac:ident!( $($args:tt)* )) => (
-        map!($i, map_res!($submac!($($args)*), from_utf8), str::to_string);
+        map!($i, map_res!($submac!($($args)*), from_utf8), String::from);
     );
     ($i:expr, $f:expr) => (
         string!($i, call!($f));
@@ -324,7 +324,7 @@ fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
 
     // TODO(xion): use *_static! variant when regexp_macros feature
     // can be used in stable Rust
-    let regex = "^".to_string() + FLOAT_REGEX;  // 'coz we want immediate match
+    let regex = "^".to_owned() + FLOAT_REGEX;  // 'coz we want immediate match
     let result = re_find!(input, &regex);
 
     // This match has to be explicit (rather than try_parse! etc.)
@@ -335,7 +335,7 @@ fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
     // to avoid this hack and the various map_res!(..., from_utf8) elsewhere
     match result {
         IResult::Done(rest, parsed) =>
-            IResult::Done(rest.as_bytes(), parsed.to_string()),
+            IResult::Done(rest.as_bytes(), String::from(parsed)),
         IResult::Incomplete(i) => IResult::Incomplete(i),
         IResult::Error(nom::Err::Code(e)) => IResult::Error(nom::Err::Code(e)),
         _ => panic!("unexpected IResult from re_find!"),
