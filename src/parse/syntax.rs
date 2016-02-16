@@ -226,10 +226,10 @@ named!(power( &[u8] ) -> Box<Eval>, chain!(
             power = match trailer {
                 Trailer::Subscript(index) => Box::new(
                     SubscriptNode{object: power, index: index}
-                ) as Box<Eval>,
-                Trailer::Args(args) => Box::new(
-                    FunctionCallNode{func: power, args: args}
-                ) as Box<Eval>,
+                ),
+                Trailer::Args(args) =>
+                    Box::new(FunctionCallNode{func: power, args: args}
+                ),
             };
         }
         // then, we build nodes for any unary operators that may have been
@@ -237,7 +237,7 @@ named!(power( &[u8] ) -> Box<Eval>, chain!(
         // so that `---foo` means `-(-(-foo))`)
         ops.reverse();
         for op in ops.drain(..) {
-            power = Box::new(UnaryOpNode{op: op, arg: power}) as Box<Eval>
+            power = Box::new(UnaryOpNode{op: op, arg: power});
         }
         power
     }
@@ -275,12 +275,12 @@ named!(object_value( &[u8] ) -> Box<Eval>, map!(
         ),
         multispaced!(tag!("}"))
     ),
-    |attrs| { Box::new(ObjectNode{attributes: attrs}) as Box<Eval> }
+    |attrs| { Box::new(ObjectNode{attributes: attrs}) }
 ));
 
 named!(array_value( &[u8] ) -> Box<Eval>, map!(
     delimited!(multispaced!(tag!("[")), items, multispaced!(tag!("]"))),
-    |items| { Box::new(ArrayNode{elements: items}) as Box<Eval> }
+    |items| { Box::new(ArrayNode{elements: items}) }
 ));
 
 named!(bool_value( &[u8] ) -> Box<Eval>, alt!(
