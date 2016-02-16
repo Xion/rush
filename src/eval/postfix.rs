@@ -1,6 +1,7 @@
 //! Module implementing the evaluation of postfix operators.
 
 use eval::{self, Context, Eval, Value};
+use eval::model::Invoke;
 use eval::model::value::{ArrayRepr, ObjectRepr, StringRepr};
 use parse::ast::{FunctionCallNode, SubscriptNode};
 
@@ -8,16 +9,22 @@ use parse::ast::{FunctionCallNode, SubscriptNode};
 /// Evaluate the function call AST node.
 impl Eval for FunctionCallNode {
     fn eval(&self, context: &Context) -> eval::Result {
-        // evaluate all the arguments first, bail if any of that fails
-        let evals: Vec<_> =
-            self.args.iter().map(|x| x.eval(&context)).collect();
-        if let Some(res) = evals.iter().find(|r| r.is_err()) {
-            return res.clone();
-        }
+        let func = try!(self.func.eval(&context));
+        if let &Value::Function(ref f) = &func {
+            // evaluate all the arguments first, bail if any of that fails
+            let evals: Vec<_> =
+                self.args.iter().map(|x| x.eval(&context)).collect();
+            if let Some(res) = evals.iter().find(|r| r.is_err()) {
+                return res.clone();
+            }
 
-        // extract the argument values and call the function
-        let args = evals.into_iter().map(|r| r.ok().unwrap()).collect();
-        context.call(&self.name, args)
+            // extract the argument values and call the function
+            let args = evals.into_iter().map(|r| r.ok().unwrap()).collect();
+            return f.invoke(args, &context);
+        }
+        Err(eval::Error::new(&format!(
+            "can't call a(n) {} like a function", func.typename()
+        )))
     }
 }
 

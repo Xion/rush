@@ -116,18 +116,18 @@ impl fmt::Debug for SubscriptNode {
 }
 
 
-/// AST node representing a call to a function with given name and arguments.
+/// AST node representing a call to a function with given arguments.
 ///
 /// The exact function the name resolves to depends on the context passed
 /// during evaluation.
 pub struct FunctionCallNode {
-    pub name: String,
+    pub func: Box<Eval>,
     pub args: Vec<Box<Eval>>,
 }
 
 impl fmt::Debug for FunctionCallNode {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "<Call: {}({})>", self.name,
+        write!(fmt, "<Call: {:?}({})>", self.func,
                self.args.iter()
                    .map(|ref arg| format!("{:?}", arg))
                    .collect::<Vec<String>>().join(","))

@@ -217,27 +217,20 @@ named!(factor( &[u8] ) -> Box<Eval>, chain!(
 /// power ::== [UNARY_OP] (function_call | atom) subscript*
 named!(power( &[u8] ) -> Box<Eval>, chain!(
     mut ops: many0!(string!(multispaced!(char_of!(UNARY_OPS)))) ~
-    mut power: alt!(
-        // complete!(...) is necessary because `atom` can be a prefix
-        // of `function_call`. Otherwise, trying to parse an atom
-        // as function call will result in incomplete input
-        // (because the pair of parentheses is "missing").
-        // Using complete! forces the parses to interpret this IResult::Incomplete
-        // as error (and thus try the `atom` branch) rather than bubble it up.
-        complete!(function_call) | atom
-    ) ~
-    // TODO(xion): when functions are first-class values, we'll need to roll
-    // parenthesized arguments from `function_call` into here
-    subscripts: many0!(
-        delimited!(multispaced!(tag!("[")), argument, multispaced!(tag!("]")))
-    ),
+    mut power: atom ~
+    trailers: many0!(trailer),
     move || {
-        // subscripting has higher priority than any possible unary operators,
-        // so we build the AST node(s) for that first
-        for subscript in subscripts {
-            power = Box::new(
-                SubscriptNode{object: power, index: subscript}
-            ) as Box<Eval>
+        // trailers (subscripts & function calls) have higher priority
+        // than any unary operators, so we build their AST node(s) first
+        for trailer in trailers {
+            power = match trailer {
+                Trailer::Subscript(index) => Box::new(
+                    SubscriptNode{object: power, index: index}
+                ) as Box<Eval>,
+                Trailer::Args(args) => Box::new(
+                    FunctionCallNode{func: power, args: args}
+                ) as Box<Eval>,
+            };
         }
         // then, we build nodes for any unary operators that may have been
         // prepended to the whole thing (in reverse order,
@@ -250,11 +243,16 @@ named!(power( &[u8] ) -> Box<Eval>, chain!(
     }
 ));
 
-/// function_call ::== identifier '(' ARGS ')'
-named!(function_call( &[u8] ) -> Box<Eval>, chain!(
-    name: identifier ~
-    args: delimited!(multispaced!(tag!("(")), items, multispaced!(tag!(")"))),
-    || { Box::new(FunctionCallNode{name: name, args: args}) as Box<Eval> }
+/// trailer ::== '[' expression ']' | '(' ARGS ')'
+enum Trailer { Subscript(Box<Eval>), Args(Vec<Box<Eval>>) }
+named!(trailer( &[u8] ) -> Trailer, alt!(
+    delimited!(multispaced!(tag!("[")),
+               expression,
+               multispaced!(tag!("]"))) => { |s| Trailer::Subscript(s) }
+    |
+    delimited!(multispaced!(tag!("(")),
+               items,
+               multispaced!(tag!(")"))) => { |args| Trailer::Args(args) }
 ));
 
 /// items ::== expression (',' expression)*
