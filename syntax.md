@@ -7,8 +7,8 @@ Expression syntax overview
 * string (default if no explicit annotation/function/coercion is used)
 * number: int or float
 * booleans (true or false)
-
-TODO(xion): hashmaps?? (for JSON maybe)
+* arrays
+* objects (hashmaps string -> value)
 
 ## Identifiers & values
 
@@ -33,9 +33,9 @@ Floats are additionally `[+-]?([0-9]\.)?[0-9]+(e$INTEGER)?` (i.e. regular & scie
 
 * arithmetic: `+`, `-`, `*`, `/`; operate on numbers
 * strings: `+` (concatentation), `*` (repeat), `%` (formatting)
+* ternary operator: `?:`
 
-TODO(xion): conditional/ternary operator?
-TODO(xion): with arrays, split & join (e.g. `/` as split operator, `~` as join)
+TODO(xion): split & join (e.g. `/` as split operator, `~` as join)
 
 ## Functions
 
@@ -44,17 +44,15 @@ Function names are identifiers.
 Function invocation always involves parentheses around its argument list (even if empty).
 Multiple arguments are separated with comma.
 
-Anonymous functions are defined using `\`, an argument list, colon, and expression, e.g.:
+Anonymous functions are defined using `|` (pipe), an argument list, another pipe, and expression, e.g.:
 
-    \: 42
-    \x: x + 2
-    \x,y: x + y
-
-FIXME(xion): this won't work nicely with shell escaping (requires double backslash), probably need some other syntax ;/
+    || 42
+    |x| x + 2
+    |x,y| x + y
 
 `.` is the composition operator:
 
-    abs . (\x: x + 2)   ===  \x: abs(x + 2)
+    abs . (|x| x + 2)   ===  |x| abs(x + 2)
 
 TODO(xion): Haskell-like syntax for (partial application of) operator functions:
 (+), (2+), (*5), etc.
@@ -76,5 +74,5 @@ Depending on the type of the overall expression, the result of its execution is 
   and the result is the output for the item
 * otherwise (e.g. function with more than one argument) it is a fatal error
 
-Alternately, an expression such as `_ + 2` can be thought as a shorthand for `\x: x + 2`
+Alternately, an expression such as `_ + 2` can be thought as a shorthand for `|x| x + 2`
 (as long as typed versions `_` haven't been used).
