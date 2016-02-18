@@ -195,6 +195,10 @@ impl BinaryOpNode {
         eval2!((left: &String, right: Integer) -> String where (right > 0) {
             iter::repeat(left).map(String::clone).take(right as usize).collect()
         });
+        eval2!((left: &Array, right: Integer) -> Array where (right > 0) {{
+            iter::repeat(left).map(Vec::clone).take((right - 1) as usize)
+                .fold(left.clone(), |mut res, mut next| { res.append(&mut next); res })
+        }});
         BinaryOpNode::err("*", left, right)
     }
 
