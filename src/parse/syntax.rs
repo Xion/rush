@@ -224,12 +224,10 @@ named!(power( &[u8] ) -> Box<Eval>, chain!(
         // than any unary operators, so we build their AST node(s) first
         for trailer in trailers {
             power = match trailer {
-                Trailer::Subscript(index) => Box::new(
-                    SubscriptNode{object: power, index: index}
-                ),
+                Trailer::Subscript(index) =>
+                    Box::new(SubscriptNode{object: power, index: index}),
                 Trailer::Args(args) =>
-                    Box::new(FunctionCallNode{func: power, args: args}
-                ),
+                    Box::new(FunctionCallNode{func: power, args: args}),
             };
         }
         // then, we build nodes for any unary operators that may have been

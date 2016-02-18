@@ -1,4 +1,5 @@
-//! Module implementing the evaluation of postfix operators.
+//! Module implementing the evaluation of "trailer" parts of terms,
+//! such as indexing or function call syntax.
 
 use eval::{self, Context, Eval, Value};
 use eval::model::Invoke;

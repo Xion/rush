@@ -6,8 +6,8 @@ mod model;
 
 mod api;
 mod atoms;
-mod infix;
-mod postfix;
+mod operators;
+mod trailers;
 
 pub use self::model::{Context, Value};
 pub use self::model::value;  // for *Repr typedefs

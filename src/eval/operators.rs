@@ -1,4 +1,4 @@
-//! Module implementing evaluation of infix operators.
+//! Module implementing evaluation of the various operators.
 
 use std::iter;
 
