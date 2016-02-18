@@ -80,6 +80,7 @@ impl Eval for BinaryOpNode {
     }
 }
 
+// Comparison operators.
 impl BinaryOpNode {
     /// Evaluate the "<" operator for two values.
     fn eval_lt(left: Value, right: Value) -> eval::Result {
@@ -148,7 +149,10 @@ impl BinaryOpNode {
 
         BinaryOpNode::err("!=", left, right)
     }
+}
 
+// Other binary operators.
+impl BinaryOpNode {
     /// Evaluate the "+" operator for two values.
     fn eval_plus(left: Value, right: Value) -> eval::Result {
         eval2!(left, right : &String { left.clone() + &*right });
@@ -156,6 +160,22 @@ impl BinaryOpNode {
         eval2!(left, right : Float { left + right });
         eval2!((left: Integer, right: Float) -> Float { left as FloatRepr + right });
         eval2!((left: Float, right: Integer) -> Float { left + right as FloatRepr });
+
+        eval2!((left: &Array, right: &Array) -> Array {{
+            let mut left = left.clone();
+            let mut right = right.clone();
+            left.append(&mut right);
+            left
+        }});
+        eval2!((left: &Object, right: &Object) -> Object {{
+            let mut left = left.clone();
+            let mut right = right.clone();
+            for (k, v) in right.drain() {
+                left.insert(k, v);
+            }
+            left
+        }});
+
         BinaryOpNode::err("+", left, right)
     }
 
