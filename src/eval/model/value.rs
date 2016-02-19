@@ -61,6 +61,8 @@ impl Value {
         }
     }
 
+    // TODO(xion): is_X methods
+
     pub fn unwrap_string(self) -> StringRepr {
         match self {
             Value::String(s) => s,

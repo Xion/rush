@@ -32,10 +32,10 @@ Floats are additionally `[+-]?([0-9]\.)?[0-9]+(e$INTEGER)?` (i.e. regular & scie
 ## Operators
 
 * arithmetic: `+`, `-`, `*`, `/`; operate on numbers
-* strings: `+` (concatentation), `*` (repeat), `%` (formatting)
+* strings: `+` (concatentation), `*` (repeat), `%` (formatting), `/` (split)
 * ternary operator: `?:`
 
-TODO(xion): split & join (e.g. `/` as split operator, `~` as join)
+TODO(xion): join (array * string)
 
 ## Functions
 

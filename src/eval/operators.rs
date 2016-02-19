@@ -3,7 +3,7 @@
 use std::iter;
 
 use eval::{self, Context, Eval, Value};
-use eval::model::value::FloatRepr;
+use eval::model::value::{FloatRepr, StringRepr};
 use parse::ast::{BinaryOpNode, ConditionalNode, UnaryOpNode};
 
 
@@ -192,6 +192,8 @@ impl BinaryOpNode {
     fn eval_times(left: Value, right: Value) -> eval::Result {
         eval2!(left, right : Integer { left * right });
         eval2!(left, right : Float { left * right });
+
+        // multiplying string/array by a number is repeating (like in Python)
         eval2!((left: &String, right: Integer) -> String where (right > 0) {
             iter::repeat(left).map(String::clone).take(right as usize).collect()
         });
@@ -199,6 +201,9 @@ impl BinaryOpNode {
             iter::repeat(left).map(Vec::clone).take((right - 1) as usize)
                 .fold(left.clone(), |mut res, mut next| { res.append(&mut next); res })
         }});
+
+        // TODO(xion): array * string should be a shorthand for join()
+
         BinaryOpNode::err("*", left, right)
     }
 
@@ -206,6 +211,12 @@ impl BinaryOpNode {
     fn eval_by(left: Value, right: Value) -> eval::Result {
         eval2!(left, right : Integer { left / right });
         eval2!(left, right : Float { left / right });
+
+        // "dividing" string by string is a shorthand for split()
+        eval2!((left: &String, right: &String) -> Array {
+            left.split(right).map(StringRepr::from).map(Value::String).collect()
+        });
+
         BinaryOpNode::err("/", left, right)
     }
 
