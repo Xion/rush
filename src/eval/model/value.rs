@@ -61,7 +61,27 @@ impl Value {
         }
     }
 
-    // TODO(xion): is_X methods
+    pub fn is_string(&self) -> bool {
+        match *self { Value::String(..) => true, _ => false, }
+    }
+    pub fn is_int(&self) -> bool {
+        match *self { Value::Integer(..) => true, _ => false, }
+    }
+    pub fn is_float(&self) -> bool {
+        match *self { Value::Float(..) => true, _ => false, }
+    }
+    pub fn is_bool(&self) -> bool {
+        match *self { Value::Boolean(..) => true, _ => false, }
+    }
+    pub fn is_array(&self) -> bool {
+        match *self { Value::Array(..) => true, _ => false, }
+    }
+    pub fn is_object(&self) -> bool {
+        match *self { Value::Object(..) => true, _ => false, }
+    }
+    pub fn is_function(&self) -> bool {
+        match *self { Value::Function(..) => true, _ => false, }
+    }
 
     pub fn unwrap_string(self) -> StringRepr {
         match self {

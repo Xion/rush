@@ -3,10 +3,10 @@
 
 // NOTE: All actual API functions should be defined in submodules.
 
-mod base;
-mod conv;
-mod math;
-mod strings;
+pub mod base;
+pub mod conv;
+pub mod math;
+pub mod strings;
 
 
 use eval::{self, Context, Error, Value};

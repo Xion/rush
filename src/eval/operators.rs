@@ -2,7 +2,7 @@
 
 use std::iter;
 
-use eval::{self, Context, Eval, Value};
+use eval::{self, api, Context, Eval, Value};
 use eval::model::value::{FloatRepr, StringRepr};
 use parse::ast::{BinaryOpNode, ConditionalNode, UnaryOpNode};
 
@@ -202,7 +202,10 @@ impl BinaryOpNode {
                 .fold(left.clone(), |mut res, mut next| { res.append(&mut next); res })
         }});
 
-        // TODO(xion): array * string should be a shorthand for join()
+        // "multiplying" array by string means a join, with string as separator
+        if left.is_array() && right.is_string() {
+            return api::strings::join(left, right);
+        }
 
         BinaryOpNode::err("*", left, right)
     }
