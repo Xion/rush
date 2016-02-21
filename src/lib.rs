@@ -10,6 +10,7 @@ extern crate log;
 extern crate rand;
 extern crate regex;
 extern crate rustc_serialize;
+extern crate unicode_segmentation;
 
 
 mod eval;
