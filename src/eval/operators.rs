@@ -3,7 +3,7 @@
 use std::iter;
 
 use eval::{self, api, Context, Eval, Value};
-use eval::model::value::{FloatRepr, StringRepr};
+use eval::model::value::FloatRepr;
 use parse::ast::{BinaryOpNode, ConditionalNode, UnaryOpNode};
 
 
@@ -216,9 +216,9 @@ impl BinaryOpNode {
         eval2!(left, right : Float { left / right });
 
         // "dividing" string by string is a shorthand for split()
-        eval2!((left: &String, right: &String) -> Array {
-            left.split(right).map(StringRepr::from).map(Value::String).collect()
-        });
+        if left.is_string() && right.is_string() {
+            return api::strings::split(left, right);
+        }
 
         BinaryOpNode::err("/", left, right)
     }
@@ -235,21 +235,10 @@ impl BinaryOpNode {
             left % (right as f64)
         });
 
-        // string formatting (for just one argument)
-        // TODO(xion): improve:
-        // 1) error out for invalid placeholders (e.g. %d for strings)
-        // 2) %% for escaping %
-        // 3) numeric formatting options
-        // the easiest way is probably call real snprintf() with FFI
-        eval2!((left: &String, right: &String) -> String {
-            left.replace("%s", right)
-        });
-        eval2!((left: &String, right: Integer) -> String {
-            left.replace("%d", &right.to_string())
-        });
-        eval2!((left: &String, right: Float) -> String {
-            left.replace("%f", &right.to_string())
-        });
+        // string formatting (for just one argument (but it can be an array))
+        if left.is_string() {
+            return api::strings::format_(left, right);
+        }
 
         BinaryOpNode::err("%", left, right)
     }

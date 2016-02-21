@@ -4,6 +4,9 @@
 /// more concise.
 
 
+pub mod fmt;
+
+
 // A few tips on how to read and/or modify these macros:
 //
 // * Rules that are more general (like those where argtypes != return type)

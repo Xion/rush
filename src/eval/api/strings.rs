@@ -1,7 +1,11 @@
 //! String API available to expressions.
 
+use std::error::Error as _Error;  // just for description() method
+use std::fmt::Display;
+
 use eval::{self, Error, Value};
 use eval::value::StringRepr;
+use eval::util::fmt::format;
 use super::conv::str_;
 
 
@@ -70,5 +74,42 @@ pub fn sub(needle: Value, replacement: Value, haystack: Value) -> eval::Result {
     Err(Error::new(&format!(
         "sub() expects three strings, got: {}, {}, {}",
         needle.typename(), replacement.typename(), haystack.typename()
+    )))
+}
+
+
+/// Peforms string formatting a'la Python str.format().
+pub fn format_(fmt: Value, arg: Value) -> eval:: Result {
+    if let Value::String(fmt) = fmt {
+        let mut args: Vec<&Display> = Vec::new();
+
+        match &arg {
+            &Value::Empty |
+            &Value::Symbol(..) |
+            &Value::Function(..) => return Err(Error::new(&format!(
+                "invalid argument for string formatting: {}", arg.typename()
+            ))),
+            &Value::Object(..) => {
+                // TODO(xion): Object should be possible but the formatting code
+                // doesn't support named placeholders yet :(
+                return Err(Error::new(
+                    "objects are not supported as string formatting arguments"
+                ));
+            },
+            &Value::Array(ref a) => {
+                args = a.iter().map(|v| v as &Display).collect();
+            },
+            _ => args.push(&arg),
+        }
+
+        return format(&fmt, &args)
+            .map(Value::String)
+            .map_err(|e| Error::new(&format!(
+                "string formatting error: {}", e.description()
+            )));
+    }
+
+    Err(Error::new(&format!(
+        "format() expects a format string, got {}", fmt.typename()
     )))
 }

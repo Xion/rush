@@ -1,7 +1,7 @@
 //! Module implementing evaluation of parsed expressions.
 
 #[macro_use]
-mod util;
+pub mod util;
 mod model;
 
 mod api;
@@ -19,7 +19,7 @@ use std::result;
 
 
 /// Error that may have occurred during evaluation.
-#[derive(Clone,Debug)]
+#[derive(Clone,Debug,Eq,PartialEq,Hash)]
 pub struct Error {
     // TODO(xion): include the representation of the eval'd AST node
     pub message: String,
