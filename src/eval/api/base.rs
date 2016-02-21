@@ -1,6 +1,7 @@
 //! Base API functions.
 
-use eval::{self, Error, Value};
+use eval::{self, Context, Error, Value};
+use eval::model::Invoke;
 use eval::value::IntegerRepr;
 
 
@@ -11,5 +12,29 @@ pub fn len(value: Value) -> eval::Result {
     eval1!((value: &Object) -> Integer { value.len() as IntegerRepr });
     Err(Error::new(&format!(
         "len() requires string or array, got {}", value.typename()
+    )))
+}
+
+
+/// Map a function over an array.
+/// Returns the array created by applying the function to each element.
+pub fn map(func: Value, array: Value) -> eval::Result {
+    let array_type = array.typename();
+
+    eval2!((func: &Function, array: Array) -> Array {{
+        let mut items = array;
+        let mut result = Vec::new();
+        for item in items.drain(..) {
+            // TODO(xion): map() has to accept the current context
+            // so it can pass it here rather than creating a new one
+            let mapped = try!(func.invoke(vec![item], &Context::new()));
+            result.push(mapped);
+        }
+        result
+    }});
+
+    Err(Error::new(&format!(
+        "map() requires a function and an array, got {} and {}",
+        func.typename(), array_type
     )))
 }

@@ -29,6 +29,7 @@ impl<'a> Context<'a> {
         self.define_unary(      "int",      conv::int       );
         self.define_binary(     "join",     strings::join   );
         self.define_unary(      "len",      base::len       );
+        self.define_binary(     "map",      base::map       );
         self.define_nullary(    "rand",     math::rand      );
         self.define_unary(      "rev",      strings::rev    );
         self.define_unary(      "sgn",      math::sgn       );
