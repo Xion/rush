@@ -64,7 +64,7 @@ pub fn join(array: Value, delim: Value) -> eval::Result {
 /// Returns the text after substitution has been made.
 // TODO(xion): allow this function to accept just two arguments,
 // with the third one being an implicit reference to the default var
-// (requires allowing functions to access the Context)
+// (requires some form of function overloading)
 pub fn sub(needle: Value, replacement: Value, haystack: Value) -> eval::Result {
     if let (&Value::String(ref n),
             &Value::String(ref r),

@@ -29,7 +29,7 @@ impl<'a> Context<'a> {
         self.define_unary(      "int",      conv::int       );
         self.define_binary(     "join",     strings::join   );
         self.define_unary(      "len",      base::len       );
-        self.define_binary(     "map",      base::map       );
+        self.define_binary_ctx( "map",      base::map       );
         self.define_nullary(    "rand",     math::rand      );
         self.define_unary(      "rev",      strings::rev    );
         self.define_unary(      "sgn",      math::sgn       );
@@ -41,7 +41,9 @@ impl<'a> Context<'a> {
 }
 
 
-// Helper methods for defining the API functions within Context.
+// Helper methods for defining the "pure" API functions
+// (those that don't access the Context directly).
+#[allow(dead_code)]
 impl<'a> Context<'a> {
     fn define<F>(&mut self, name: &str, func: F) -> &mut Self
         where F: Fn(Args) -> eval::Result + 'static
@@ -88,6 +90,60 @@ impl<'a> Context<'a> {
             func(args.next().unwrap(),
                  args.next().unwrap(),
                  args.next().unwrap())
+        })
+    }
+}
+
+// Helper methods for defining the API functions which access the Context.
+#[allow(dead_code)]
+impl<'a> Context<'a> {
+    fn define_ctx<F>(&mut self, name: &str, func: F) -> &mut Self
+        where F: Fn(Args, &Context) -> eval::Result + 'static
+    {
+        self.set(name, Value::Function(Function::from_native_ctx(func)));
+        self
+    }
+
+    fn define_nullary_ctx<F>(&mut self, name: &'static str, func: F) -> &mut Self
+        where F: Fn(&Context) -> eval::Result + 'static
+    {
+        self.define_ctx(name, move |args: Args, context: &Context| {
+            try!(ensure_argcount(name, &args, 0, 0));
+            func(&context)
+        })
+    }
+
+    fn define_unary_ctx<F>(&mut self, name: &'static str, func: F) -> &mut Self
+        where F: Fn(Value, &Context) -> eval::Result + 'static
+    {
+        self.define_ctx(name, move |mut args: Args, context: &Context| {
+            try!(ensure_argcount(name, &args, 1, 1));
+            let mut args = args.drain(..);
+            func(args.next().unwrap(), &context)
+        })
+    }
+
+    fn define_binary_ctx<F>(&mut self, name: &'static str, func: F) -> &mut Self
+        where F: Fn(Value, Value, &Context) -> eval::Result + 'static
+    {
+        self.define_ctx(name, move |mut args: Args, context: &Context| {
+            try!(ensure_argcount(name, &args, 2, 2));
+            let mut args = args.drain(..);
+            func(args.next().unwrap(), args.next().unwrap(),
+                &context)
+        })
+    }
+
+    fn define_ternary_ctx<F>(&mut self, name: &'static str, func: F) -> &mut Self
+        where F: Fn(Value, Value, Value, &Context) -> eval::Result + 'static
+    {
+        self.define_ctx(name, move |mut args: Args, context: &Context| {
+            try!(ensure_argcount(name, &args, 3, 3));
+            let mut args = args.drain(..);
+            func(args.next().unwrap(),
+                 args.next().unwrap(),
+                 args.next().unwrap(),
+                 &context)
         })
     }
 }

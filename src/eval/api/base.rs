@@ -18,16 +18,15 @@ pub fn len(value: Value) -> eval::Result {
 
 /// Map a function over an array.
 /// Returns the array created by applying the function to each element.
-pub fn map(func: Value, array: Value) -> eval::Result {
+pub fn map(func: Value, array: Value, context: &Context) -> eval::Result {
     let array_type = array.typename();
 
     eval2!((func: &Function, array: Array) -> Array {{
         let mut items = array;
         let mut result = Vec::new();
         for item in items.drain(..) {
-            // TODO(xion): map() has to accept the current context
-            // so it can pass it here rather than creating a new one
-            let mapped = try!(func.invoke(vec![item], &Context::new()));
+            let context = Context::with_parent(&context);
+            let mapped = try!(func.invoke(vec![item], &context));
             result.push(mapped);
         }
         result
