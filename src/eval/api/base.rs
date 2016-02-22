@@ -3,6 +3,7 @@
 use eval::{self, Context, Error, Value};
 use eval::model::Invoke;
 use eval::value::IntegerRepr;
+use super::conv::bool;
 
 
 /// Compute the length of given value (an array or a string).
@@ -34,6 +35,34 @@ pub fn map(func: Value, array: Value, context: &Context) -> eval::Result {
 
     Err(Error::new(&format!(
         "map() requires a function and an array, got {} and {}",
+        func.typename(), array_type
+    )))
+}
+
+/// Filter an array through a predicate function.
+///
+/// Returns the array created by apply the function to each element
+/// and preserving only those for it returned a truthy value.
+pub fn filter(func: Value, array: Value, context: &Context) -> eval::Result {
+    let array_type = array.typename();
+
+    eval2!((func: &Function, array: Array) -> Array {{
+        let mut items = array;
+        let mut result = Vec::new();
+        for item in items.drain(..) {
+            let context = Context::with_parent(&context);
+            let keep = try!(
+                func.invoke(vec![item.clone()], &context).and_then(bool)
+            ).unwrap_bool();
+            if keep {
+                result.push(item);
+            }
+        }
+        result
+    }});
+
+    Err(Error::new(&format!(
+        "filter() requires a function and an array, got {} and {}",
         func.typename(), array_type
     )))
 }

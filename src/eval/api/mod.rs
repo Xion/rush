@@ -24,6 +24,7 @@ impl<'a> Context<'a> {
         //
         self.define_unary(      "abs",      math::abs       );
         self.define_unary(      "bool",     conv::bool      );
+        self.define_binary_ctx( "filter",   base::filter    );
         self.define_unary(      "float",    conv::float     );
         self.define_binary(     "format",   strings::format_);
         self.define_unary(      "int",      conv::int       );
