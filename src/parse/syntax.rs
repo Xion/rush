@@ -6,7 +6,7 @@ use std::str::from_utf8;
 use nom::{self, alpha, alphanumeric, multispace, IResult};
 
 use super::ast::*;
-use eval::{Eval, Value};
+use eval::{Eval, Function, Value};
 
 
 // TODO(xion): switch from parsers expecting &[u8] to accepting &str;
@@ -128,7 +128,20 @@ const UNDERSCORE_SUFFIXES: &'static str = "bifs";
 // Grammar definition.
 
 /// Root symbol of the grammar.
-named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: conditional, || { e }));
+named!(pub expression( &[u8] ) -> Box<Eval>, alt!(conditional | lambda));
+
+/// lambda ::== '|' ARGS '|' lambda
+named!(lambda( &[u8] ) -> Box<Eval>, chain!(
+    multispaced!(tag!("|")) ~
+    args: separated_list!(multispaced!(tag!(",")), identifier) ~
+    multispaced!(tag!("|")) ~
+    body: expression,
+    move || {
+        Box::new(ScalarNode{
+            value: Value::Function(Function::from_lambda(args, body))
+        }) as Box<Eval>
+    }
+));
 
 /// conditional ::== comparison ['?' comparison ':' conditional]
 named!(conditional( &[u8] ) -> Box<Eval>, map!(

@@ -55,7 +55,7 @@ impl Function {
         Function::NativeCtx(Rc::new(f))
     }
 
-    pub fn from_lambda(argnames: &[&str], expr: Box<Eval>) -> Function {
+    pub fn from_lambda(argnames: Vec<String>, expr: Box<Eval>) -> Function {
         Function::Custom(CustomFunction::new(argnames, expr))
     }
 }
@@ -127,9 +127,9 @@ pub struct CustomFunction {
 }
 
 impl CustomFunction {
-    pub fn new(argnames: &[&str], expr: Box<Eval>) -> CustomFunction {
+    pub fn new(argnames: Vec<String>, expr: Box<Eval>) -> CustomFunction {
         CustomFunction{
-            argnames: argnames.iter().map(|s| (*s).to_owned()).collect(),
+            argnames: argnames,
             expr: Rc::new(expr),
         }
     }

@@ -9,7 +9,7 @@ mod atoms;
 mod operators;
 mod trailers;
 
-pub use self::model::{Context, Value};
+pub use self::model::{Context, Function, Value};
 pub use self::model::value;  // for *Repr typedefs
 
 
