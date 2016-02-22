@@ -65,6 +65,7 @@ impl Eval for BinaryOpNode {
                 ">=" => result = try!(BinaryOpNode::eval_ge(result, arg)),
                 "==" => result = try!(BinaryOpNode::eval_eq(result, arg)),
                 "!=" => result = try!(BinaryOpNode::eval_ne(result, arg)),
+                "@" => result = try!(BinaryOpNode::eval_at(result, arg)),
                 "+" => result = try!(BinaryOpNode::eval_plus(result, arg)),
                 "-" => result = try!(BinaryOpNode::eval_minus(result, arg)),
                 "*" => result = try!(BinaryOpNode::eval_times(result, arg)),
@@ -148,6 +149,16 @@ impl BinaryOpNode {
         eval2!((left: &String, right: &String) -> Boolean { left != right });
 
         BinaryOpNode::err("!=", left, right)
+    }
+
+    /// Evaluate the "@" operator for two values.
+    fn eval_at(left: Value, right: Value) -> eval::Result {
+        // value @ array is a membership test
+        if let &Value::Array(ref a) = &right {
+            return Ok(Value::Boolean(a.contains(&left)));
+        }
+
+        BinaryOpNode::err("@", left, right)
     }
 }
 

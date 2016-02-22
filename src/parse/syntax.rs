@@ -168,7 +168,7 @@ named!(comparison( &[u8] ) -> Box<Eval>, chain!(
     left: argument ~
     maybe_right: maybe!(pair!(
         string!(multispaced!(alt!(
-            tag!("<=") | tag!(">=") | tag!("==") | tag!("!=") | char_of!("<>")
+            tag!("<=") | tag!(">=") | tag!("==") | tag!("!=") | char_of!("<>@")
         ))),
         argument
     )),
