@@ -39,10 +39,24 @@ impl<'a> Context<'a> {
         self.parent.is_none()
     }
 
+    /// Check if given name is defined within this Context
+    /// or any of its ancestors.
+    pub fn is_defined(&self, name: &str) -> bool {
+        self.scope.get(name)
+            .or_else(|| self.parent.and_then(|ctx| ctx.get(name)))
+            .is_some()
+    }
+
+    /// Check if given name is defined in this context.
+    /// Does not look at parent Contexts.
+    pub fn is_defined_here(&self, name: &str) -> bool {
+        self.scope.get(name).is_some()
+    }
+
     /// Retrieves a value by name from the scope of the context
     /// or any of its parents.
     pub fn get(&self, name: &str) -> Option<&Value> {
-        self.scope.get(&name.to_owned())
+        self.scope.get(name)
             .or_else(|| self.parent.and_then(|ctx| ctx.get(name)))
     }
 

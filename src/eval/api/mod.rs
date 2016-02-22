@@ -48,6 +48,8 @@ impl<'a> Context<'a> {
     fn define<F>(&mut self, name: &str, func: F) -> &mut Self
         where F: Fn(Args) -> eval::Result + 'static
     {
+        assert!(!self.is_defined_here(name),
+             "`{}` has already been defined in this Context!", name);
         self.set(name, Value::Function(Function::from_native(func)));
         self
     }
@@ -100,6 +102,8 @@ impl<'a> Context<'a> {
     fn define_ctx<F>(&mut self, name: &str, func: F) -> &mut Self
         where F: Fn(Args, &Context) -> eval::Result + 'static
     {
+        assert!(!self.is_defined_here(name),
+             "`{}` has already been defined in this Context!", name);
         self.set(name, Value::Function(Function::from_native_ctx(func)));
         self
     }
