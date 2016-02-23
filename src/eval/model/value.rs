@@ -129,7 +129,7 @@ impl Value {
 
 
 // TODO(xion): given the numerous ways we can & want to interpret the input,
-// it makes less and less sense to has this as default;
+// it makes less and less sense to have this as default;
 // consider removing this impl
 impl FromStr for Value {
     type Err = ();
@@ -222,10 +222,10 @@ impl From<Json> for Value {
             Json::I64(i) => Value::Integer(i),
             Json::U64(u) => {
                 // TODO(xion): implement optional parsing
-                if u > (i64::max_value() as u64) {
+                if u > (IntegerRepr::max_value() as u64) {
                     panic!("JSON integer too large: {}", u);
                 }
-                Value::Integer(u as i64)
+                Value::Integer(u as IntegerRepr)
             },
             Json::F64(f) => Value::Float(f),
             Json::String(s) => Value::String(s),

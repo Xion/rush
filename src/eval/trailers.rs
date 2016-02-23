@@ -1,7 +1,7 @@
 //! Module implementing the evaluation of "trailer" parts of terms,
 //! such as indexing or function call syntax.
 
-use eval::{self, Context, Eval, Value};
+use eval::{self, api, Context, Eval, Value};
 use eval::model::Invoke;
 use eval::model::value::{ArrayRepr, ObjectRepr, StringRepr};
 use parse::ast::{FunctionCallNode, SubscriptNode};
@@ -35,6 +35,12 @@ impl Eval for SubscriptNode {
     fn eval(&self, context: &Context) -> eval::Result {
         let object = try!(self.object.eval(&context));
         let index = try!(self.index.eval(&context));
+
+        // TODO(xion): roll this into eval_on_array(), which would require
+        // copying parts of the filter() function implementation
+        if object.is_array() && index.is_function() {
+            return api::base::filter(index, object, &context);
+        }
 
         match object {
             Value::String(ref s) => SubscriptNode::eval_on_string(&s, &index),

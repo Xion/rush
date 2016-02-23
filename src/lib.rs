@@ -17,6 +17,7 @@ mod eval;
 mod parse;
 
 pub use self::eval::Value;
+pub use self::eval::value::{BooleanRepr, FloatRepr, IntegerRepr};
 pub use self::parse::parse;
 
 
@@ -109,11 +110,11 @@ fn parse_expr(expr: &str) -> io::Result<Box<Eval>> {
 
 fn update_context(ctx: &mut Context, input: &str) {
     ctx.set("_", input.parse::<Value>().unwrap_or_else(|_| Value::String(input.to_owned())));
-    ctx.set("_b", input.parse::<bool>().map(Value::Boolean).unwrap_or(Value::Empty));
-    ctx.set("_f", input.parse::<f64>().map(Value::Float).unwrap_or(Value::Empty));
+    ctx.set("_b", input.parse::<BooleanRepr>().map(Value::Boolean).unwrap_or(Value::Empty));
+    ctx.set("_f", input.parse::<FloatRepr>().map(Value::Float).unwrap_or(Value::Empty));
     // TODO(xion): consider also trying to parse the input as f64
     // and exposing the rounded version as _i
-    ctx.set("_i", input.parse::<i64>().map(Value::Integer).unwrap_or(Value::Empty));
+    ctx.set("_i", input.parse::<IntegerRepr>().map(Value::Integer).unwrap_or(Value::Empty));
     ctx.set("_s", Value::String(input.to_owned()));
 }
 
