@@ -3,7 +3,7 @@
 use std::iter;
 
 use eval::{self, api, Context, Eval, Value};
-use eval::model::value::FloatRepr;
+use eval::model::value::{FloatRepr, IntegerRepr};
 use parse::ast::{BinaryOpNode, ConditionalNode, UnaryOpNode};
 
 
@@ -256,16 +256,27 @@ impl BinaryOpNode {
 
     /// Evaluate the "**" operator for two values.
     fn eval_power(left: Value, right: Value) -> eval::Result {
-        // TODO(xion): check that integer exponents are within range of u32/i32
-        // and return an error if they're not rather than clamping them
-        eval2!(left, right : Integer { left.pow(right as u32) });
+        eval2!(left, right : Integer {{
+            if right > (u32::max_value() as IntegerRepr) {
+                return Err(eval::Error::new(&format!(
+                    "exponent out of range: {}", right
+                )));
+            }
+            left.pow(right as u32)
+        }});
         eval2!(left, right : Float { left.powf(right) });
         eval2!((left: Integer, right: Float) -> Float {
-            (left as f64).powf(right)
+            (left as FloatRepr).powf(right)
         });
-        eval2!((left: Float, right: Integer) -> Float {
+        eval2!((left: Float, right: Integer) -> Float {{
+            if right > (i32::max_value() as IntegerRepr) {
+                return Err(eval::Error::new(&format!(
+                    "exponent out of range: {}", right
+                )));
+            }
             left.powi(right as i32)
-        });
+        }});
+
         BinaryOpNode::err("**", left, right)
     }
 

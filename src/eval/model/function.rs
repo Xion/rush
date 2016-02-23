@@ -73,8 +73,7 @@ impl fmt::Debug for Function {
             &Function::Native(..) => write!(fmt, "<native func>"),
             &Function::NativeCtx(..) => write!(fmt, "<native(ctx) func>"),
             &Function::Custom(ref f) => {
-                // TODO(xion): update accordingly when lambda syntax is finalized
-                write!(fmt, "(:{}: <custom func>)", f.argnames.join(","))
+                write!(fmt, "(|{}| <custom func>)", f.argnames.join(","))
             },
         }
     }
