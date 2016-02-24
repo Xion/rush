@@ -8,6 +8,8 @@
 //! within the `util` module.
 
 extern crate ap;
+#[macro_use]
+extern crate maplit;
 extern crate rustc_serialize;
 
 

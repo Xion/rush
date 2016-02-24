@@ -1,7 +1,5 @@
 //! Tests for constant expressions.
 
-use std::collections::HashMap;
-
 use util::*;
 
 
@@ -145,7 +143,7 @@ fn constant_object_1attribute() {
 
 #[test]
 fn constant_object() {
-    let elems = hashmap!{"a" => "foo", "b" => "bar"};
+    let elems = hashmap_owned!{"a" => "foo", "b" => "bar"};
     let expr = format!("{{{}}}", elems.iter()
         .map(|(ref k, ref v)| format!("{}:{}", k, v))
         .collect::<Vec<_>>().join(","));
