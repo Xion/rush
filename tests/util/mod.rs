@@ -8,6 +8,18 @@ use rustc_serialize::json::Json;
 use ap;
 
 
+/// Construct a hashmap with given items.
+/// Usage: hashmap!{"a" => "b", "c" => "d"}
+macro_rules! hashmap {
+    {$($key:expr => $value:expr),*} => {{
+        let mut result = HashMap::new();
+        $(
+            result.insert($key.to_owned(), $value.to_owned());
+        )*
+        result
+    }};
+}
+
 pub fn join<T: ToString>(array: &[T], sep: &str) -> String {
     array.iter().map(T::to_string).collect::<Vec<_>>().join(sep)
 }

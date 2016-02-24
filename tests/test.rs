@@ -11,5 +11,6 @@ extern crate ap;
 extern crate rustc_serialize;
 
 
-mod tests;
+#[macro_use]
 mod util;
+mod tests;

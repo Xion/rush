@@ -145,11 +145,7 @@ fn constant_object_1attribute() {
 
 #[test]
 fn constant_object() {
-    let mut elems = HashMap::new();
-    {
-        elems.insert("a".to_owned(), "foo".to_owned());
-        elems.insert("b".to_owned(), "bar".to_owned());
-    }
+    let elems = hashmap!{"a" => "foo", "b" => "bar"};
     let expr = format!("{{{}}}", elems.iter()
         .map(|(ref k, ref v)| format!("{}:{}", k, v))
         .collect::<Vec<_>>().join(","));
@@ -158,3 +154,4 @@ fn constant_object() {
 }
 
 // TODO(xion): more constant objects' tests
+

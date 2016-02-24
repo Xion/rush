@@ -1,4 +1,4 @@
-//! Tests for postfix operators.
+//! Tests for "trialers", i.e. final parts of atoms: subscripts & function calls.
 
 use util::*;
 

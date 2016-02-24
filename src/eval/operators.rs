@@ -3,7 +3,7 @@
 use std::iter;
 
 use eval::{self, api, Context, Eval, Value};
-use eval::model::value::{FloatRepr, IntegerRepr};
+use eval::model::value::{ArrayRepr, FloatRepr, IntegerRepr, StringRepr};
 use parse::ast::{BinaryOpNode, ConditionalNode, UnaryOpNode};
 
 
@@ -206,10 +206,10 @@ impl BinaryOpNode {
 
         // multiplying string/array by a number is repeating (like in Python)
         eval2!((left: &String, right: Integer) -> String where (right > 0) {
-            iter::repeat(left).map(String::clone).take(right as usize).collect()
+            iter::repeat(left).map(StringRepr::clone).take(right as usize).collect()
         });
         eval2!((left: &Array, right: Integer) -> Array where (right > 0) {{
-            iter::repeat(left).map(Vec::clone).take((right - 1) as usize)
+            iter::repeat(left).map(ArrayRepr::clone).take((right - 1) as usize)
                 .fold(left.clone(), |mut res, mut next| { res.append(&mut next); res })
         }});
 
@@ -240,10 +240,10 @@ impl BinaryOpNode {
         eval2!(left, right : Integer { left % right });
         eval2!(left, right : Float { left % right });
         eval2!((left: Integer, right: Float) -> Float {
-            (left as f64) % right
+            (left as FloatRepr) % right
         });
         eval2!((left: Float, right: Integer) -> Float {
-            left % (right as f64)
+            left % (right as FloatRepr)
         });
 
         // string formatting (for just one argument (but it can be an array))
