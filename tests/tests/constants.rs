@@ -1,5 +1,9 @@
 //! Tests for constant expressions.
 
+use std::collections::HashMap;
+use std::fmt::Display;
+use std::hash::Hash;
+
 use util::*;
 
 
@@ -144,12 +148,30 @@ fn constant_object_1attribute() {
 #[test]
 fn constant_object() {
     let elems = hashmap_owned!{"a" => "foo", "b" => "bar"};
-    let expr = format!("{{{}}}", elems.iter()
-        .map(|(ref k, ref v)| format!("{}:{}", k, v))
-        .collect::<Vec<_>>().join(","));
+    let expr = to_object_literal(&elems);
     let actual = parse_json_stringmap(&eval(&expr));
     assert_eq!(elems, actual);
 }
 
-// TODO(xion): more constant objects' tests
+#[test]
+fn constant_object_duplicate_key() {
+    let key = "a";
+    let first_value = "foo";
+    let second_value = "bar";
+    let elems = hashmap_owned!{key => first_value, key => second_value};
 
+    let expr = to_object_literal(&elems);
+    let actual = parse_json_stringmap(&eval(&expr));
+    assert!(actual.contains_key(key));
+    assert_eq!(second_value, actual.get(key).unwrap());
+}
+
+// Utility functions
+
+fn to_object_literal<K, V>(items: &HashMap<K, V>) -> String
+    where K: Display + Eq + Hash, V: Display
+{
+    format!("{{{}}}", items.iter()
+        .map(|(ref k, ref v)| format!("{}:{}", k, v))
+        .collect::<Vec<_>>().join(","))
+}

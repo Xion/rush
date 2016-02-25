@@ -179,6 +179,9 @@ impl fmt::Debug for Value {
     }
 }
 
+// TODO(xion): Display doesn't really allow for propagating those errors
+// (e.g. write!() never returns an I/O error on formatting error),
+// so we may need a dedicated trait instead
 impl fmt::Display for Value {
     /// Format a Value for outputing it as a result of the computation.
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
