@@ -2,7 +2,8 @@
 
 use std::iter;
 
-use eval::{self, api, Context, Eval, Value};
+use eval::{self, api, Context, Eval, Function, Value};
+use eval::model::function::Invoke;
 use eval::model::value::{ArrayRepr, FloatRepr, IntegerRepr, StringRepr};
 use parse::ast::{BinaryOpNode, ConditionalNode, UnaryOpNode};
 
@@ -68,7 +69,7 @@ impl Eval for BinaryOpNode {
                 "@" => result = try!(BinaryOpNode::eval_at(result, arg)),
                 "+" => result = try!(BinaryOpNode::eval_plus(result, arg)),
                 "-" => result = try!(BinaryOpNode::eval_minus(result, arg)),
-                "*" => result = try!(BinaryOpNode::eval_times(result, arg)),
+                "*" => result = try!(BinaryOpNode::eval_times(result, arg, &context)),
                 "/" => result = try!(BinaryOpNode::eval_by(result, arg)),
                 "%" => result = try!(BinaryOpNode::eval_modulo(result, arg)),
                 "**" => result = try!(BinaryOpNode::eval_power(result, arg)),
@@ -200,7 +201,7 @@ impl BinaryOpNode {
     }
 
     /// Evaluate the "*" operator for two values.
-    fn eval_times(left: Value, right: Value) -> eval::Result {
+    fn eval_times(left: Value, right: Value, context: &Context) -> eval::Result {
         eval2!(left, right : Integer { left * right });
         eval2!(left, right : Float { left * right });
 
@@ -216,6 +217,19 @@ impl BinaryOpNode {
         // "multiplying" array by string means a join, with string as separator
         if left.is_array() && right.is_string() {
             return api::strings::join(left, right);
+        }
+
+        // "multiplying" functions is composition
+        // TODO(xion): when function arity is stored and known,
+        // check that left argument is unary
+        if left.is_function() && right.is_function() {
+            let left = left.unwrap_function();
+            let right = right.unwrap_function();
+            let result = Box::new(move |args, context: &Context| {
+                let intermediate = try!(right.invoke(args, &context));
+                left.invoke(vec![intermediate], &context)
+            });
+            return Ok(Value::Function(Function::from_boxed_native_ctx(result)));
         }
 
         BinaryOpNode::err("*", left, right)

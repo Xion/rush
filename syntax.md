@@ -35,8 +35,6 @@ Floats are additionally `[+-]?([0-9]\.)?[0-9]+(e$INTEGER)?` (i.e. regular & scie
 * strings: `+` (concatentation), `*` (repeat), `%` (formatting), `/` (split)
 * ternary operator: `?:`
 
-TODO(xion): join (array * string)
-
 ## Functions
 
 Function names are identifiers.
@@ -50,9 +48,9 @@ Anonymous functions are defined using `|` (pipe), an argument list, another pipe
     |x| x + 2
     |x,y| x + y
 
-`.` is the composition operator:
+`*` is the composition operator:
 
-    abs . (|x| x + 2)   ===  |x| abs(x + 2)
+    abs * (|x| x + 2)   ===  |x| abs(x + 2)
 
 TODO(xion): Haskell-like syntax for (partial application of) operator functions:
 (+), (2+), (*5), etc.
