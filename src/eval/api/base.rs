@@ -1,6 +1,6 @@
 //! Base API functions.
 
-use eval::{self, Context, Error, Value};
+use eval::{self, Context, Error, Function, Value};
 use eval::model::Invoke;
 use eval::value::IntegerRepr;
 use super::conv::bool;
@@ -23,6 +23,8 @@ pub fn map(func: Value, array: Value, context: &Context) -> eval::Result {
     let array_type = array.typename();
 
     eval2!((func: &Function, array: Array) -> Array {{
+        try!(ensure_unary(&func, "map"));
+
         let mut items = array;
         let mut result = Vec::new();
         for item in items.drain(..) {
@@ -47,6 +49,8 @@ pub fn filter(func: Value, array: Value, context: &Context) -> eval::Result {
     let array_type = array.typename();
 
     eval2!((func: &Function, array: Array) -> Array {{
+        try!(ensure_unary(&func, "filter"));
+
         let mut items = array;
         let mut result = Vec::new();
         for item in items.drain(..) {
@@ -65,4 +69,17 @@ pub fn filter(func: Value, array: Value, context: &Context) -> eval::Result {
         "filter() requires a function and an array, got {} and {}",
         func.typename(), array_type
     )))
+}
+
+
+// Utility functions
+
+fn ensure_unary(func: &Function, api_call: &str) -> Result<(), Error> {
+    match func.arity() {
+        1 => Ok(()),
+        arity @ _ =>  Err(Error::new(&format!(
+            "{}() requires a 1-argument function, got {}-argument one",
+            api_call, arity
+        ))),
+    }
 }
