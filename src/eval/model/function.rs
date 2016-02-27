@@ -58,6 +58,18 @@ impl Function {
     pub fn from_lambda(argnames: Vec<String>, expr: Box<Eval>) -> Function {
         Function::Custom(CustomFunction::new(argnames, expr))
     }
+
+    /// Function composition:
+    /// self.compose_with(other)(x) === self(other(x))
+    pub fn compose_with(self, other: Function) -> Function {
+        // TODO(xion): when function arity is stored and known,
+        // check that `self` is unary and return an error if not so
+        let result =  Box::new(move |args, context: &Context| {
+            let intermediate = try!(other.invoke(args, &context));
+            self.invoke(vec![intermediate], &context)
+        });
+        Function::from_boxed_native_ctx(result)
+    }
 }
 
 impl PartialEq for Function {

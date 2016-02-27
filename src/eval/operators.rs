@@ -2,7 +2,7 @@
 
 use std::iter;
 
-use eval::{self, api, Context, Eval, Function, Value};
+use eval::{self, api, Context, Eval, Value};
 use eval::model::function::Invoke;
 use eval::model::value::{ArrayRepr, FloatRepr, IntegerRepr, StringRepr};
 use parse::ast::{BinaryOpNode, ConditionalNode, UnaryOpNode};
@@ -220,16 +220,10 @@ impl BinaryOpNode {
         }
 
         // "multiplying" functions is composition
-        // TODO(xion): when function arity is stored and known,
-        // check that left argument is unary
         if left.is_function() && right.is_function() {
             let left = left.unwrap_function();
             let right = right.unwrap_function();
-            let result = Box::new(move |args, context: &Context| {
-                let intermediate = try!(right.invoke(args, &context));
-                left.invoke(vec![intermediate], &context)
-            });
-            return Ok(Value::Function(Function::from_boxed_native_ctx(result)));
+            return Ok(Value::Function(left.compose_with(right)));
         }
 
         BinaryOpNode::err("*", left, right)
