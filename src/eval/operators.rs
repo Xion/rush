@@ -3,6 +3,7 @@
 use std::iter;
 
 use eval::{self, api, Context, Eval, Value};
+use eval::model::Invoke;
 use eval::model::value::{ArrayRepr, FloatRepr, IntegerRepr, StringRepr};
 use parse::ast::{BinaryOpNode, ConditionalNode, UnaryOpNode};
 
@@ -222,7 +223,11 @@ impl BinaryOpNode {
         if left.is_function() && right.is_function() {
             let left = left.unwrap_function();
             let right = right.unwrap_function();
-            return Ok(Value::Function(left.compose_with(right)));
+            return left.compose_with(right)
+                .map(Value::Function)
+                .ok_or_else(|| eval::Error::new(&format!(
+                    "left side of function composition must be unary"
+                )));
         }
 
         BinaryOpNode::err("*", left, right)

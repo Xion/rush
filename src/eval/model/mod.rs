@@ -6,5 +6,5 @@ pub mod function;
 pub mod value;
 
 pub use self::context::Context;
-pub use self::function::{Args, Function, Invoke};
+pub use self::function::{Args, Arity, Function, Invoke};
 pub use self::value::Value;

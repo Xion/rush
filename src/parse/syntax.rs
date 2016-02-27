@@ -200,7 +200,7 @@ named!(argument( &[u8] ) -> Box<Eval>, chain!(
     }
 ));
 
-/// term ::== factor (MULT_BIN_OP factor)*
+/// term ::== factor (MULTIPLICATIVE_BIN_OP factor)*
 named!(term( &[u8] ) -> Box<Eval>, chain!(
     first: factor ~
     rest: many0!(pair!(
