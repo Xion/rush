@@ -3,7 +3,6 @@
 use std::iter;
 
 use eval::{self, api, Context, Eval, Value};
-use eval::model::function::Invoke;
 use eval::model::value::{ArrayRepr, FloatRepr, IntegerRepr, StringRepr};
 use parse::ast::{BinaryOpNode, ConditionalNode, UnaryOpNode};
 
@@ -69,7 +68,7 @@ impl Eval for BinaryOpNode {
                 "@" => result = try!(BinaryOpNode::eval_at(result, arg)),
                 "+" => result = try!(BinaryOpNode::eval_plus(result, arg)),
                 "-" => result = try!(BinaryOpNode::eval_minus(result, arg)),
-                "*" => result = try!(BinaryOpNode::eval_times(result, arg, &context)),
+                "*" => result = try!(BinaryOpNode::eval_times(result, arg)),
                 "/" => result = try!(BinaryOpNode::eval_by(result, arg)),
                 "%" => result = try!(BinaryOpNode::eval_modulo(result, arg)),
                 "**" => result = try!(BinaryOpNode::eval_power(result, arg)),
@@ -201,7 +200,7 @@ impl BinaryOpNode {
     }
 
     /// Evaluate the "*" operator for two values.
-    fn eval_times(left: Value, right: Value, context: &Context) -> eval::Result {
+    fn eval_times(left: Value, right: Value) -> eval::Result {
         eval2!(left, right : Integer { left * right });
         eval2!(left, right : Float { left * right });
 

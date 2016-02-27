@@ -64,11 +64,21 @@ impl Function {
     pub fn compose_with(self, other: Function) -> Function {
         // TODO(xion): when function arity is stored and known,
         // check that `self` is unary and return an error if not so
-        let result =  Box::new(move |args, context: &Context| {
+        Function::from_native_ctx(move |args, context: &Context| {
             let intermediate = try!(other.invoke(args, &context));
             self.invoke(vec![intermediate], &context)
-        });
-        Function::from_boxed_native_ctx(result)
+        })
+    }
+
+    /// Function currying (partial application):
+    /// self.curry(arg)(x) === self(arg, x)
+    pub fn curry(self, arg: Value) -> Function {
+        // TODO(xion): when function arity is stored and known,
+        // check that `self` is at least unary and return an error if not
+        Function::from_native_ctx(move |mut args: Args, context: &Context| {
+            args.insert(0, arg.clone());
+            self.invoke(args, &context)
+        })
     }
 }
 
@@ -133,8 +143,8 @@ impl Invoke for NativeCtxFunction {
 /// i.e. one that has been defined using the expression syntax.
 #[derive(Clone)]
 pub struct CustomFunction {
-    pub argnames: Vec<String>,
-    pub expr: Rc<Box<Eval>>,
+    argnames: Vec<String>,
+    expr: Rc<Box<Eval>>,
 }
 
 impl CustomFunction {

@@ -130,6 +130,9 @@ const UNDERSCORE_SUFFIXES: &'static str = "bifs";
 /// Root symbol of the grammar.
 named!(pub expression( &[u8] ) -> Box<Eval>, alt!(conditional | lambda));
 
+// TODO(xion): & and $ as lowest priority operators
+// (reverse composition & function application/currying, respectively)
+
 /// lambda ::== '|' ARGS '|' lambda
 named!(lambda( &[u8] ) -> Box<Eval>, chain!(
     multispaced!(tag!("|")) ~
