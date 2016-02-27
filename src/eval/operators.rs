@@ -5,7 +5,7 @@ use std::iter;
 use eval::{self, api, Context, Eval, Value};
 use eval::model::Invoke;
 use eval::model::value::{ArrayRepr, FloatRepr, IntegerRepr, StringRepr};
-use parse::ast::{BinaryOpNode, ConditionalNode, UnaryOpNode};
+use parse::ast::{Associativity, BinaryOpNode, ConditionalNode, UnaryOpNode};
 
 
 /// Evaluate the unary operator AST node.
@@ -56,29 +56,45 @@ impl UnaryOpNode {
 /// Evaluate the binary operator AST node.
 impl Eval for BinaryOpNode {
     fn eval(&self, context: &Context) -> eval::Result {
+        match self.assoc {
+            Associativity::Left => self.eval_left_assoc(&context),
+            Associativity::Right => self.eval_right_assoc(&context),
+        }
+    }
+}
+impl BinaryOpNode {
+    fn eval_left_assoc(&self, context: &Context) -> eval::Result {
         let mut result = try!(self.first.eval(&context));
         for &(ref op, ref arg) in &self.rest {
             let arg = try!(arg.eval(&context));
-            match &op[..] {
-                "<" => result = try!(BinaryOpNode::eval_lt(result, arg)),
-                "<=" => result = try!(BinaryOpNode::eval_le(result, arg)),
-                ">" => result = try!(BinaryOpNode::eval_gt(result, arg)),
-                ">=" => result = try!(BinaryOpNode::eval_ge(result, arg)),
-                "==" => result = try!(BinaryOpNode::eval_eq(result, arg)),
-                "!=" => result = try!(BinaryOpNode::eval_ne(result, arg)),
-                "@" => result = try!(BinaryOpNode::eval_at(result, arg)),
-                "+" => result = try!(BinaryOpNode::eval_plus(result, arg)),
-                "-" => result = try!(BinaryOpNode::eval_minus(result, arg)),
-                "*" => result = try!(BinaryOpNode::eval_times(result, arg)),
-                "/" => result = try!(BinaryOpNode::eval_by(result, arg)),
-                "%" => result = try!(BinaryOpNode::eval_modulo(result, arg)),
-                "**" => result = try!(BinaryOpNode::eval_power(result, arg)),
-                _ => { return Err(
-                    eval::Error::new(&format!("unknown binary operator: `{}`", op))
-                ); }
-            }
+            result = try!(BinaryOpNode::eval_op(&op[..], result, arg, &context));
         }
         Ok(result)
+    }
+
+    fn eval_right_assoc(&self, context: &Context) -> eval::Result {
+        unimplemented!()
+    }
+
+    fn eval_op(op: &str, left: Value, right: Value, context: &Context) -> eval::Result {
+        match op {
+            "<" => BinaryOpNode::eval_lt(left, right),
+            "<=" => BinaryOpNode::eval_le(left, right),
+            ">" => BinaryOpNode::eval_gt(left, right),
+            ">=" => BinaryOpNode::eval_ge(left, right),
+            "==" => BinaryOpNode::eval_eq(left, right),
+            "!=" => BinaryOpNode::eval_ne(left, right),
+            "@" => BinaryOpNode::eval_at(left, right),
+            "&" => BinaryOpNode::eval_and(left, right),
+            "$" => BinaryOpNode::eval_dollar(left, right, &context),
+            "+" => BinaryOpNode::eval_plus(left, right),
+            "-" => BinaryOpNode::eval_minus(left, right),
+            "*" => BinaryOpNode::eval_times(left, right),
+            "/" => BinaryOpNode::eval_by(left, right),
+            "%" => BinaryOpNode::eval_modulo(left, right),
+            "**" => BinaryOpNode::eval_power(left, right),
+            _ => Err(eval::Error::new(&format!("unknown binary operator: `{}`", op))),
+        }
     }
 }
 

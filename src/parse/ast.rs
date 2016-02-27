@@ -78,6 +78,20 @@ impl fmt::Debug for UnaryOpNode {
 }
 
 
+/// Associativity of a binary operator.
+pub enum Associativity {
+    /// Left associativity: a OP b OP c OP d === ((a OP b) OP c) OP d.
+    /// In AST, this means first is a, and rest is [(OP, b), (OP, c), (OP, d)].
+    Left,
+
+    /// Right associativity: a OP b OP c OP d === a OP (b OP (c OP d)).
+    ///
+    /// In AST, this means first is d, rest is [(OP, c), (OP, b), (OP, a)],
+    /// and the evaluation reverses order of arguments
+    /// (compared to their position in expression source).
+    Right,
+}
+
 /// AST node representing an operation involving binary operators
 /// and their arguments.
 ///
@@ -86,16 +100,29 @@ impl fmt::Debug for UnaryOpNode {
 /// as one object.
 ///
 pub struct BinaryOpNode {
+    pub assoc: Associativity,
     pub first: Box<Eval>,
     pub rest: Vec<(String, Box<Eval>)>,
 }
 
+impl BinaryOpNode {
+    pub fn new(assoc: Associativity,
+               first: Box<Eval>, rest: Vec<(String, Box<Eval>)>) -> BinaryOpNode {
+        BinaryOpNode{assoc: assoc, first: first, rest: rest}
+    }
+}
+
 impl fmt::Debug for BinaryOpNode {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "<Op: {:?} {}>", self.first,
-               self.rest.iter()
+        let repr = match self.assoc {
+            Associativity::Left => format!(
+                "{:?} {}", self.first, self.rest.iter()
                    .map(|&(ref op, ref arg)| format!("{} {:?}", op, arg))
-                   .collect::<Vec<String>>().join(" "))
+                   .collect::<Vec<String>>().join(" ")
+            ),
+            Associativity::Right => unimplemented!(),
+        };
+        write!(fmt, "<Op {}>", repr)
     }
 }
 

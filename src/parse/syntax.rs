@@ -179,7 +179,7 @@ named!(comparison( &[u8] ) -> Box<Eval>, chain!(
         match maybe_right {
             None => left,
             Some(right) => Box::new(
-                BinaryOpNode{first: left, rest: vec![right]}
+                BinaryOpNode::new(Associativity::Left, left, vec![right])
             ) as Box<Eval>,
         }
     }
@@ -195,7 +195,7 @@ named!(argument( &[u8] ) -> Box<Eval>, chain!(
     move || {
         if rest.is_empty() { first }
         else { Box::new(
-            BinaryOpNode{first: first, rest: rest}
+            BinaryOpNode::new(Associativity::Left, first, rest)
         ) as Box<Eval> }
     }
 ));
@@ -210,7 +210,7 @@ named!(term( &[u8] ) -> Box<Eval>, chain!(
     move || {
         if rest.is_empty() { first }
         else { Box::new(
-            BinaryOpNode{first: first, rest: rest}
+            BinaryOpNode::new(Associativity::Left, first, rest)
         ) as Box<Eval> }
     }
 ));
@@ -225,7 +225,7 @@ named!(factor( &[u8] ) -> Box<Eval>, chain!(
     move || {
         if rest.is_empty() { first }
         else { Box::new(
-            BinaryOpNode{first: first, rest: rest}
+            BinaryOpNode::new(Associativity::Left, first, rest)
         ) as Box<Eval> }
     }
 ));
