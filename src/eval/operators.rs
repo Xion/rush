@@ -181,6 +181,37 @@ impl BinaryOpNode {
 
 // Other binary operators.
 impl BinaryOpNode {
+    /// Evaluate the "&" operator for two values.
+    fn eval_and(left: Value, right: Value) -> eval::Result {
+        if left.is_function() && right.is_function() {
+            let left = left.unwrap_function();
+            let right = right.unwrap_function();
+            return right.compose_with(left)  // reverse order!
+                .map(Value::Function)
+                .ok_or_else(|| eval::Error::new(&format!(
+                    "second argument of `&` must be a unary function"
+                )));
+        }
+        BinaryOpNode::err("&", left, right)
+    }
+
+    /// Evaluate the "$" operator for two values.
+    fn eval_dollar(left: Value, right: Value, context: &Context) -> eval::Result {
+        if left.is_function() {
+            let left = left.unwrap_function();
+            return if left.arity() == 1 {
+                left.invoke(vec![right], &context)
+            } else {
+                left.curry(right)
+                    .map(Value::Function)
+                    .ok_or_else(|| eval::Error::new(&format!(
+                        "left side of `$` must be a function taking at least one argument"
+                    )))
+            };
+        }
+        BinaryOpNode::err("$", left, right)
+    }
+
     /// Evaluate the "+" operator for two values.
     fn eval_plus(left: Value, right: Value) -> eval::Result {
         eval2!(left, right : &String { left.clone() + &*right });

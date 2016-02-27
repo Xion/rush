@@ -110,6 +110,7 @@ macro_rules! char_of {
 
 // Grammar constants.
 
+const FUNCTIONAL_BINARY_OPS: &'static str = "&$";
 const ADDITIVE_BINARY_OPS: &'static str = "+-";
 const MULTIPLICATIVE_BINARY_OPS: &'static str = "*/%";
 const POWER_OP: &'static str = "**";
@@ -128,17 +129,32 @@ const UNDERSCORE_SUFFIXES: &'static str = "bifs";
 // Grammar definition.
 
 /// Root symbol of the grammar.
-named!(pub expression( &[u8] ) -> Box<Eval>, alt!(conditional | lambda));
+named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: functional, || { e }));
 
-// TODO(xion): & and $ as lowest priority operators
-// (reverse composition & function application/currying, respectively)
+/// functional ::== joint [FUNCTIONAL_OP joint]*
+named!(functional( &[u8] ) -> Box<Eval>, chain!(
+    first: joint ~
+    rest: many0!(pair!(
+        string!(multispaced!(char_of!(FUNCTIONAL_BINARY_OPS))),
+        joint
+    )),
+    move || {
+        if rest.is_empty() { first }
+        else { Box::new(
+            BinaryOpNode::new(Associativity::Left, first, rest)
+        ) as Box<Eval> }
+    }
+));
+
+/// joint ::== conditional | lambda
+named!(joint( &[u8] ) -> Box<Eval>, alt!(conditional | lambda));
 
 /// lambda ::== '|' ARGS '|' lambda
 named!(lambda( &[u8] ) -> Box<Eval>, chain!(
     multispaced!(tag!("|")) ~
     args: separated_list!(multispaced!(tag!(",")), identifier) ~
     multispaced!(tag!("|")) ~
-    body: expression,
+    body: joint,
     move || {
         Box::new(ScalarNode{
             value: Value::Function(Function::from_lambda(args, body))
