@@ -33,36 +33,27 @@ pub trait Invoke {
 #[derive(Clone)]
 pub enum Function {
     /// Native function that's implemented in the interpreter.
-    Native(Arity, Rc<Box<NativeFunction>>),
+    Native(Arity, Rc<NativeFunction>),
 
     /// Native function that's implemented in the interpreter
     /// and takes Context as an explicit parameter.
-    NativeCtx(Arity, Rc<Box<NativeCtxFunction>>),
+    NativeCtx(Arity, Rc<NativeCtxFunction>),
 
     /// Custom function that's been defined as part of the expression itself.
     Custom(CustomFunction),
 }
 
-#[allow(dead_code)]
 impl Function {
     pub fn from_native<F>(arity: Arity, f: F) -> Function
         where F: Fn(Args) -> eval::Result + 'static
     {
-        Function::Native(arity, Rc::new(Box::new(f)))
-    }
-    pub fn from_boxed_native(arity: Arity, f: Box<NativeFunction>) -> Function {
         Function::Native(arity, Rc::new(f))
     }
-
     pub fn from_native_ctx<F>(arity: Arity, f: F) -> Function
         where F: Fn(Args, &Context) -> eval::Result + 'static
     {
-        Function::NativeCtx(arity, Rc::new(Box::new(f)))
-    }
-    pub fn from_boxed_native_ctx(arity: Arity, f: Box<NativeCtxFunction>) -> Function {
         Function::NativeCtx(arity, Rc::new(f))
     }
-
     pub fn from_lambda(argnames: Vec<String>, expr: Box<Eval>) -> Function {
         Function::Custom(CustomFunction::new(argnames, expr))
     }
