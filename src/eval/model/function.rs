@@ -101,9 +101,7 @@ impl fmt::Debug for Function {
         match self {
             &Function::Native(a, _) => write!(fmt, "<native func of {} arg(s)>", a),
             &Function::NativeCtx(a, _) => write!(fmt, "<native(ctx) func of {} arg(s)>", a),
-            &Function::Custom(ref f) => {
-                write!(fmt, "(|{}| <custom func>)", f.argnames.join(","))
-            },
+            &Function::Custom(ref f) => write!(fmt, "{:?}", f),
         }
     }
 }
@@ -152,6 +150,12 @@ impl CustomFunction {
             argnames: argnames,
             expr: Rc::new(expr),
         }
+    }
+}
+
+impl fmt::Debug for CustomFunction {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "|{}| {:?}", self.argnames.join(","), self.expr)
     }
 }
 
