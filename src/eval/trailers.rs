@@ -11,22 +11,35 @@ use parse::ast::{FunctionCallNode, SubscriptNode};
 impl Eval for FunctionCallNode {
     fn eval(&self, context: &Context) -> eval::Result {
         let func = try!(self.func.eval(&context));
-        if let &Value::Function(ref f) = &func {
+        let func_type = func.typename();
+
+        if let Value::Function(mut f) = func {
             // evaluate all the arguments first, bail if any of that fails
             let evals: Vec<_> = self.args.iter()
-                .map(|opt_arg| opt_arg.as_ref().expect("function currying is NYI"))
+                .map(|opt_arg| opt_arg.as_ref()
+                    .expect("currying with non-initial arguments is NYI"))
                 .map(|arg| arg.eval(&context))
                 .collect();
             if let Some(res) = evals.iter().find(|r| r.is_err()) {
                 return res.clone();
             }
 
-            // extract the argument values and call the function
-            let args = evals.into_iter().map(|r| r.ok().unwrap()).collect();
-            return f.invoke(args, &context);
+            // extract the argument values and determine
+            // if it's a regular call or a curry (partial application)
+            let mut args: Vec<_> =
+                evals.into_iter().map(|r| r.ok().unwrap()).collect();
+            if f.arity() > args.len() {
+                for arg in args.drain(..) {
+                    f = f.curry(arg).unwrap();
+                }
+                return Ok(Value::Function(f));
+            } else {
+                return f.invoke(args, &context);
+            }
         }
+
         Err(eval::Error::new(&format!(
-            "can't call a(n) {} like a function", func.typename()
+            "can't call a(n) {} like a function", func_type
         )))
     }
 }
