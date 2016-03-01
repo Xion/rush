@@ -60,6 +60,7 @@ impl Function {
 
     /// Function composition:
     /// self.compose_with(other)(x) === self(other(x))
+    #[inline]
     pub fn compose_with(self, other: Function) -> Option<Function> {
         if self.arity() == 1 {
             let arity = other.arity();
@@ -67,14 +68,14 @@ impl Function {
                 let intermediate = try!(other.invoke(args, &context));
                 self.invoke(vec![intermediate], &context)
             };
-            Some(Function::from_native_ctx(arity, result))
-        } else {
-            None
+            return Some(Function::from_native_ctx(arity, result));
         }
+        None
     }
 
     /// Function currying (partial application):
     /// self.curry(arg)(x) === self(arg, x)
+    #[inline]
     pub fn curry(self, arg: Value) -> Option<Function> {
         if self.arity() >= 1 {
             let arity = self.arity() - 1;
@@ -82,10 +83,9 @@ impl Function {
                 args.insert(0, arg.clone());
                 self.invoke(args, &context)
             };
-            Some(Function::from_native_ctx(arity, result))
-        } else {
-            None
+            return Some(Function::from_native_ctx(arity, result));
         }
+        None
     }
 }
 
@@ -160,6 +160,7 @@ impl fmt::Debug for CustomFunction {
 }
 
 impl Invoke for CustomFunction {
+    #[inline(always)]
     fn arity(&self) -> Arity {
         self.argnames.len()
     }

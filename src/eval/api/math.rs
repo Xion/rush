@@ -55,6 +55,7 @@ pub fn sqrt(value : Value) -> eval::Result {
 }
 
 /// Generate a random floating point number from the 0..1 range.
+#[inline(always)]
 pub fn rand() -> eval::Result {
     Ok(Value::Float(random()))
 }

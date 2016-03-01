@@ -74,6 +74,7 @@ pub fn filter(func: Value, array: Value, context: &Context) -> eval::Result {
 
 // Utility functions
 
+#[inline(always)]
 fn ensure_unary(func: &Function, api_call: &str) -> Result<(), Error> {
     match func.arity() {
         1 => Ok(()),

@@ -35,12 +35,14 @@ impl<'a> Context<'a> {
     }
 
     /// Whether this is a root context (one without a parent).
+    #[inline(always)]
     pub fn is_root(&self) -> bool {
         self.parent.is_none()
     }
 
     /// Check if given name is defined within this Context
     /// or any of its ancestors.
+    #[inline]
     pub fn is_defined(&self, name: &str) -> bool {
         self.scope.get(name)
             .or_else(|| self.parent.and_then(|ctx| ctx.get(name)))
@@ -49,12 +51,14 @@ impl<'a> Context<'a> {
 
     /// Check if given name is defined in this context.
     /// Does not look at parent Contexts.
+    #[inline]
     pub fn is_defined_here(&self, name: &str) -> bool {
         self.scope.get(name).is_some()
     }
 
     /// Retrieves a value by name from the scope of the context
     /// or any of its parents.
+    #[inline(always)]
     pub fn get(&self, name: &str) -> Option<&Value> {
         self.scope.get(name)
             .or_else(|| self.parent.and_then(|ctx| ctx.get(name)))
@@ -63,6 +67,7 @@ impl<'a> Context<'a> {
     /// Set a value for a variable inside the context's scope.
     /// If the name already exists in the parent scope (if any),
     /// it will be shadowed.
+    #[inline(always)]
     pub fn set(&mut self, name: &str, value: Value) {
         self.scope.insert(name.to_owned(), value);
     }

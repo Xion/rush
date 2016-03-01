@@ -61,64 +61,78 @@ impl Value {
         }
     }
 
+    #[inline(always)]
     pub fn is_string(&self) -> bool {
         match *self { Value::String(..) => true, _ => false, }
     }
+    #[inline(always)]
     pub fn is_int(&self) -> bool {
         match *self { Value::Integer(..) => true, _ => false, }
     }
+    #[inline(always)]
     pub fn is_float(&self) -> bool {
         match *self { Value::Float(..) => true, _ => false, }
     }
+    #[inline(always)]
     pub fn is_bool(&self) -> bool {
         match *self { Value::Boolean(..) => true, _ => false, }
     }
+    #[inline(always)]
     pub fn is_array(&self) -> bool {
         match *self { Value::Array(..) => true, _ => false, }
     }
+    #[inline(always)]
     pub fn is_object(&self) -> bool {
         match *self { Value::Object(..) => true, _ => false, }
     }
+    #[inline(always)]
     pub fn is_function(&self) -> bool {
         match *self { Value::Function(..) => true, _ => false, }
     }
 
+    #[inline]
     pub fn unwrap_string(self) -> StringRepr {
         match self {
             Value::String(s) => s,
             _ => { panic!("unwrap_string() on {} value", self.typename()) },
         }
     }
+    #[inline]
     pub fn unwrap_int(self) -> IntegerRepr {
         match self {
             Value::Integer(i) => i,
             _ => { panic!("unwrap_int() on {} value", self.typename()) },
         }
     }
+    #[inline]
     pub fn unwrap_float(self) -> FloatRepr {
         match self {
             Value::Float(f) => f,
             _ => { panic!("unwrap_float() on {} value", self.typename()) },
         }
     }
+    #[inline]
     pub fn unwrap_bool(self) -> BooleanRepr {
         match self {
             Value::Boolean(b) => b,
             _ => { panic!("unwrap_bool() on {} value", self.typename()) },
         }
     }
+    #[inline]
     pub fn unwrap_array(self) -> ArrayRepr {
         match self {
             Value::Array(a) => a,
             _ => { panic!("unwrap_array() on {} value", self.typename()) },
         }
     }
+    #[inline]
     pub fn unwrap_object(self) -> ObjectRepr {
         match self {
             Value::Object(o) => o,
             _ => { panic!("unwrap_object() on {} value", self.typename()) },
         }
     }
+    #[inline]
     pub fn unwrap_function(self) -> FunctionRepr {
         match self {
             Value::Function(f) => f,
