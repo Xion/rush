@@ -25,7 +25,7 @@ use std::io::{self, Read, Write, BufRead, BufReader, BufWriter};
 
 use rustc_serialize::json::Json;
 
-use self::eval::{Eval, Context};
+use self::eval::{Eval, Context, Invoke};
 
 
 /// Apply the expression to given input stream, line by line,
@@ -42,8 +42,8 @@ pub fn map_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
         let line = try!(line);
         update_context(&mut context, &line);
 
-        let result = try!(eval(&ast, &context));
-        try!(write!(writer, "{}\n", result));
+        let result = try!(evaluate(&ast, &context));
+        try!(write_result(&mut writer, result, &context));
 
         count += 1;
     }
@@ -72,8 +72,8 @@ pub fn apply_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> i
     context.set("_", Value::Array(lines));
 
     let mut writer = BufWriter::new(output);
-    let result = try!(eval(&ast, &context));
-    try!(write!(writer, "{}\n", result));
+    let result = try!(evaluate(&ast, &context));
+    try!(write_result(&mut writer, result, &context));
 
     info!("Processed {} line(s) of input", count);
     Ok(())
@@ -94,9 +94,10 @@ pub fn apply_json<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io
     context.set("_", value);
 
     let mut writer = BufWriter::new(output);
-    let result = try!(eval(&ast, &context));
-    try!(write!(writer, "{}\n", result));
+    let result = try!(evaluate(&ast, &context));
+    try!(write_result(&mut writer, result, &context));
 
+    info!("Processed {} bytes of JSON", json_string.bytes().len());
     Ok(())
 }
 
@@ -118,6 +119,27 @@ fn update_context(ctx: &mut Context, input: &str) {
     ctx.set("_s", Value::String(input.to_owned()));
 }
 
-fn eval(ast: &Box<Eval>, ctx: &Context) -> io::Result<Value> {
+fn evaluate(ast: &Box<Eval>, ctx: &Context) -> io::Result<Value> {
     ast.eval(&ctx).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+}
+
+fn write_result<W: Write>(output: &mut W, mut result: Value, context: &Context) -> io::Result<()> {
+    // result might be a function, in which case we will try to apply to original input
+    if result.is_function() {
+        let func = result.unwrap_function();
+        if func.arity() != 1 {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput,
+                eval::Error::new(&format!(
+                    "output must be an immediate value or a 1-argument function \
+                    (got {}-argument one)", func.arity()))));
+        }
+
+        // TODO(xion): context should probably know what input ("default variable") is,
+        // so that don't have to get it by underscore
+        let input = context.get("_").unwrap();
+        result = try!(func.invoke(vec![input.clone()], &context)
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e)));
+    }
+
+    write!(output, "{}\n", result)
 }
