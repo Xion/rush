@@ -262,13 +262,9 @@ named!(trailer( &[u8] ) -> Trailer, alt!(
                multispaced!(tag!("]"))) => { |s| Trailer::Subscript(s) }
     |
     delimited!(multispaced!(tag!("(")),
-               items,
+               separated_list!(multispaced!(tag!(",")), expression),
                multispaced!(tag!(")"))) => { |args| Trailer::Args(args) }
 ));
-
-/// items ::== expression (',' expression)*
-named!(items( &[u8] ) -> Vec<Box<Eval>>,
-       separated_list!(multispaced!(tag!(",")), expression));
 
 /// atom ::== OBJECT | ARRAY | BOOLEAN | SYMBOL | FLOAT | INTEGER | STRING | '(' expression ')'
 named!(atom( &[u8] ) -> Box<Eval>, alt!(
@@ -277,6 +273,7 @@ named!(atom( &[u8] ) -> Box<Eval>, alt!(
     delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
 ));
 
+/// OBJECT ::== '{' [expression ':' expression] (',' expression ':' expression)* '}'
 named!(object_value( &[u8] ) -> Box<Eval>, map!(
     delimited!(
         multispaced!(tag!("{")),
@@ -289,8 +286,13 @@ named!(object_value( &[u8] ) -> Box<Eval>, map!(
     |attrs| { Box::new(ObjectNode{attributes: attrs}) }
 ));
 
+/// ARRAY ::== '[' [expression] (',' expression)* ']'
 named!(array_value( &[u8] ) -> Box<Eval>, map!(
-    delimited!(multispaced!(tag!("[")), items, multispaced!(tag!("]"))),
+    delimited!(
+        multispaced!(tag!("[")),
+        separated_list!(multispaced!(tag!(",")), expression),
+        multispaced!(tag!("]"))
+    ),
     |items| { Box::new(ArrayNode{elements: items}) }
 ));
 

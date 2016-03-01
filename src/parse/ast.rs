@@ -143,10 +143,11 @@ impl fmt::Debug for SubscriptNode {
 }
 
 
-/// AST node representing a call to a function with given arguments.
+/// AST node representing a call to, or an appliacation of,
+/// a function with/to given arguments.
 ///
-/// The exact function the name resolves to depends on the context passed
-/// during evaluation.
+/// The exact function the expression resolves to
+/// depends on the context passed during evaluation.
 pub struct FunctionCallNode {
     pub func: Box<Eval>,
     pub args: Vec<Box<Eval>>,
