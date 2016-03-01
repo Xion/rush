@@ -13,8 +13,10 @@ impl Eval for FunctionCallNode {
         let func = try!(self.func.eval(&context));
         if let &Value::Function(ref f) = &func {
             // evaluate all the arguments first, bail if any of that fails
-            let evals: Vec<_> =
-                self.args.iter().map(|x| x.eval(&context)).collect();
+            let evals: Vec<_> = self.args.iter()
+                .map(|opt_arg| opt_arg.as_ref().expect("function currying is NYI"))
+                .map(|arg| arg.eval(&context))
+                .collect();
             if let Some(res) = evals.iter().find(|r| r.is_err()) {
                 return res.clone();
             }

@@ -255,14 +255,16 @@ named!(power( &[u8] ) -> Box<Eval>, chain!(
 ));
 
 /// trailer ::== '[' expression ']' | '(' ARGS ')'
-enum Trailer { Subscript(Box<Eval>), Args(Vec<Box<Eval>>) }
+enum Trailer { Subscript(Box<Eval>), Args(Vec<Option<Box<Eval>>>) }
 named!(trailer( &[u8] ) -> Trailer, alt!(
     delimited!(multispaced!(tag!("[")),
                expression,
                multispaced!(tag!("]"))) => { |s| Trailer::Subscript(s) }
     |
+    // TODO(xion): to support currying, this probably can't be separated list;
+    // figure out the exact syntax and implement optional argument "slots"
     delimited!(multispaced!(tag!("(")),
-               separated_list!(multispaced!(tag!(",")), expression),
+               separated_list!(multispaced!(tag!(",")), map!(expression, Some)),
                multispaced!(tag!(")"))) => { |args| Trailer::Args(args) }
 ));
 
