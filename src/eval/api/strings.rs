@@ -65,9 +65,6 @@ pub fn join(array: Value, delim: Value) -> eval::Result {
 /// Substitute a given string ("needle") with another ("replacement")
 /// within given text ("haystack").
 /// Returns the text after substitution has been made.
-// TODO(xion): allow this function to accept just two arguments,
-// with the third one being an implicit reference to the default var
-// (requires some form of function overloading)
 pub fn sub(needle: Value, replacement: Value, haystack: Value) -> eval::Result {
     if let (&Value::String(ref n),
             &Value::String(ref r),
@@ -79,7 +76,6 @@ pub fn sub(needle: Value, replacement: Value, haystack: Value) -> eval::Result {
         needle.typename(), replacement.typename(), haystack.typename()
     )))
 }
-
 
 /// Peforms string formatting a'la Python str.format().
 pub fn format_(fmt: Value, arg: Value) -> eval:: Result {

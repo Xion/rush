@@ -59,3 +59,42 @@ pub fn sqrt(value : Value) -> eval::Result {
 pub fn rand() -> eval::Result {
     Ok(Value::Float(random()))
 }
+
+
+// Rounding
+
+/// Round a number down.
+pub fn floor(value: Value) -> eval::Result {
+    eval1!(value : Integer { value });
+    eval1!(value : Float { value.floor() });
+    Err(Error::new(&format!(
+        "floor() requires a number, got {}", value.typename()
+    )))
+}
+
+/// Round a number up.
+pub fn ceil(value: Value) -> eval::Result {
+    eval1!(value : Integer { value });
+    eval1!(value : Float { value.ceil() });
+    Err(Error::new(&format!(
+        "ceil() requires a number, got {}", value.typename()
+    )))
+}
+
+/// Round a number to the nearest integer.
+pub fn round(value : Value) -> eval::Result {
+    eval1!(value : Integer { value });
+    eval1!(value : Float { value.round() });
+    Err(Error::new(&format!(
+        "round() requires a number, got {}", value.typename()
+    )))
+}
+
+/// Return the integer part of the number.
+pub fn trunc(value : Value) -> eval::Result {
+    eval1!(value : Integer { value });
+    eval1!(value : Float { value.trunc() });
+    Err(Error::new(&format!(
+        "trunc() requires a number, got {}", value.typename()
+    )))
+}
