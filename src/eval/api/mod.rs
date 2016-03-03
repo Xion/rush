@@ -9,16 +9,23 @@ pub mod math;
 pub mod strings;
 
 
+use std::f64;
+
 use eval::{self, Context, Error, Value};
 use eval::model::{Args, Arity, Function};
+use eval::value::FloatRepr;
 
 
 impl<'a> Context<'a> {
-    /// Initialize symbols corresponding to the built-in functions.
+    /// Initialize symbols for the built-in functions and constants.
     /// This should be done only for the root Context (the one w/o a parent).
     pub fn init_builtins(&mut self) {
         assert!(self.is_root(), "Only root Context can have builtins!");
+        self.init_functions();
+        self.init_constants();
+    }
 
+    fn init_functions(&mut self) {
         //
         // Keep the list sorted alphabetically by function names.
         //
@@ -44,6 +51,17 @@ impl<'a> Context<'a> {
         self.define_unary(      "str",      conv::str_      );
         self.define_ternary(    "sub",      strings::sub    );
         self.define_unary(      "trunc",    math::trunc     );
+    }
+
+    fn init_constants(&mut self) {
+        //
+        // Keep the list sorted alphabetically by constant names (ignore case).
+        //
+        self.set(   "false",    Value::Boolean(false));
+        self.set(   "Inf",      Value::Float(f64::INFINITY as FloatRepr));
+        self.set(   "NaN",      Value::Float(f64::NAN as FloatRepr));
+        self.set(   "pi",       Value::Float(f64::consts::PI as FloatRepr));
+        self.set(   "true",     Value::Boolean(true));
     }
 }
 
