@@ -25,23 +25,22 @@ pub fn rev(string: Value) -> eval::Result {
 
 /// Split a string by given string delimiter.
 /// Returns an array of strings.
-pub fn split(string: Value, delim: Value) -> eval::Result {
-    eval2!((string: &String, delim: &String) -> Array {
+pub fn split(delim: Value, string: Value) -> eval::Result {
+    eval2!((delim: &String, string: &String) -> Array {
         string.split(delim).map(StringRepr::from).map(Value::String).collect()
     });
     Err(Error::new(&format!(
-        "split() expects two strings, got: {}, {}",
+        "split() expects string delimiter and string to split, got: {}, {}",
         string.typename(), delim.typename()
     )))
 }
 
 /// Join an array of values into a single delimited string.
-// TODO(xion): reverse the order of arguments (also in split())
-pub fn join(array: Value, delim: Value) -> eval::Result {
-    let array_type = array.typename();
+pub fn join(delim: Value, array: Value) -> eval::Result {
     let delim_type = delim.typename();
+    let array_type = array.typename();
 
-    if let (Value::Array(a), Value::String(d)) = (array, delim) {
+    if let (Value::String(d), Value::Array(a)) = (delim, array) {
         let elem_count = a.len();
         let strings: Vec<_> =  a.into_iter()
             .map(str_).filter(Result::is_ok)
@@ -58,8 +57,8 @@ pub fn join(array: Value, delim: Value) -> eval::Result {
     }
 
     Err(Error::new(&format!(
-        "join() expects an array and string, got: {}, {}",
-        array_type, delim_type
+        "join() expects a string and an array, got: {}, {}",
+        delim_type, array_type
     )))
 }
 

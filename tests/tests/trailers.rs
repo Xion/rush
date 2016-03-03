@@ -57,12 +57,12 @@ fn function_call_1arg_input() {
 
 #[test]
 fn function_call_2args_constant() {
-    assert_eq!("he\n\no", eval("split(hello, l)"));
+    assert_eq!("he\n\no", eval("split(l, hello)"));
 }
 
 #[test]
 fn function_call_2args_input() {
-    assert_eq!("he\n\no", apply("split(_, l)", "hello"));
+    assert_eq!("he\n\no", apply("split(l, _)", "hello"));
 }
 
 #[test]
