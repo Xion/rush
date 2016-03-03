@@ -36,6 +36,7 @@ pub fn split(string: Value, delim: Value) -> eval::Result {
 }
 
 /// Join an array of values into a single delimited string.
+// TODO(xion): reverse the order of arguments (also in split())
 pub fn join(array: Value, delim: Value) -> eval::Result {
     let array_type = array.typename();
     let delim_type = delim.typename();

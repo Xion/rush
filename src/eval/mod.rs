@@ -1,4 +1,5 @@
 //! Module implementing evaluation of parsed expressions.
+#![allow(dead_code)]
 
 #[macro_use]
 pub mod util;
@@ -16,6 +17,8 @@ pub use self::model::value;  // for *Repr typedefs
 use std::error;
 use std::fmt;
 use std::result;
+
+use mopa;
 
 
 /// Error that may have occurred during evaluation.
@@ -48,6 +51,7 @@ pub type Result = result::Result<Value, Error>;
 
 
 /// Trait for objects that can be evaluated within given Context.
-pub trait Eval : fmt::Debug {
+pub trait Eval : fmt::Debug + mopa::Any {
     fn eval(&self, context: &Context) -> Result;
 }
+mopafy!(Eval);

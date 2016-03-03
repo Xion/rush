@@ -7,6 +7,8 @@ extern crate nom;
 #[macro_use]
 extern crate log;
 
+#[macro_use]
+extern crate mopa;
 extern crate rand;
 extern crate regex;
 extern crate rustc_serialize;
