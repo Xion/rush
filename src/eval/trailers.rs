@@ -26,10 +26,10 @@ impl Eval for FunctionCallNode {
 
             // extract the argument values and determine
             // if it's a regular call or a curry (partial application)
-            let mut args: Vec<_> =
+            let args: Vec<_> =
                 evals.into_iter().map(|r| r.ok().unwrap()).collect();
             if f.arity() > args.len() {
-                for arg in args.drain(..) {
+                for arg in args.into_iter() {
                     f = f.curry(arg).unwrap();
                 }
                 return Ok(Value::Function(f));

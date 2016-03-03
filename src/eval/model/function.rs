@@ -17,6 +17,9 @@ pub type Args = Vec<Value>;
 
 /// Function arity (number of accepted arguments).
 pub type Arity = usize;
+// TODO(xion): make this an enum with Exact and Minimum, to allow for varargs;
+// currying of variadic functions with $ operator shall result in invocation
+// as soon as number of accumulated arguments reaches Minimum
 
 
 /// Denotes an object that works as a callable function within an expression.
@@ -165,7 +168,7 @@ impl Invoke for CustomFunction {
         self.argnames.len()
     }
 
-    fn invoke(&self, mut args: Args, context: &Context) -> eval::Result {
+    fn invoke(&self, args: Args, context: &Context) -> eval::Result {
         let expected_count = self.argnames.len();
         let actual_count = args.len();
         if actual_count != expected_count {
@@ -176,7 +179,7 @@ impl Invoke for CustomFunction {
         }
 
         let mut context = Context::with_parent(context);
-        for (name, value) in self.argnames.iter().zip(args.drain(..)) {
+        for (name, value) in self.argnames.iter().zip(args.into_iter()) {
             context.set(name, value);
         }
         self.expr.eval(&context)

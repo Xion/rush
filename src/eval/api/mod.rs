@@ -75,8 +75,8 @@ impl<'a> Context<'a> {
     fn define_unary<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn(Value) -> eval::Result + 'static
     {
-        self.define(name, 1, move |mut args: Args| {
-            let mut args = args.drain(..);
+        self.define(name, 1, move |args: Args| {
+            let mut args = args.into_iter();
             func(args.next().unwrap())
         })
     }
@@ -84,8 +84,8 @@ impl<'a> Context<'a> {
     fn define_binary<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn(Value, Value) -> eval::Result + 'static
     {
-        self.define(name, 2, move |mut args: Args| {
-            let mut args = args.drain(..);
+        self.define(name, 2, move |args: Args| {
+            let mut args = args.into_iter();
             func(args.next().unwrap(), args.next().unwrap())
         })
     }
@@ -93,8 +93,8 @@ impl<'a> Context<'a> {
     fn define_ternary<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn(Value, Value, Value) -> eval::Result + 'static
     {
-        self.define(name, 3, move |mut args: Args| {
-            let mut args = args.drain(..);
+        self.define(name, 3, move |args: Args| {
+            let mut args = args.into_iter();
             func(args.next().unwrap(),
                  args.next().unwrap(),
                  args.next().unwrap())
@@ -130,8 +130,8 @@ impl<'a> Context<'a> {
     fn define_unary_ctx<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn(Value, &Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, 1, move |mut args: Args, context: &Context| {
-            let mut args = args.drain(..);
+        self.define_ctx(name, 1, move |args: Args, context: &Context| {
+            let mut args = args.into_iter();
             func(args.next().unwrap(), &context)
         })
     }
@@ -139,8 +139,8 @@ impl<'a> Context<'a> {
     fn define_binary_ctx<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn(Value, Value, &Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, 2, move |mut args: Args, context: &Context| {
-            let mut args = args.drain(..);
+        self.define_ctx(name, 2, move |args: Args, context: &Context| {
+            let mut args = args.into_iter();
             func(args.next().unwrap(), args.next().unwrap(),
                 &context)
         })
@@ -149,8 +149,8 @@ impl<'a> Context<'a> {
     fn define_ternary_ctx<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn(Value, Value, Value, &Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, 3, move |mut args: Args, context: &Context| {
-            let mut args = args.drain(..);
+        self.define_ctx(name, 3, move |args: Args, context: &Context| {
+            let mut args = args.into_iter();
             func(args.next().unwrap(),
                  args.next().unwrap(),
                  args.next().unwrap(),

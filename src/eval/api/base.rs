@@ -25,9 +25,8 @@ pub fn map(func: Value, array: Value, context: &Context) -> eval::Result {
     eval2!((func: &Function, array: Array) -> Array {{
         try!(ensure_unary(&func, "map"));
 
-        let mut items = array;
         let mut result = Vec::new();
-        for item in items.drain(..) {
+        for item in array.into_iter() {
             let context = Context::with_parent(&context);
             let mapped = try!(func.invoke(vec![item], &context));
             result.push(mapped);
@@ -51,9 +50,8 @@ pub fn filter(func: Value, array: Value, context: &Context) -> eval::Result {
     eval2!((func: &Function, array: Array) -> Array {{
         try!(ensure_unary(&func, "filter"));
 
-        let mut items = array;
         let mut result = Vec::new();
-        for item in items.drain(..) {
+        for item in array.into_iter() {
             let context = Context::with_parent(&context);
             let keep = try!(
                 func.invoke(vec![item.clone()], &context).and_then(bool)

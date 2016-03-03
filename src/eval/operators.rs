@@ -228,9 +228,8 @@ impl BinaryOpNode {
         }});
         eval2!((left: &Object, right: &Object) -> Object {{
             let mut left = left.clone();
-            let mut right = right.clone();
-            for (k, v) in right.drain() {
-                left.insert(k, v);
+            for (k, v) in right {
+                left.insert(k.to_owned(), v.clone());
             }
             left
         }});

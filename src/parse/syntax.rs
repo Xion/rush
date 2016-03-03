@@ -229,28 +229,31 @@ named!(factor( &[u8] ) -> Box<Eval>, chain!(
 
 /// power ::== [UNARY_OP] (function_call | atom) subscript*
 named!(power( &[u8] ) -> Box<Eval>, chain!(
-    mut ops: many0!(string!(multispaced!(char_of!(UNARY_OPS)))) ~
-    mut power: atom ~
+    ops: many0!(string!(multispaced!(char_of!(UNARY_OPS)))) ~
+    power: atom ~
     trailers: many0!(trailer),
     move || {
+        let mut result = power;
+
         // trailers (subscripts & function calls) have higher priority
         // than any unary operators, so we build their AST node(s) first
         for trailer in trailers {
-            power = match trailer {
+            result = match trailer {
                 Trailer::Subscript(index) =>
-                    Box::new(SubscriptNode{object: power, index: index}),
+                    Box::new(SubscriptNode{object: result, index: index}),
                 Trailer::Args(args) =>
-                    Box::new(FunctionCallNode{func: power, args: args}),
+                    Box::new(FunctionCallNode{func: result, args: args}),
             };
         }
+
         // then, we build nodes for any unary operators that may have been
         // prepended to the whole thing (in reverse order,
         // so that `---foo` means `-(-(-foo))`)
-        ops.reverse();
-        for op in ops.drain(..) {
-            power = Box::new(UnaryOpNode{op: op, arg: power});
+        for op in ops.into_iter().rev() {
+            result = Box::new(UnaryOpNode{op: op, arg: result});
         }
-        power
+
+        result
     }
 ));
 
