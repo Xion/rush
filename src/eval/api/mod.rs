@@ -25,6 +25,7 @@ impl<'a> Context<'a> {
         self.define_unary(      "abs",      math::abs       );
         self.define_unary(      "bool",     conv::bool      );
         self.define_unary(      "ceil",     math::ceil      );
+        self.define_unary(      "exp",      math::exp       );
         self.define_binary_ctx( "filter",   base::filter    );
         self.define_unary(      "float",    conv::float     );
         self.define_unary(      "floor",    math::floor     );
@@ -32,6 +33,7 @@ impl<'a> Context<'a> {
         self.define_unary(      "int",      conv::int       );
         self.define_binary(     "join",     strings::join   );
         self.define_unary(      "len",      base::len       );
+        self.define_unary(      "ln",       math::ln        );
         self.define_binary_ctx( "map",      base::map       );
         self.define_nullary(    "rand",     math::rand      );
         self.define_unary(      "rev",      strings::rev    );

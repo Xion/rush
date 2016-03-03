@@ -60,6 +60,24 @@ pub fn rand() -> eval::Result {
     Ok(Value::Float(random()))
 }
 
+/// The exponential function.
+pub fn exp(value : Value) -> eval::Result {
+    eval1!((value : Integer) -> Float { (value as FloatRepr).exp() });
+    eval1!(value : Float { value.exp() });
+    Err(Error::new(&format!(
+        "exp() requires a number, got {}", value.typename()
+    )))
+}
+
+/// Natural logarithm (with respect to base 'e').
+pub fn ln(value : Value) -> eval::Result {
+    eval1!((value : Integer) -> Float { (value as FloatRepr).ln() });
+    eval1!(value : Float { value.ln() });
+    Err(Error::new(&format!(
+        "ln() requires a number, got {}", value.typename()
+    )))
+}
+
 
 // Rounding
 
