@@ -44,35 +44,34 @@ pub fn assert_noop_apply(expr: &str, input: &str) {
 }
 
 pub fn assert_eval_error(expr: &str) {
-    if !eval_ex(expr).is_err() {
-        panic!("Expression `{}` didn't cause an error!", expr);
-    }
+    assert!(eval_ex(expr).is_err(),
+        "Expression `{}` didn't cause an error!", expr);
 }
 
 pub fn assert_eval_true(expr: &str) {
     let result = eval(expr);
-    assert!(result.parse::<bool>().expect(&format!(
+    let result_bool = result.parse::<bool>().expect(&format!(
         "Couldn't interpret result of `{}` as boolean: {}", expr, result
-    )));
+    ));
+    assert!(result_bool, "unexpectedly false: {}", expr);
 }
 
 pub fn assert_eval_false(expr: &str) {
     let result = eval(expr);
-    assert!(!result.parse::<bool>().expect(&format!(
+    let result_bool = result.parse::<bool>().expect(&format!(
         "Couldn't interpret result of `{}` as boolean: {}", expr, result
-    )));
+    ));
+    assert!(!result_bool, "unexpectedly true: {}", expr);
 }
 
 pub fn assert_apply_error(expr: &str, input: &str) {
-    if !apply_ex(expr, input).is_err() {
-        panic!("Mapping `{}` for input `{}` didn't cause an error!", expr, input);
-    }
+    assert!(apply_ex(expr, input).is_err(),
+        "Mapping `{}` for input `{}` didn't cause an error!", expr, input);
 }
 
 pub fn assert_apply_lines_error<'a>(expr: &str, input: &'a [&'a str]) {
-    if !apply_lines_ex(expr, input).is_err() {
-        panic!("Reducing `{}` on input `{}` didn't cause an error!");
-    }
+    assert!(apply_lines_ex(expr, input).is_err(),
+        "Reducing `{}` on input `{}` didn't cause an error!");
 }
 
 

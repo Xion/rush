@@ -117,7 +117,7 @@ impl fmt::Debug for BinaryOpNode {
         let repr = match self.assoc {
             Associativity::Left => format!(
                 "{:?} {}", self.first, self.rest.iter()
-                   .map(|&(ref op, ref arg)| format!("{} {:?}", op, arg))
+                   .map(|&(ref op, ref arg)| format!("`{}` {:?}", op, arg))
                    .collect::<Vec<String>>().join(" ")
             ),
             Associativity::Right => unimplemented!(),

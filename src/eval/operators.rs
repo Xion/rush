@@ -145,9 +145,10 @@ impl BinaryOpNode {
         eval2!((left: Float, right: Float) -> Boolean { left == right });
 
         // others
-        eval2!((left: &Array, right: &Array) -> Boolean { left == right });
         eval2!((left: Boolean, right: Boolean) -> Boolean { left == right });
         eval2!((left: &String, right: &String) -> Boolean { left == right });
+        eval2!((left: &Array, right: &Array) -> Boolean { left == right });
+        eval2!((left: &Object, right: &Object) -> Boolean { left == right });
 
         BinaryOpNode::err("==", left, right)
     }
@@ -161,9 +162,10 @@ impl BinaryOpNode {
         eval2!((left: Float, right: Float) -> Boolean { left != right });
 
         // others
-        eval2!((left: &Array, right: &Array) -> Boolean { left != right });
         eval2!((left: Boolean, right: Boolean) -> Boolean { left != right });
         eval2!((left: &String, right: &String) -> Boolean { left != right });
+        eval2!((left: &Array, right: &Array) -> Boolean { left != right });
+        eval2!((left: &Object, right: &Object) -> Boolean { left != right });
 
         BinaryOpNode::err("!=", left, right)
     }

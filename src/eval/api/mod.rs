@@ -57,11 +57,12 @@ impl<'a> Context<'a> {
         //
         // Keep the list sorted alphabetically by constant names (ignore case).
         //
-        self.set(   "false",    Value::Boolean(false));
         self.set(   "Inf",      Value::Float(f64::INFINITY as FloatRepr));
         self.set(   "NaN",      Value::Float(f64::NAN as FloatRepr));
         self.set(   "pi",       Value::Float(f64::consts::PI as FloatRepr));
-        self.set(   "true",     Value::Boolean(true));
+        //
+        // Don't add "true" or "false", they are recognized at parser level!
+        //
     }
 }
 
