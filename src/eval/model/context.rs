@@ -1,10 +1,18 @@
 //! Evaluation context.
 
 use std::collections::HashMap;
+use std::hash::BuildHasherDefault;
+
+use fnv::FnvHasher;
 
 use eval;
 use super::function::{Args, Invoke};
 use super::value::Value;
+
+
+/// Custom hasher for hashmap type that stores variables present in Context.
+/// Uses the Fowler-Noll-Vo hashing algorithm which is faster for short keys.
+type Hasher = BuildHasherDefault<FnvHasher>;
 
 
 /// Evaluation context for an expression.
@@ -18,20 +26,20 @@ pub struct Context<'a> {
     parent: Option<&'a Context<'a>>,
 
     /// Names & values present in the context.
-    scope: HashMap<String, Value>,
+    scope: HashMap<String, Value, Hasher>,
 }
 
 impl<'a> Context<'a> {
     /// Create a new root context.
     pub fn new() -> Context<'a> {
-        let mut context = Context{parent: None, scope: HashMap::new()};
+        let mut context = Context{parent: None, scope: HashMap::default()};
         context.init_builtins();
         context
     }
 
     /// Create a new Context that's a child of given parent.
     pub fn with_parent(parent: &'a Context<'a>) -> Context<'a> {
-        Context{parent: Some(parent), scope: HashMap::new()}
+        Context{parent: Some(parent), scope: HashMap::default()}
     }
 
     /// Whether this is a root context (one without a parent).

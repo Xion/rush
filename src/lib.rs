@@ -7,6 +7,7 @@ extern crate nom;
 #[macro_use]
 extern crate log;
 
+extern crate fnv;
 #[macro_use]
 extern crate mopa;
 extern crate rand;
