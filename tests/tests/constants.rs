@@ -1,9 +1,5 @@
 //! Tests for constant expressions.
 
-use std::collections::HashMap;
-use std::fmt::Display;
-use std::hash::Hash;
-
 use util::*;
 
 
@@ -164,14 +160,4 @@ fn constant_object_duplicate_key() {
     let actual = parse_json_stringmap(&eval(&expr));
     assert!(actual.contains_key(key));
     assert_eq!(second_value, actual.get(key).unwrap());
-}
-
-// Utility functions
-
-fn to_object_literal<K, V>(items: &HashMap<K, V>) -> String
-    where K: Display + Eq + Hash, V: Display
-{
-    format!("{{{}}}", items.iter()
-        .map(|(ref k, ref v)| format!("{}:{}", k, v))
-        .collect::<Vec<_>>().join(","))
 }

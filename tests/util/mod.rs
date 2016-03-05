@@ -1,6 +1,8 @@
 //! Utility functions used by tests.
 
 use std::collections::HashMap;
+use std::fmt::Display;
+use std::hash::Hash;
 use std::io;
 use std::str::from_utf8;
 
@@ -17,6 +19,7 @@ macro_rules! hashmap_owned {
 }
 
 
+/// Join a slice of stringifiable values.
 pub fn join<T: ToString>(array: &[T], sep: &str) -> String {
     array.iter().map(T::to_string).collect::<Vec<_>>().join(sep)
 }
@@ -29,6 +32,20 @@ pub fn parse_json_stringmap(json: &str) -> HashMap<String, String> {
             .map(|(k, v)| (k, v.as_string().unwrap().to_owned())).collect(),
         _ => { panic!("expected a JSON object literal") },
     }
+}
+
+/// Convert a hashmap to an object literal.
+pub fn to_object_literal<K, V>(items: &HashMap<K, V>) -> String
+    where K: Display + Eq + Hash, V: Display
+{
+    format!("{{{}}}", items.iter()
+        .map(|(ref k, ref v)| format!("{}:{}", k, v))
+        .collect::<Vec<_>>().join(","))
+}
+
+/// Convert a slice to an array literal.
+pub fn to_array_literal<T: ToString>(array: &[T]) -> String {
+    format!("[{}]", join(array, ","))
 }
 
 
