@@ -18,6 +18,14 @@ macro_rules! hashmap_owned {
     };
 }
 
+/// Construct a string literal from given separate string literal lines
+/// by joining them all together.
+macro_rules! unlines (
+    ($($line:expr),*) => ({
+        $crate::util::join(&[$($line),*], "\n")
+    });
+);
+
 
 /// Join a slice of stringifiable values.
 pub fn join<T: ToString>(array: &[T], sep: &str) -> String {

@@ -2,3 +2,4 @@
 
 mod base;
 mod conv;
+mod strings;
