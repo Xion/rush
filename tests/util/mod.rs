@@ -48,6 +48,9 @@ pub fn to_array_literal<T: ToString>(array: &[T]) -> String {
     format!("[{}]", join(array, ","))
 }
 
+// TODO(xion): consider making a ToLiteral trait for converting Rust types into
+// "equivalent" value literals
+
 
 // Assertions.
 // TODO(xion): allow for more fine grained error assertions
@@ -81,12 +84,13 @@ pub fn assert_eval_false(expr: &str) {
     assert!(!result_bool, "unexpectedly true: {}", expr);
 }
 
-pub fn assert_apply_error(expr: &str, input: &str) {
+pub fn assert_apply_error<T: ToString>(expr: &str, input: T) {
+    let input = &input.to_string();
     assert!(apply_ex(expr, input).is_err(),
         "Mapping `{}` for input `{}` didn't cause an error!", expr, input);
 }
 
-pub fn assert_apply_lines_error<'a>(expr: &str, input: &'a [&'a str]) {
+pub fn assert_apply_lines_error<T: ToString>(expr: &str, input: &[T]) {
     assert!(apply_lines_ex(expr, input).is_err(),
         "Reducing `{}` on input `{}` didn't cause an error!");
 }
@@ -110,14 +114,15 @@ pub fn eval_ex(expr: &str) -> io::Result<String> {
 /// Applies an expression to input given as (single line) string.
 /// This is a special variant of map_lines().
 /// Internally, this calls ap::map_lines.
-pub fn apply(expr: &str, input: &str) -> String {
+pub fn apply<T: ToString>(expr: &str, input: T) -> String {
     match apply_ex(expr, input) {
         Ok(output) => output,
         Err(err) => { panic!("apply() error: {}", err); }
     }
 }
 
-pub fn apply_ex(expr: &str, input: &str) -> io::Result<String> {
+pub fn apply_ex<T: ToString>(expr: &str, input: T) -> io::Result<String> {
+    let input = input.to_string();
     assert!(!input.contains("\n"));
     map_lines_ex(expr, input)
 }
@@ -131,16 +136,16 @@ pub fn apply_ex(expr: &str, input: &str) -> io::Result<String> {
 ///
 /// Internally, this calls ap::map_lines.
 #[allow(dead_code)]
-pub fn map_lines(expr: &str, input: &str) -> String {
+pub fn map_lines<T: ToString>(expr: &str, input: T) -> String {
     match map_lines_ex(expr, input) {
         Ok(output) => output,
         Err(err) => { panic!("map_lines() error: {}", err); }
     }
 }
 
-pub fn map_lines_ex(expr: &str, input: &str) -> io::Result<String> {
+pub fn map_lines_ex<T: ToString>(expr: &str, input: T) -> io::Result<String> {
     let mut extra_newline = false;
-    let mut input = input.to_owned();
+    let mut input = input.to_string();
     if !input.ends_with("\n") {
         input.push('\n');
         extra_newline = true;
@@ -164,15 +169,15 @@ pub fn map_lines_ex(expr: &str, input: &str) -> io::Result<String> {
 /// This input is interpreted as an array by the given expression.
 ///
 /// Internally, this calls ap::apply_lines.
-pub fn apply_lines<'a>(expr: &str, input: &'a [&'a str]) -> String {
+pub fn apply_lines<T: ToString>(expr: &str, input: &[T]) -> String {
     match apply_lines_ex(expr, input) {
         Ok(output) => output,
         Err(err) => { panic!("apply_lines() error: {}", err); }
     }
 }
 
-pub fn apply_lines_ex<'a>(expr: &str, input: &'a [&'a str]) -> io::Result<String> {
-    let input = input.join("\n").to_owned();
+pub fn apply_lines_ex<T: ToString>(expr: &str, input: &[T]) -> io::Result<String> {
+    let input  = join(input, "\n");
 
     let mut output: Vec<u8> = Vec::new();
     try!(ap::apply_lines(expr, input.as_bytes(), &mut output));

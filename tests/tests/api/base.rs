@@ -22,3 +22,5 @@ fn len() {
                eval(&format!("len({})", to_object_literal(&OBJECT))));
     assert_eval_error("len(|x| x)");
 }
+
+// TODO(xion): tests for map() and filter()
