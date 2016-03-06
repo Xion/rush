@@ -1,4 +1,7 @@
-//! Tests for type conversion constructs.
+//! Tests for input conversion constructs.
+//!
+//! Note that this is only about the _i, _b, etc. constructs.
+//! Tests for the type conversion API are in tests::api::conv module.
 
 use util::*;
 

@@ -59,6 +59,7 @@ pub fn bool(value: Value) -> eval::Result {
         Value::Float(f) => Ok(Value::Boolean(f != 0.0)),
         Value::Boolean(_) => Ok(value),
         Value::Array(ref a) => Ok(Value::Boolean(a.len() > 0)),
+        Value::Object(ref o) => Ok(Value::Boolean(o.len() > 0)),
         _ => Err(Error::new(
             &format!("cannot convert {} to bool", value.typename())
         )),
