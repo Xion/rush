@@ -142,6 +142,30 @@ impl Value {
 }
 
 
+// Conversions from Rust types
+
+/// Macro to create a straighforward From<FooRepr> -> Value::Foo implementation.
+macro_rules! value_from (
+    ($input:ty => $output:ident) => {
+        impl From<$input> for Value {
+            #[inline(always)]
+            fn from(input: $input) -> Self {
+                Value::$output(input)
+            }
+        }
+    }
+);
+
+// Note how string input is deliberately omitted, for it is ambiguous.
+// (It could result in either Value::String or Value::Symbol).
+value_from!(IntegerRepr => Integer);
+value_from!(FloatRepr => Float);
+value_from!(BooleanRepr => Boolean);
+value_from!(ArrayRepr => Array);
+value_from!(ObjectRepr => Object);
+value_from!(FunctionRepr => Function);
+
+
 // TODO(xion): given the numerous ways we can & want to interpret the input,
 // it makes less and less sense to have this as default;
 // consider removing this impl

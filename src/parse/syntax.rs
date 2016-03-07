@@ -138,7 +138,7 @@ named!(lambda( &[u8] ) -> Box<Eval>, chain!(
     body: joint,
     move || {
         Box::new(ScalarNode{
-            value: Value::Function(Function::from_lambda(args, body))
+            value: Value::from(Function::from_lambda(args, body))
         }) as Box<Eval>
     }
 ));
@@ -302,8 +302,8 @@ named!(array_value( &[u8] ) -> Box<Eval>, map!(
 ));
 
 named!(bool_value( &[u8] ) -> Box<Eval>, alt!(
-    tag!("false") => { |_| Box::new(ScalarNode{value: Value::Boolean(false)}) } |
-    tag!("true") => { |_| Box::new(ScalarNode{value: Value::Boolean(true)}) }
+    tag!("false") => { |_| Box::new(ScalarNode{value: Value::from(false)}) } |
+    tag!("true") => { |_| Box::new(ScalarNode{value: Value::from(true)}) }
 ));
 
 named!(symbol_value( &[u8] ) -> Box<Eval>, map!(identifier, |value: String| {
@@ -326,14 +326,14 @@ named!(identifier( &[u8] ) -> String, alt!(
 ));
 
 named!(int_value( &[u8] ) -> Box<Eval>, map_res!(int_literal, |value: String| {
-    value.parse::<i64>().map(|i| Box::new(ScalarNode{value: Value::Integer(i)}))
+    value.parse::<i64>().map(|i| Box::new(ScalarNode{value: Value::from(i)}))
 }));
 named!(int_literal( &[u8] ) -> String, string!(alt!(
     seq!(char_of!(&DIGITS[1..]), many0!(char_of!(DIGITS))) | tag!("0")
 )));
 
 named!(float_value( &[u8] ) -> Box<Eval>, map_res!(float_literal, |value: String| {
-    value.parse::<f64>().map(|f| Box::new(ScalarNode{value: Value::Float(f)}))
+    value.parse::<f64>().map(|f| Box::new(ScalarNode{value: Value::from(f)}))
 }));
 fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
     let (_, input) = try_parse!(input, expr_res!(from_utf8(input)));
