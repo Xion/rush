@@ -201,9 +201,3 @@ pub fn apply_lines_ex<T: ToString>(expr: &str, input: &[T]) -> io::Result<String
     }
     Ok(result)
 }
-
-
-/// Return the string representation of Value::Empty.
-pub fn empty() -> String {
-    format!("{}", ap::Value::Empty)
-}

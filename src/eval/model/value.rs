@@ -3,8 +3,11 @@
 use std::collections::HashMap;
 use std::convert::From;
 use std::fmt;
+use std::io;
 use std::str::FromStr;
 
+use conv::TryFrom;
+use conv::misc::InvalidSentinel;
 use rustc_serialize::json::{Json, ToJson};
 
 use super::function::Function;
@@ -42,7 +45,6 @@ pub enum Value {
     Object(ObjectRepr),
     Function(FunctionRepr),
 }
-
 
 impl Value {
     /// Return the type of this value as string.
@@ -142,6 +144,38 @@ impl Value {
 }
 
 
+impl InvalidSentinel for Value {
+    fn invalid_sentinel() -> Self { Value::Empty }
+}
+
+
+impl fmt::Debug for Value {
+    /// Format a Value for debugging purposes.
+    /// This representation is not meant for consumption by end users.
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Value::Empty => write!(fmt, "{}", "<empty>"),
+            Value::Symbol(ref t) => write!(fmt, ":{}", t),
+            Value::Boolean(ref b) => write!(fmt, "{}", b.to_string()),
+            Value::Integer(ref i) => write!(fmt, "{}i", i),
+            Value::Float(ref f) => write!(fmt, "{}f", f),
+            Value::String(ref s) => write!(fmt, "\"{}\"", s),
+            Value::Array(ref a) => {
+                write!(fmt, "[{}]", a.iter()
+                    .map(|v| format!("{:?}", v)).collect::<Vec<String>>()
+                    .join(","))
+            },
+            Value::Object(ref o) => {
+                write!(fmt, "{{{}}}", o.iter()
+                    .map(|(k, v)| format!("\"{}\": {:?}", k, v))
+                    .collect::<Vec<String>>().join(","))
+            },
+            Value::Function(ref f) => write!(fmt, "{:?}", f),
+        }
+    }
+}
+
+
 // Conversions from Rust types
 
 /// Macro to create a straighforward From<FooRepr> -> Value::Foo implementation.
@@ -189,46 +223,21 @@ impl FromStr for Value {
 }
 
 
-// Debug & regular output
+// Producing string output
 
-impl fmt::Debug for Value {
-    /// Format a Value for debugging purposes.
-    /// This representation is not meant for consumption by end users.
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Value::Empty => write!(fmt, "{}", "<empty>"),
-            Value::Symbol(ref t) => write!(fmt, ":{}", t),
-            Value::Boolean(ref b) => write!(fmt, "{}", b.to_string()),
-            Value::Integer(ref i) => write!(fmt, "{}i", i),
-            Value::Float(ref f) => write!(fmt, "{}f", f),
-            Value::String(ref s) => write!(fmt, "\"{}\"", s),
-            Value::Array(ref a) => {
-                write!(fmt, "[{}]", a.iter()
-                    .map(|v| format!("{:?}", v)).collect::<Vec<String>>()
-                    .join(","))
-            },
-            Value::Object(ref o) => {
-                write!(fmt, "{{{}}}", o.iter()
-                    .map(|(k, v)| format!("\"{}\": {:?}", k, v))
-                    .collect::<Vec<String>>().join(","))
-            },
-            Value::Function(ref f) => write!(fmt, "{:?}", f),
-        }
-    }
-}
+impl<'a> TryFrom<&'a Value> for String {
+    type Err = io::Error;  // TODO(xion): consider a better error type
 
-// TODO(xion): Display doesn't really allow for propagating those errors
-// (e.g. write!() never returns an I/O error on formatting error),
-// so we may need a dedicated trait instead
-impl fmt::Display for Value {
-    /// Format a Value for outputing it as a result of the computation.
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            // TODO(xion): make Empty a formatting error
-            Value::Empty => write!(fmt, "{}", "<empty>"),
-            Value::Symbol(ref t) => write!(fmt, "{}", t),
-            Value::Boolean(ref b) => write!(fmt, "{}", b),
-            Value::Integer(ref i) => write!(fmt, "{}", i),
+    /// Try to convert a Value to string that can be emitted
+    /// as a final result of a computation.
+    fn try_from(src: &'a Value) -> Result<Self, Self::Err> {
+        match *src {
+            Value::Empty => Err(io::Error::new(
+                io::ErrorKind::InvalidData, "cannot serialize an empty value"
+            )),
+            Value::Symbol(ref t) => Ok(format!("{}", t)),
+            Value::Boolean(ref b) => Ok(format!("{}", b)),
+            Value::Integer(ref i) => Ok(format!("{}", i)),
             Value::Float(ref f) => {
                 // always include decimal point and zero, even if the float
                 // is actually an integer
@@ -236,19 +245,31 @@ impl fmt::Display for Value {
                 if !res.contains(".") {
                     res.push_str(".0");
                 }
-                write!(fmt, "{}", res)
+                Ok(format!("{}", res))
             },
-            Value::String(ref s) => write!(fmt, "{}", s),
+            Value::String(ref s) => Ok(format!("{}", s)),
             Value::Array(ref a) => {
                 // for final display, an array is assummed to contain lines of output
-                write!(fmt, "{}", a.iter()
+                Ok(format!("{}", a.iter()
                     .map(|v| format!("{}", v)).collect::<Vec<String>>()
-                    .join("\n"))
+                    .join("\n")))
             },
-            Value::Object(..) => write!(fmt, "{}", self.to_json().to_string()),
-            // TODO(xion): make Function a formatting error
-            Value::Function(..) => write!(fmt, "{}", "<function>"),
+            Value::Object(..) => Ok(format!("{}", src.to_json().to_string())),
+            Value::Function(..) => Err(io::Error::new(
+                io::ErrorKind::InvalidData, "cannot serialize a function"
+            )),
         }
+    }
+}
+
+impl fmt::Display for Value {
+    /// Format a Value for outputing it as a result of the computation.
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        String::try_from(self)
+            .map(|s| write!(fmt, "{}", s))
+            // TODO(xion): return an Err(fmt::Error) rather than panicking
+            // when formatting constructs actually react to it constructively
+            .expect(&format!("can't display a value of type `{}`", self.typename()))
     }
 }
 

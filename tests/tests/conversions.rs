@@ -30,26 +30,26 @@ fn identity_on_boolean() {
 #[test]
 fn input_conversion_integer() {
     assert_noop_apply("_i", "42");
-    assert_eq!(empty(), apply("_i", "42.42"));
-    assert_eq!(empty(), apply("_i", "true"));
-    assert_eq!(empty(), apply("_i", "foo"));
+    assert_apply_error("_i", "42.42");
+    assert_apply_error("_i", "true");
+    assert_apply_error("_i", "foo");
 }
 
 #[test]
 fn input_conversion_float() {
     assert_noop_apply("_f", "42.42");
     assert_eq!("42.0", apply("_f", "42"));
-    assert_eq!(empty(), apply("_f", "true"));
-    assert_eq!(empty(), apply("_f", "foo"));
+    assert_apply_error("_f", "true");
+    assert_apply_error("_f", "foo");
 }
 
 #[test]
 fn input_conversion_boolean() {
     assert_noop_apply("_b", "true");
     assert_noop_apply("_b", "false");
-    assert_eq!(empty(), apply("_b", "42"));
-    assert_eq!(empty(), apply("_b", "42.42"));
-    assert_eq!(empty(), apply("_b", "foo"));
+    assert_apply_error("_b", "42");
+    assert_apply_error("_b", "42.42");
+    assert_apply_error("_b", "foo");
 }
 
 #[test]

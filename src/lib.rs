@@ -7,6 +7,7 @@ extern crate nom;
 #[macro_use]
 extern crate log;
 
+extern crate conv;
 extern crate fnv;
 #[macro_use]
 extern crate mopa;
@@ -26,6 +27,7 @@ pub use self::parse::parse;
 
 use std::io::{self, Read, Write, BufRead, BufReader, BufWriter};
 
+use conv::TryFrom;
 use rustc_serialize::json::Json;
 
 use self::eval::{Eval, Context, Invoke};
@@ -144,5 +146,6 @@ fn write_result<W: Write>(output: &mut W, mut result: Value, context: &Context) 
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e)));
     }
 
+    let result = try!(String::try_from(&result));
     write!(output, "{}\n", result)
 }
