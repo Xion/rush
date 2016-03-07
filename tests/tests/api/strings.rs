@@ -26,7 +26,11 @@ fn split_strings() {
 
 #[test]
 fn split_non_strings() {
-    // ...
+    assert_apply_error("split(X, _)", "42");
+    assert_apply_error("split(X, _)", "13.42");
+    assert_apply_error("split(X, _)", "false");
+    assert_eval_error(&format!("split(X, {})", "[]"));
+    assert_eval_error(&format!("split(X, {})", "{}"));
 }
 
 #[test]
