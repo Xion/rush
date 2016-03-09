@@ -35,5 +35,13 @@ fn split_non_strings() {
 
 #[test]
 fn join_() {
-    // ...
+    assert_eq!("", apply_lines("join(X, _)", &[""]));
+    assert_eq!("foo", apply_lines("join(X, _)", &["foo"]));
+    assert_eq!("fooXbar", apply_lines("join(X, _)", &["foo", "bar"]));
+    assert_eq!("falseXtrue", apply_lines("join(X, _)", &[false, true]));
+    assert_eval_error(&format!("join(X, {})", "false"));
+    assert_eval_error(&format!("join(X, {})", "foo"));
+    assert_eval_error(&format!("join(X, {})", "42"));
+    assert_eval_error(&format!("join(X, {})", "13.42"));
+    assert_eval_error(&format!("join(X, {})", "{}"));
 }
