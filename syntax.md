@@ -2,6 +2,8 @@
 
 Expression syntax overview
 
+TODO(xion): either move this all into README or to dedicated documentation page
+
 ## Data types
 
 * string (default if no explicit annotation/function/coercion is used)
@@ -50,7 +52,20 @@ Anonymous functions are defined using `|` (pipe), an argument list, another pipe
 
 `*` is the composition operator:
 
-    abs * (|x| x + 2)   ===  |x| abs(x + 2)
+    abs & |x| x + 2   ===  |x| abs(x + 2)
+    
+However, the "reverse composition" (piping) operator is typically more useful:
+
+    int & abs & |x| x / 2  ===  |x| abs(int(x)) / 2
+
+Functions are automatically curried when given fewer than minimum number of arguments:
+
+    split(",")  ===  |s| split(",", s)
+
+These features can of course be combined:
+
+    $ echo '1,2,3' | ap 'split(",") & map(int & |x| x * 2) & join(",")'
+    2,4,6
 
 TODO(xion): Haskell-like syntax for (partial application of) operator functions:
 (+), (2+), (*5), etc.
