@@ -36,7 +36,7 @@ fn main() {
         } else if args.is_present("json") {
             ap::apply_json
         } else {
-            // default is to process the input line-by-line
+            info!("Using default processing mode (line-by-line)");
             ap::map_lines
         };
     if let Err(error) = apply(expr, io::stdin(), &mut io::stdout()) {

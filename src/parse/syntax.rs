@@ -264,8 +264,6 @@ named!(trailer( &[u8] ) -> Trailer, alt!(
                expression,
                multispaced!(tag!("]"))) => { |s| Trailer::Subscript(s) }
     |
-    // TODO(xion): to support currying, this probably can't be separated list;
-    // figure out the exact syntax and implement optional argument "slots"
     delimited!(multispaced!(tag!("(")),
                separated_list!(multispaced!(tag!(",")), map!(expression, Some)),
                multispaced!(tag!(")"))) => { |args| Trailer::Args(args) }
