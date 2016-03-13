@@ -225,8 +225,15 @@ impl FromStr for Value {
 
 // Producing string output
 
-impl<'a> TryFrom<&'a Value> for String {
+impl TryFrom<Value> for String {
     type Err = io::Error;  // TODO(xion): consider a better error type
+
+    fn try_from(src: Value) -> Result<Self, Self::Err> {
+        String::try_from(&src)
+    }
+}
+impl<'a> TryFrom<&'a Value> for String {
+    type Err = <String as TryFrom<Value>>::Err;
 
     /// Try to convert a Value to string that can be emitted
     /// as a final result of a computation.
@@ -249,7 +256,7 @@ impl<'a> TryFrom<&'a Value> for String {
             },
             Value::String(ref s) => Ok(format!("{}", s)),
             Value::Array(ref a) => {
-                // for final display, an array is assummed to contain lines of output
+                // for final display, an array is assumed to contain lines of output
                 Ok(format!("{}", a.iter()
                     .map(|v| format!("{}", v)).collect::<Vec<String>>()
                     .join("\n")))

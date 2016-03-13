@@ -45,10 +45,19 @@ pub fn map_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
     let mut count = 0;
     for line in reader.lines() {
         let line = try!(line);
-        update_context(&mut context, &line);
 
-        let result = try!(evaluate(&ast, &context));
-        try!(write_result(&mut writer, result, &context));
+        // add the input the context, incl. all the various conversions thereof
+        context.set("_", line.parse::<Value>().unwrap_or_else(|_| Value::String(line.to_owned())));
+        context.set("_b", line.parse::<BooleanRepr>().map(Value::Boolean).unwrap_or(Value::Empty));
+        context.set("_f", line.parse::<FloatRepr>().map(Value::Float).unwrap_or(Value::Empty));
+        // TODO(xion): consider also trying to parse the line as f64
+        // and exposing the rounded version as _i
+        context.set("_i", line.parse::<IntegerRepr>().map(Value::Integer).unwrap_or(Value::Empty));
+        context.set("_s", Value::String(line.to_owned()));
+
+        let value = context.get("_").unwrap();
+        let result = try!(evaluate(&ast, value, &context));
+        try!(write_result(&mut writer, result));
 
         count += 1;
     }
@@ -75,10 +84,11 @@ pub fn apply_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> i
 
     let mut context = Context::new();
     context.set("_", Value::Array(lines));
+    let value = context.get("_").unwrap();
 
     let mut writer = BufWriter::new(output);
-    let result = try!(evaluate(&ast, &context));
-    try!(write_result(&mut writer, result, &context));
+    let result = try!(evaluate(&ast, value, &context));
+    try!(write_result(&mut writer, result));
 
     info!("Processed {} line(s) of input", count);
     Ok(())
@@ -93,14 +103,14 @@ pub fn apply_json<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io
     try!(BufReader::new(input).read_to_string(&mut json_string));
     let json_obj = try!(Json::from_str(&json_string)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e)));
-    let value = Value::from(json_obj);
 
     let mut context = Context::new();
-    context.set("_", value);
+    context.set("_", Value::from(json_obj));
+    let value = context.get("_").unwrap();
 
     let mut writer = BufWriter::new(output);
-    let result = try!(evaluate(&ast, &context));
-    try!(write_result(&mut writer, result, &context));
+    let result = try!(evaluate(&ast, value, &context));
+    try!(write_result(&mut writer, result));
 
     info!("Processed {} bytes of JSON", json_string.bytes().len());
     Ok(())
@@ -114,38 +124,27 @@ fn parse_expr(expr: &str) -> io::Result<Box<Eval>> {
     parse(expr).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
 }
 
-fn update_context(ctx: &mut Context, input: &str) {
-    ctx.set("_", input.parse::<Value>().unwrap_or_else(|_| Value::String(input.to_owned())));
-    ctx.set("_b", input.parse::<BooleanRepr>().map(Value::Boolean).unwrap_or(Value::Empty));
-    ctx.set("_f", input.parse::<FloatRepr>().map(Value::Float).unwrap_or(Value::Empty));
-    // TODO(xion): consider also trying to parse the input as f64
-    // and exposing the rounded version as _i
-    ctx.set("_i", input.parse::<IntegerRepr>().map(Value::Integer).unwrap_or(Value::Empty));
-    ctx.set("_s", Value::String(input.to_owned()));
+fn evaluate<'a>(ast: &Box<Eval>, input: &'a Value, context: &'a Context) -> io::Result<Value> {
+    ast.eval(&context)
+        .and_then(|result| maybe_apply_result(result, input, &context))
+        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
 }
 
-fn evaluate(ast: &Box<Eval>, ctx: &Context) -> io::Result<Value> {
-    ast.eval(&ctx).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
-}
-
-fn write_result<W: Write>(output: &mut W, mut result: Value, context: &Context) -> io::Result<()> {
+fn maybe_apply_result<'a>(result: Value, input: &'a Value, context: &'a Context) -> eval::Result {
     // result might be a function, in which case we will try to apply to original input
-    if result.is_function() {
-        let func = result.unwrap_function();
+    if let Value::Function(func) = result {
         if func.arity() != 1 {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput,
-                eval::Error::new(&format!(
-                    "output must be an immediate value or a 1-argument function \
-                    (got {}-argument one)", func.arity()))));
+            return Err(eval::Error::new(&format!(
+                "output must be an immediate value or a 1-argument function \
+                (got {}-argument one)", func.arity())));
         }
-
-        // TODO(xion): context should probably know what input ("default variable") is,
-        // so that don't have to get it by underscore
-        let input = context.get("_").unwrap();
-        result = try!(func.invoke(vec![input.clone()], &context)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e)));
+        debug!("Result found to be a function, applying it to input");
+        return func.invoke(vec![input.clone()], &context);
     }
+    Ok(result)
+}
 
-    let result = try!(String::try_from(&result));
+fn write_result<W: Write>(output: &mut W, result: Value) -> io::Result<()> {
+    let result = try!(String::try_from(result));
     write!(output, "{}\n", result)
 }
