@@ -64,6 +64,7 @@ fn constant_quoted_string() {
     const STRING: &'static str = "foo";
     let expr = &format!("\"{}\"", STRING);
     assert_eq!(STRING, eval(expr));
+    // TODO(xion): test escape sequences
 }
 
 #[test]

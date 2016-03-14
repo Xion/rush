@@ -103,6 +103,7 @@ const RESERVED_WORDS: &'static [&'static str] = &[
 
 const DIGITS: &'static str = "0123456789";
 const FLOAT_REGEX: &'static str = r"(0|[1-9][0-9]*)\.[0-9]+(e[+-]?[1-9][0-9]*)?";
+const ESCAPE: &'static str = "\\";
 
 const UNDERSCORE_SUFFIXES: &'static str = "bifs";
 
@@ -356,10 +357,38 @@ fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
     }
 }
 
-// TODO(xion): quote escaping
 named!(string_value( &[u8] ) -> Box<Eval>, map!(string_literal, |value: String| {
     Box::new(ScalarNode{value: Value::String(value)})
 }));
-named!(string_literal( &[u8] ) -> String, string!(
-    preceded!(tag!("\""), take_until_and_consume!("\""))
-));
+fn string_literal(input: &[u8]) -> IResult<&[u8], String> {
+    let (mut input, _) = try_parse!(input, tag!("\""));
+
+    // consume characters until the closing double quote
+    let mut s = String::new();
+    loop {
+        let (rest, chunk) = try_parse!(input,
+                                       string!(take_until_and_consume!("\"")));
+        input = rest;
+
+        if chunk.is_empty() {
+            break;
+        }
+        s.push_str(&chunk);
+
+        // however, if the quote was escaped, the string continues beyond it
+        // and requires parsing of another chunk
+        if !chunk.ends_with(ESCAPE) {
+            break;
+        }
+        s.push('"');
+    }
+
+    // replace the escape sequences with corresponding characters
+    s = s.replace(&format!("{}\"", ESCAPE), "\"");  // double quotes
+    s = s.replace(&format!("{}n", ESCAPE), "\n");
+    s = s.replace(&format!("{}r", ESCAPE), "\r");
+    s = s.replace(&format!("{}t", ESCAPE), "\t");
+    s = s.replace(&format!("{}{}", ESCAPE, ESCAPE), ESCAPE);  // must be last
+
+    IResult::Done(input, s)
+}
