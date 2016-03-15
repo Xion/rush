@@ -150,17 +150,13 @@ impl fmt::Debug for SubscriptNode {
 /// depends on the context passed during evaluation.
 pub struct FunctionCallNode {
     pub func: Box<Eval>,
-    pub args: Vec<Option<Box<Eval>>>,
+    pub args: Vec<Box<Eval>>,
 }
 
 impl fmt::Debug for FunctionCallNode {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let args = self.args.iter()
-            .map(|ref arg| {
-                arg.as_ref()
-                    .map(|v| format!("{:?}", v))
-                    .unwrap_or_else(|| "".to_owned())
-            })
+            .map(|arg| format!("{:?}", arg))
             .collect::<Vec<String>>().join(",");
         write!(fmt, "<Call: {:?}({})>", self.func, args)
     }

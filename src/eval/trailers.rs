@@ -16,8 +16,6 @@ impl Eval for FunctionCallNode {
         if let Value::Function(mut f) = func {
             // evaluate all the arguments first, bail if any of that fails
             let evals: Vec<_> = self.args.iter()
-                .map(|opt_arg| opt_arg.as_ref()
-                    .expect("currying with non-initial arguments is NYI"))
                 .map(|arg| arg.eval(&context))
                 .collect();
             if let Some(res) = evals.iter().find(|r| r.is_err()) {
