@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Handy script for printing the grammar definition.
+
+
+SYNTAX_SOURCE='parse/syntax.rs'
+EBNF_EQUALS='::=='
+
+
+main() {
+    local syntax_file="./src/$SYNTAX_SOURCE"
+    cat $syntax_file |\
+        grep --color=never "///..*$EBNF_EQUALS" |\
+        sed 's/^\/\/\/\s*//'
+}
+
+main "$@"

@@ -131,19 +131,6 @@ named!(functional( &[u8] ) -> Box<Eval>, chain!(
 /// joint ::== conditional | lambda
 named!(joint( &[u8] ) -> Box<Eval>, alt!(conditional | lambda));
 
-/// lambda ::== '|' ARGS '|' lambda
-named!(lambda( &[u8] ) -> Box<Eval>, chain!(
-    multispaced!(tag!("|")) ~
-    args: separated_list!(multispaced!(tag!(",")), identifier) ~
-    multispaced!(tag!("|")) ~
-    body: joint,
-    move || {
-        Box::new(ScalarNode{
-            value: Value::from(Function::from_lambda(args, body))
-        }) as Box<Eval>
-    }
-));
-
 /// conditional ::== comparison ['?' comparison ':' conditional]
 named!(conditional( &[u8] ) -> Box<Eval>, map!(
     pair!(comparison, maybe!(chain!(
@@ -160,6 +147,19 @@ named!(conditional( &[u8] ) -> Box<Eval>, map!(
                 ConditionalNode{cond: cond, then: then, else_: else_}
             ) as Box<Eval>,
         }
+    }
+));
+
+/// lambda ::== '|' ARGS '|' joint
+named!(lambda( &[u8] ) -> Box<Eval>, chain!(
+    multispaced!(tag!("|")) ~
+    args: separated_list!(multispaced!(tag!(",")), identifier) ~
+    multispaced!(tag!("|")) ~
+    body: joint,
+    move || {
+        Box::new(ScalarNode{
+            value: Value::from(Function::from_lambda(args, body))
+        }) as Box<Eval>
     }
 ));
 
@@ -228,7 +228,7 @@ named!(factor( &[u8] ) -> Box<Eval>, chain!(
     }
 ));
 
-/// power ::== [UNARY_OP] (function_call | atom) subscript*
+/// power ::== UNARY_OP* atom trailer*
 named!(power( &[u8] ) -> Box<Eval>, chain!(
     ops: many0!(string!(multispaced!(char_of!(UNARY_OPS)))) ~
     power: atom ~
