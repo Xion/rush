@@ -102,7 +102,7 @@ const RESERVED_WORDS: &'static [&'static str] = &[
 ];
 
 const DIGITS: &'static str = "0123456789";
-const FLOAT_REGEX: &'static str = r"(0|[1-9][0-9]*)\.[0-9]+(e[+-]?[1-9][0-9]*)?";
+const FLOAT_REGEX: &'static str = r"(0|[1-9][0-9]*)\.[0-9]+([eE][+-]?[1-9][0-9]*)?";
 const ESCAPE: &'static str = "\\";
 
 const UNDERSCORE_SUFFIXES: &'static str = "bifs";
