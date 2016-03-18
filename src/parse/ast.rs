@@ -127,6 +127,36 @@ impl fmt::Debug for BinaryOpNode {
 }
 
 
+/// AST node representing a curried binary operator,
+/// i.e. a unary function made by providing exactly one argument to the operator.
+pub struct CurriedBinaryOpNode  {
+    pub op: String,
+    pub arg: Box<Eval>,
+    pub arg_is_left: bool,
+}
+
+impl CurriedBinaryOpNode {
+    pub fn with_left(op: String, arg: Box<Eval>) -> CurriedBinaryOpNode {
+        CurriedBinaryOpNode{op: op, arg: arg, arg_is_left: true}
+    }
+
+    pub fn with_right(op: String, arg: Box<Eval>) -> CurriedBinaryOpNode {
+        CurriedBinaryOpNode{op: op, arg: arg, arg_is_left: false}
+    }
+}
+
+impl fmt::Debug for CurriedBinaryOpNode {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let repr = if self.arg_is_left {
+            format!("{:?} {}", self.arg, self.op)
+        } else {
+            format!("{} {:?}", self.op, self.arg)
+        };
+        write!(fmt, "<CurriedOp ({})>", repr)
+    }
+}
+
+
 /// AST node representing an operation of taking a subscript of an object
 /// (also referred to as "indexing").
 ///

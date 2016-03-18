@@ -128,8 +128,8 @@ named!(functional( &[u8] ) -> Box<Eval>, chain!(
     }
 ));
 
-/// joint ::== conditional | lambda
-named!(joint( &[u8] ) -> Box<Eval>, alt!(conditional | lambda));
+/// joint ::== conditional | lambda | curried_op
+named!(joint( &[u8] ) -> Box<Eval>, alt!(conditional | lambda | curried_op));
 
 /// conditional ::== comparison ['?' comparison ':' conditional]
 named!(conditional( &[u8] ) -> Box<Eval>, map!(
@@ -161,6 +161,26 @@ named!(lambda( &[u8] ) -> Box<Eval>, chain!(
             value: Value::from(Function::from_lambda(args, body))
         }) as Box<Eval>
     }
+));
+
+/// curried_op ::== '(' (atom BINARY_OP) | (BINARY_OP atom) ')'
+named!(curried_op( &[u8] ) -> Box<Eval>, delimited!(
+    multispaced!(tag!("(")),
+        alt!(
+            pair!(atom, binary_op) => { |(arg, op)| Box::new(
+                CurriedBinaryOpNode::with_left(op, arg)
+            ) as Box<Eval> }
+            |
+            pair!(binary_op, atom) => { |(op, arg)| Box::new(
+                CurriedBinaryOpNode::with_right(op, arg)
+            ) as Box<Eval> }
+        ),
+    multispaced!(tag!(")"))
+));
+named!(binary_op( &[u8] ) -> String, alt!(
+    // TODO(xion): comparison & functional ops
+    string!(multispaced!(char_of!(ADDITIVE_BINARY_OPS))) |
+    string!(multispaced!(char_of!(MULTIPLICATIVE_BINARY_OPS)))
 ));
 
 /// comparison ::== argument [COMPARISON_OP argument]

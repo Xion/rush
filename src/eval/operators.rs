@@ -1,11 +1,15 @@
-//! Module implementing evaluation of the various operators.
+//! Module implementing evaluation of operator-related AST nodes.
+//!
+//! This includes unary and conditional operators, as well as binary operators
+//! and their curried versions (which evaluate into unary functions).
 
 use std::iter;
 
 use eval::{self, api, Context, Eval, Value};
 use eval::model::Invoke;
+use eval::model::function::{Args, Function};
 use eval::model::value::{ArrayRepr, FloatRepr, IntegerRepr, StringRepr};
-use parse::ast::{Associativity, BinaryOpNode, ConditionalNode, UnaryOpNode};
+use parse::ast::{Associativity, BinaryOpNode, ConditionalNode, CurriedBinaryOpNode, UnaryOpNode};
 
 
 /// Evaluate the unary operator AST node.
@@ -345,6 +349,32 @@ impl BinaryOpNode {
         Err(eval::Error::new(&format!(
             "invalid arguments for `{}` operator: `{:?}` and `{:?}`",
             op, left, right)))
+    }
+}
+
+
+/// Evaluate the curried binary operator node.
+impl Eval for CurriedBinaryOpNode {
+    fn eval(&self, context: &Context) -> eval::Result {
+        let arg = try!(self.arg.eval(&context));
+        let arg_is_left = self.arg_is_left;
+        let op = self.op.clone();
+
+        Ok(Value::Function(Function::from_native_ctx(1, move |args: Args, ctx: &Context| {
+            if args.len() != 1 {
+                return Err(eval::Error::new(&format!(
+                    "invalid number of arguments: expected {}, got {}",
+                    1, args.len()
+                )));
+            }
+
+            let other = args.into_iter().next().unwrap();
+            if arg_is_left {
+                BinaryOpNode::eval_op(&op, arg.clone(), other, &ctx)
+            } else {
+                BinaryOpNode::eval_op(&op, other, arg.clone(), &ctx)
+            }
+        })))
     }
 }
 
