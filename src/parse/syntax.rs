@@ -181,11 +181,12 @@ named!(curried_op( &[u8] ) -> Box<Eval>, delimited!(
         ),
     multispaced!(tag!(")"))
 ));
-named!(binary_op( &[u8] ) -> String, alt!(
+named!(binary_op( &[u8] ) -> String, string!(multispaced!(alt_complete!(
     // TODO(xion): comparison & functional ops
-    string!(multispaced!(char_of!(ADDITIVE_BINARY_OPS))) |
-    string!(multispaced!(char_of!(MULTIPLICATIVE_BINARY_OPS)))
-));
+    tag!(POWER_OP) |
+    char_of!(MULTIPLICATIVE_BINARY_OPS) |
+    char_of!(ADDITIVE_BINARY_OPS)
+))));
 
 /// comparison ::== argument [COMPARISON_OP argument]
 named!(comparison( &[u8] ) -> Box<Eval>, chain!(
