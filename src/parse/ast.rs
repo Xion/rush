@@ -127,32 +127,34 @@ impl fmt::Debug for BinaryOpNode {
 }
 
 
-/// AST node representing a curried binary operator,
-/// i.e. a unary function made by providing exactly one argument to the operator.
+/// AST node representing a curried binary operator.
+///
+/// This is essenitally a function made out of said operator
+/// by optionally providing left or right argument (or neither).
 pub struct CurriedBinaryOpNode  {
     pub op: String,
-    pub arg: Box<Eval>,
-    pub arg_is_left: bool,
+    pub left: Option<Box<Eval>>,
+    pub right: Option<Box<Eval>>,
 }
 
 impl CurriedBinaryOpNode {
-    pub fn with_left(op: String, arg: Box<Eval>) -> CurriedBinaryOpNode {
-        CurriedBinaryOpNode{op: op, arg: arg, arg_is_left: true}
+    pub fn with_none(op: String) -> CurriedBinaryOpNode {
+        CurriedBinaryOpNode{op: op, left: None, right: None}
     }
-
+    pub fn with_left(op: String, arg: Box<Eval>) -> CurriedBinaryOpNode {
+        CurriedBinaryOpNode{op: op, left: Some(arg), right: None}
+    }
     pub fn with_right(op: String, arg: Box<Eval>) -> CurriedBinaryOpNode {
-        CurriedBinaryOpNode{op: op, arg: arg, arg_is_left: false}
+        CurriedBinaryOpNode{op: op, left: None, right: Some(arg)}
     }
 }
 
 impl fmt::Debug for CurriedBinaryOpNode {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let repr = if self.arg_is_left {
-            format!("{:?} {}", self.arg, self.op)
-        } else {
-            format!("{} {:?}", self.op, self.arg)
-        };
-        write!(fmt, "<CurriedOp ({})>", repr)
+        write!(fmt, "<CurriedOp ({}{}{})>",
+            self.left.as_ref().map(|l| format!("{:?} ", l)).unwrap_or(String::new()),
+            self.op,
+            self.right.as_ref().map(|r| format!(" {:?}", r)).unwrap_or(String::new()))
     }
 }
 

@@ -163,7 +163,7 @@ named!(lambda( &[u8] ) -> Box<Eval>, chain!(
     }
 ));
 
-/// curried_op ::== '(' (atom BINARY_OP) | (BINARY_OP atom) ')'
+/// curried_op ::== '(' (atom BINARY_OP) | (BINARY_OP atom) | BINARY_OP ')'
 named!(curried_op( &[u8] ) -> Box<Eval>, delimited!(
     multispaced!(tag!("(")),
         alt!(
@@ -173,6 +173,10 @@ named!(curried_op( &[u8] ) -> Box<Eval>, delimited!(
             |
             pair!(binary_op, atom) => { |(op, arg)| Box::new(
                 CurriedBinaryOpNode::with_right(op, arg)
+            ) as Box<Eval> }
+            |
+            binary_op => { |op| Box::new(
+                CurriedBinaryOpNode::with_none(op)
             ) as Box<Eval> }
         ),
     multispaced!(tag!(")"))
