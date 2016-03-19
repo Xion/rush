@@ -1,8 +1,7 @@
 //! Module with actual tests.
 
 mod api;
-mod binary;
 mod constants;
 mod conversions;
+mod operators;
 mod trailers;
-mod unary;

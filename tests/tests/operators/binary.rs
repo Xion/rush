@@ -202,5 +202,3 @@ fn multiplication_constant_floats() {
 }
 
 // TODO(xion): tests for division, string formatting
-// TODO(xion): tests for the conditional operator
-// TODO(xion): tests for curried binary operators: (2+), (3*), etc.
