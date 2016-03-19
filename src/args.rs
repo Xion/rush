@@ -29,7 +29,7 @@ fn create_parser<'a>() -> clap::App<'a, 'a> {
         parser = parser.version(version);
     }
     parser
-        .about("sed/awk for Humans (tm)")
+        .about("Succinct & readable processing language")
         .author("Karol Kuczmarski")
 
         .setting(AppSettings::ArgRequiredElseHelp)
