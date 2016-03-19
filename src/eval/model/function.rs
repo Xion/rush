@@ -6,7 +6,7 @@
 
 use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::fmt;
-use std::ops::Sub;
+use std::ops::{Add, Sub};
 use std::rc::Rc;
 
 use eval::{self, Context, Eval};
@@ -34,6 +34,7 @@ pub enum Arity {
 }
 
 impl Arity {
+    #[inline]
     pub fn is_exact(&self) -> bool {
         match *self { Arity::Exact(..) => true, _ => false }
     }
@@ -78,6 +79,8 @@ impl PartialEq<ArgCount> for Arity {
         if let Arity::Exact(c) = *self {
             return c == *count;
         }
+        // Arity::Minimum always returns false to maintain transitivity
+        // with the derived PartialEq<Arity>.
         false
     }
 }
@@ -98,6 +101,18 @@ impl PartialOrd<ArgCount> for Arity {
     }
 }
 
+impl Add<ArgCount> for Arity {
+    type Output = Arity;
+
+    /// Adding a specific argument count to an arity,
+    /// equivalent to introducing that many new argument slots to a function.
+    fn add(self, rhs: ArgCount) -> Self::Output {
+        match self {
+            Arity::Exact(c) => Arity::Exact(c + rhs),
+            Arity::Minimum(c) => Arity::Minimum(c), // no change
+        }
+    }
+}
 impl Sub<ArgCount> for Arity {
     type Output = Arity;
 
@@ -131,6 +146,7 @@ impl Sub<ArgCount> for Arity {
 /// (This isn't named Call because call() function would conflict with
 /// the quasi-intrinsic method on Fn types in Rust).
 pub trait Invoke {
+    // TODO(xion): make arity() optionally accept &Args for variadic API functions
     fn arity(&self) -> Arity;
     fn invoke(&self, args: Args, context: &Context) -> eval::Result;
 }
@@ -139,9 +155,8 @@ pub trait Invoke {
 /// Function that can be invoked when evaluating an expression.
 #[derive(Clone)]
 pub enum Function {
-    // TODO(xion): introduce Raw(Rc<Invoke>) variant, changing Invoke.arity()
-    // to optionally accept &Args; this will allow to implement some functions
-    // in the API to accept variadic number of arguments
+    /// An unspecified "invokable" object.
+    Raw(Rc<Box<Invoke>>),
 
     /// Native function that's implemented in the interpreter.
     Native(Arity, Rc<NativeFunction>),
@@ -155,6 +170,9 @@ pub enum Function {
 }
 
 impl Function {
+    pub fn from_raw(invoke: Box<Invoke>) -> Function {
+        Function::Raw(Rc::new(invoke))
+    }
     pub fn from_native<F>(arity: Arity, f: F) -> Function
         where F: Fn(Args) -> eval::Result + 'static
     {
@@ -201,6 +219,7 @@ impl Function {
 }
 
 impl PartialEq for Function {
+    #[inline(always)]
     fn eq(&self, _: &Self) -> bool {
         // for simplicity, functions are never equal to one another
         false
@@ -210,6 +229,7 @@ impl PartialEq for Function {
 impl fmt::Debug for Function {
     fn fmt(&self, fmt:  &mut fmt::Formatter) -> fmt::Result {
         match self {
+            &Function::Raw(ref f) => write!(fmt, "<raw func of {} arg(s)>", f.arity()),
             &Function::Native(a, _) => write!(fmt, "<native func of {} arg(s)>", a),
             &Function::NativeCtx(a, _) => write!(fmt, "<native(ctx) func of {} arg(s)>", a),
             &Function::Custom(ref f) => write!(fmt, "{:?}", f),
@@ -220,6 +240,7 @@ impl fmt::Debug for Function {
 impl Invoke for Function {
     fn arity(&self) -> Arity {
         match self {
+            &Function::Raw(ref f) => f.arity(),
             &Function::Native(a, _) => a,
             &Function::NativeCtx(a, _) => a,
             &Function::Custom(ref f) => f.arity(),
@@ -228,9 +249,10 @@ impl Invoke for Function {
 
     fn invoke(&self, args: Args, context: &Context) -> eval::Result {
         match self {
+            &Function::Raw(ref f) => f.invoke(args, &context),
             &Function::Native(_, ref f) => f(args),
             &Function::NativeCtx(_, ref f) => f(args, &context),
-            &Function::Custom(ref f) => f.invoke(args, context),
+            &Function::Custom(ref f) => f.invoke(args, &context),
         }
     }
 }
