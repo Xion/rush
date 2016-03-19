@@ -78,7 +78,7 @@ impl<'a> Context<'a> {
              "`{}` has already been defined in this Context!", name);
 
         let function = Function::from_native(arity, move |args: Args| {
-            try!(ensure_argcount(name, &args, arity, arity));
+            try!(ensure_argcount(name, &args, arity));
             func(args)
         });
         self.set(name, Value::Function(function));
@@ -88,13 +88,13 @@ impl<'a> Context<'a> {
     fn define_nullary<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn() -> eval::Result + 'static
     {
-        self.define(name, 0, move |_| { func() })
+        self.define(name, Arity::Exact(0), move |_| { func() })
     }
 
     fn define_unary<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn(Value) -> eval::Result + 'static
     {
-        self.define(name, 1, move |args: Args| {
+        self.define(name, Arity::Exact(1), move |args: Args| {
             let mut args = args.into_iter();
             func(args.next().unwrap())
         })
@@ -103,7 +103,7 @@ impl<'a> Context<'a> {
     fn define_binary<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn(Value, Value) -> eval::Result + 'static
     {
-        self.define(name, 2, move |args: Args| {
+        self.define(name, Arity::Exact(2), move |args: Args| {
             let mut args = args.into_iter();
             func(args.next().unwrap(), args.next().unwrap())
         })
@@ -112,7 +112,7 @@ impl<'a> Context<'a> {
     fn define_ternary<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn(Value, Value, Value) -> eval::Result + 'static
     {
-        self.define(name, 3, move |args: Args| {
+        self.define(name, Arity::Exact(3), move |args: Args| {
             let mut args = args.into_iter();
             func(args.next().unwrap(),
                  args.next().unwrap(),
@@ -131,7 +131,7 @@ impl<'a> Context<'a> {
              "`{}` has already been defined in this Context!", name);
 
         let function = Function::from_native_ctx(arity, move |args: Args, context: &Context| {
-            try!(ensure_argcount(name, &args, arity, arity));
+            try!(ensure_argcount(name, &args, arity));
             func(args, &context)
         });
         self.set(name, Value::Function(function));
@@ -141,7 +141,7 @@ impl<'a> Context<'a> {
     fn define_nullary_ctx<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn(&Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, 0, move |_, context: &Context| {
+        self.define_ctx(name, Arity::Exact(0), move |_, context: &Context| {
             func(&context)
         })
     }
@@ -149,7 +149,7 @@ impl<'a> Context<'a> {
     fn define_unary_ctx<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn(Value, &Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, 1, move |args: Args, context: &Context| {
+        self.define_ctx(name, Arity::Exact(1), move |args: Args, context: &Context| {
             let mut args = args.into_iter();
             func(args.next().unwrap(), &context)
         })
@@ -158,7 +158,7 @@ impl<'a> Context<'a> {
     fn define_binary_ctx<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn(Value, Value, &Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, 2, move |args: Args, context: &Context| {
+        self.define_ctx(name, Arity::Exact(2), move |args: Args, context: &Context| {
             let mut args = args.into_iter();
             func(args.next().unwrap(), args.next().unwrap(),
                 &context)
@@ -168,7 +168,7 @@ impl<'a> Context<'a> {
     fn define_ternary_ctx<F>(&mut self, name: &'static str, func: F) -> &mut Self
         where F: Fn(Value, Value, Value, &Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, 3, move |args: Args, context: &Context| {
+        self.define_ctx(name, Arity::Exact(3), move |args: Args, context: &Context| {
             let mut args = args.into_iter();
             func(args.next().unwrap(),
                  args.next().unwrap(),
@@ -183,15 +183,14 @@ impl<'a> Context<'a> {
 /// Usage:
 ///     try!(ensure_argcount("function", min, max));
 ///
-fn ensure_argcount(name: &str, args: &Args, min: usize, max: usize) -> Result<(), Error> {
+fn ensure_argcount(name: &str, args: &Args, arity: Arity) -> Result<(), Error> {
     let count = args.len();
-    if min <= count && count <= max {
-        return Ok(());
+    if arity.accepts(count) {
+        Ok(())
+    } else {
+        Err(Error::new(&format!(
+            "invalid number of arguments to {}(): expected {}, got {}",
+            name, arity, count
+        )))
     }
-
-    let expected = if min == max { format!("{}", min) }
-                   else { format!("{} to {}", min, max) };
-    Err(Error::new(&format!(
-        "invalid number of arguments to {}(): expected {}, got {}", name, expected, count
-    )))
 }

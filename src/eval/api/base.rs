@@ -74,11 +74,12 @@ pub fn filter(func: Value, array: Value, context: &Context) -> eval::Result {
 
 #[inline(always)]
 fn ensure_unary(func: &Function, api_call: &str) -> Result<(), Error> {
-    match func.arity() {
-        1 => Ok(()),
-        arity @ _ =>  Err(Error::new(&format!(
-            "{}() requires a 1-argument function, got {}-argument one",
+    let arity = func.arity();
+    if !arity.accepts(1) {
+        return Err(Error::new(&format!(
+            "{}() requires a 1-argument function, got one with {} arguments",
             api_call, arity
-        ))),
+        )));
     }
+    Ok(())
 }

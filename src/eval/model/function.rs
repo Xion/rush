@@ -4,8 +4,9 @@
 //! in native code), as well as user defined functions that are basically
 //! pieces of AST.
 
-use std::cmp::PartialEq;
+use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::fmt;
+use std::ops::Sub;
 use std::rc::Rc;
 
 use eval::{self, Context, Eval};
@@ -15,11 +16,114 @@ use super::value::Value;
 /// Arguments to a function.
 pub type Args = Vec<Value>;
 
+/// Type for a number of arguments
+/// (both expected by a function, and actuallyp passed).
+pub type ArgCount = usize;
+
+
 /// Function arity (number of accepted arguments).
-pub type Arity = usize;
-// TODO(xion): make this an enum with Exact and Minimum, to allow for varargs;
-// currying of variadic functions with $ operator shall result in invocation
-// as soon as number of accumulated arguments reaches Minimum
+#[derive(Clone,Copy,Debug,PartialEq)]
+pub enum Arity {
+    /// Exact arity.
+    /// Function requires the precise number of arguments, no more and no less.
+    Exact(ArgCount),
+
+    /// Minimum arity.
+    /// Function requires at least that many arguments.
+    Minimum(ArgCount),
+}
+
+impl Arity {
+    pub fn is_exact(&self) -> bool {
+        match *self { Arity::Exact(..) => true, _ => false }
+    }
+
+    /// Whether arity allows/accepts given argument count.
+    /// This is equivalent to simple equality check: arity == argcount.
+    pub fn accepts(&self, argcount: ArgCount) -> bool {
+        match *self {
+            Arity::Exact(c) => argcount == c,
+            Arity::Minimum(c) => argcount >= c,
+        }
+    }
+}
+
+impl fmt::Display for Arity {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Arity::Exact(c) => write!(fmt, "{}", c),
+            Arity::Minimum(c) => write!(fmt, "{}+", c),
+        }
+    }
+}
+
+impl PartialOrd for Arity {
+    /// Compare arities with each other.
+    /// The ordering is only defined for exact arities.
+    fn partial_cmp(&self, other: &Arity) -> Option<Ordering> {
+        match *self {
+            Arity::Exact(c1) => {
+                if let Arity::Exact(c2) = *other {
+                    return Some(c1.cmp(&c2));
+                }
+                None
+            },
+            _ => None,
+        }
+    }
+}
+
+impl PartialEq<ArgCount> for Arity {
+    fn eq(&self, count: &ArgCount) -> bool {
+        if let Arity::Exact(c) = *self {
+            return c == *count;
+        }
+        false
+    }
+}
+impl PartialOrd<ArgCount> for Arity {
+    /// Compare arity with an actual argument count.
+    ///
+    /// Result indicates whether the count satisfies the arity, or whether
+    /// more/fewer arguments would be needed.
+    fn partial_cmp(&self, count: &ArgCount) -> Option<Ordering> {
+        match *self {
+            Arity::Exact(c) => c.partial_cmp(&count),
+            Arity::Minimum(c) => Some(
+                // Once the argument count is above minimum,
+                // it is "equal" for all intents and purposes.
+                if *count >= c { Ordering::Equal } else { Ordering::Less }
+            ),
+        }
+    }
+}
+
+impl Sub<ArgCount> for Arity {
+    type Output = Arity;
+
+    /// Subtracting a specific argument count from an arity.
+    /// Used to determine the new arity of a curried function.
+    fn sub(self, rhs: ArgCount) -> Self::Output {
+        match self {
+            Arity::Exact(c) => {
+                if c >= rhs {
+                    return Arity::Exact(c - rhs);
+                }
+                panic!("underflow when subtracting from exact arity: {} - {} < 0",
+                    c, rhs)
+            },
+            Arity::Minimum(c) => {
+                if c > rhs {
+                    return Arity::Minimum(c - rhs);
+                } else if c == rhs {
+                    return Arity::Exact(0);
+                }
+                panic!("underflow when subtracting from minimum arity: {} - {} < 0",
+                    c, rhs)
+            },
+        }
+    }
+}
 
 
 /// Denotes an object that works as a callable function within an expression.
@@ -35,6 +139,10 @@ pub trait Invoke {
 /// Function that can be invoked when evaluating an expression.
 #[derive(Clone)]
 pub enum Function {
+    // TODO(xion): introduce Raw(Rc<Invoke>) variant, changing Invoke.arity()
+    // to optionally accept &Args; this will allow to implement some functions
+    // in the API to accept variadic number of arguments
+
     /// Native function that's implemented in the interpreter.
     Native(Arity, Rc<NativeFunction>),
 
@@ -165,7 +273,7 @@ impl fmt::Debug for CustomFunction {
 impl Invoke for CustomFunction {
     #[inline(always)]
     fn arity(&self) -> Arity {
-        self.argnames.len()
+        Arity::Exact(self.argnames.len())
     }
 
     fn invoke(&self, args: Args, context: &Context) -> eval::Result {
