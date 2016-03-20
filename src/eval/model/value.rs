@@ -35,7 +35,7 @@ pub enum Value {
     /// Symbol is a string that can be interpreted as a variable name.
     ///
     /// `Symbol("x")` shall evaluate to the value of variable `x` if one is in scope.
-    /// Otherwise, it should be equivalent to String("x").
+    /// Otherwise, it is an equivalent to String("x").
     Symbol(SymbolRepr),
 
     // Various data types.

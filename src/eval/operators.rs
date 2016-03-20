@@ -181,6 +181,9 @@ impl BinaryOpNode {
             return Ok(Value::Boolean(a.contains(&left)));
         }
 
+        // string @ regex is a match attempt
+        eval2!((left: &String, right: &Regex) -> Boolean { right.is_match(left) });
+
         BinaryOpNode::err("@", left, right)
     }
 }
