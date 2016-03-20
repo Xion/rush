@@ -7,6 +7,7 @@ use nom::{self, alpha, alphanumeric, multispace, IResult};
 
 use super::ast::*;
 use eval::{Eval, Function, Value};
+use eval::value::{FloatRepr, IntegerRepr};
 
 
 // TODO(xion): switch from parsers expecting &[u8] to accepting &str;
@@ -350,14 +351,14 @@ named!(identifier( &[u8] ) -> String, alt!(
 ));
 
 named!(int_value( &[u8] ) -> Box<Eval>, map_res!(int_literal, |value: String| {
-    value.parse::<i64>().map(|i| Box::new(ScalarNode{value: Value::from(i)}))
+    value.parse::<IntegerRepr>().map(|i| Box::new(ScalarNode{value: Value::from(i)}))
 }));
 named!(int_literal( &[u8] ) -> String, string!(alt!(
     seq!(char_of!(&DIGITS[1..]), many0!(char_of!(DIGITS))) | tag!("0")
 )));
 
 named!(float_value( &[u8] ) -> Box<Eval>, map_res!(float_literal, |value: String| {
-    value.parse::<f64>().map(|f| Box::new(ScalarNode{value: Value::from(f)}))
+    value.parse::<FloatRepr>().map(|f| Box::new(ScalarNode{value: Value::from(f)}))
 }));
 fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
     let (_, input) = try_parse!(input, expr_res!(from_utf8(input)));

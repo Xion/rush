@@ -364,7 +364,7 @@ impl Eval for CurriedBinaryOpNode {
             let arg = try!(right.eval(&context));
             return self.eval_with_right(arg);
         }
-        self.eval_with_none(&context)
+        self.eval_with_none()
     }
 }
 impl CurriedBinaryOpNode {
@@ -385,7 +385,7 @@ impl CurriedBinaryOpNode {
         Ok(Value::Function(Function::from_native_ctx(Arity::Exact(1), func)))
     }
 
-    fn eval_with_none(&self, context: &Context) -> eval::Result {
+    fn eval_with_none(&self) -> eval::Result {
         let op = self.op.clone();
         let func = move |args: Args, ctx: &Context| {
             if args.len() != 2 {
