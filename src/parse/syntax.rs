@@ -4,10 +4,11 @@
 use std::str::from_utf8;
 
 use nom::{self, alpha, alphanumeric, multispace, IResult};
+use regex::Regex;
 
 use super::ast::*;
 use eval::{Eval, Function, Value};
-use eval::value::{FloatRepr, IntegerRepr};
+use eval::value::{FloatRepr, IntegerRepr, RegexRepr, StringRepr};
 
 
 // TODO(xion): switch from parsers expecting &[u8] to accepting &str;
@@ -296,10 +297,11 @@ named!(trailer( &[u8] ) -> Trailer, alt!(
                multispaced!(tag!(")"))) => { |args| Trailer::Args(args) }
 ));
 
-/// atom ::== OBJECT | ARRAY | BOOLEAN | SYMBOL | FLOAT | INTEGER | STRING | '(' expression ')'
+/// atom ::== OBJECT | ARRAY | BOOLEAN | SYMBOL | FLOAT | INTEGER | REGEX | STRING | '(' expression ')'
 named!(atom( &[u8] ) -> Box<Eval>, alt!(
     object_value | array_value |
-    bool_value | symbol_value | float_value | int_value | string_value |
+    bool_value | symbol_value | float_value | int_value |
+    regex_value | string_value |
     delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
 ));
 
@@ -383,7 +385,43 @@ fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
     }
 }
 
-named!(string_value( &[u8] ) -> Box<Eval>, map!(string_literal, |value: String| {
+named!(regex_value( &[u8] ) -> Box<Eval>, map!(regex_literal, |value: RegexRepr| {
+    Box::new(ScalarNode{value: Value::Regex(value)})
+}));
+fn regex_literal(input: &[u8]) -> IResult<&[u8], Regex> {
+    let (mut input, _) = try_parse!(input, tag!("/"));
+
+    // consume chacters until the closing slash
+    let mut r = String::new();
+    loop {
+        let (rest, chunk) = try_parse!(input,
+                                       string!(take_until_and_consume!("/")));
+        r.push_str(&chunk);
+
+        input = rest;
+        if input.is_empty() {
+            break;
+        }
+
+        // Try to parse what we've got so far as a regex;
+        // if it succeeds, then this is our result.
+        // Note that this will handle escaping of the slash
+        // (to make it literal part of the regex) through character class [/],
+        // since unterminated square bracket won't parse as regex.
+        let parse_result = Regex::new(&r);
+        if parse_result.is_ok() {
+            return expr_res!(input, parse_result);
+        }
+
+        r.push('/');
+    }
+
+    // If we exhausted the input, then whatever we've accumulated so far
+    // may still be a valid regex, so try to parse it.
+    expr_res!(input, Regex::new(&r))
+}
+
+named!(string_value( &[u8] ) -> Box<Eval>, map!(string_literal, |value: StringRepr| {
     Box::new(ScalarNode{value: Value::String(value)})
 }));
 fn string_literal(input: &[u8]) -> IResult<&[u8], String> {
