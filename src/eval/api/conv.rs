@@ -1,20 +1,24 @@
 //! Conversion functions.
 
+use regex;
+
 use eval::{self, Error, Value};
-use eval::value::{BooleanRepr, IntegerRepr, FloatRepr};
+use eval::value::{BooleanRepr, IntegerRepr, FloatRepr, RegexRepr};
 
 
-/// Convert a value to string.
-pub fn str_(value: Value) -> eval::Result {
+/// Convert a value to a boolean, based on its "truthy" value.
+pub fn bool(value: Value) -> eval::Result {
     match value {
-        Value::String(_) => Ok(value),
-        Value::Integer(i) => Ok(Value::String(i.to_string())),
-        Value::Float(f) => Ok(Value::String(f.to_string())),
-        Value::Boolean(b) => Ok(Value::String((
-            if b { "true" } else { "false" }
-        ).to_owned())),
+        Value::String(ref s) => s.parse::<BooleanRepr>()
+            .map_err(|_| Error::new(&format!("invalid bool value: {}", s)))
+            .map(Value::Boolean),
+        Value::Integer(i) => Ok(Value::Boolean(i != 0)),
+        Value::Float(f) => Ok(Value::Boolean(f != 0.0)),
+        Value::Boolean(_) => Ok(value),
+        Value::Array(ref a) => Ok(Value::Boolean(a.len() > 0)),
+        Value::Object(ref o) => Ok(Value::Boolean(o.len() > 0)),
         _ => Err(Error::new(
-            &format!("cannot convert {} to string", value.typename())
+            &format!("cannot convert {} to bool", value.typename())
         )),
     }
 }
@@ -49,19 +53,41 @@ pub fn float(value: Value) -> eval::Result {
     }
 }
 
-/// Convert a value to a boolean, based on its "truthy" value.
-pub fn bool(value: Value) -> eval::Result {
+/// Convert a value to string.
+pub fn str_(value: Value) -> eval::Result {
     match value {
-        Value::String(ref s) => s.parse::<BooleanRepr>()
-            .map_err(|_| Error::new(&format!("invalid bool value: {}", s)))
-            .map(Value::Boolean),
-        Value::Integer(i) => Ok(Value::Boolean(i != 0)),
-        Value::Float(f) => Ok(Value::Boolean(f != 0.0)),
-        Value::Boolean(_) => Ok(value),
-        Value::Array(ref a) => Ok(Value::Boolean(a.len() > 0)),
-        Value::Object(ref o) => Ok(Value::Boolean(o.len() > 0)),
+        Value::String(_) => Ok(value),
+        Value::Integer(i) => Ok(Value::String(i.to_string())),
+        Value::Float(f) => Ok(Value::String(f.to_string())),
+        Value::Boolean(b) => Ok(Value::String((
+            if b { "true" } else { "false" }
+        ).to_owned())),
         _ => Err(Error::new(
-            &format!("cannot convert {} to bool", value.typename())
+            &format!("cannot convert {} to string", value.typename())
         )),
     }
+}
+
+/// Convert a value to a regular expression.
+/// If not a string, the value will be stringified first.
+pub fn regex(value: Value) -> eval::Result {
+    // handle strings separately because we don't want to regex-escape them
+    if value.is_string() {
+        let value = value.unwrap_string();
+        return RegexRepr::new(&value)
+            .map(Value::Regex)
+            .map_err(|e| Error::new(&format!(
+                "invalid regular expression: {}", e)));
+    }
+
+    let value_type = value.typename();
+    str_(value)
+        .map(|v| regex::quote(&v.unwrap_string()))
+        .and_then(|s| RegexRepr::new(&s).map_err(|e| {
+            Error::new(&format!("cannot compile regular expression: {}", e))
+        }))
+        .map(Value::Regex)
+        .map_err(|e| Error::new(&format!(
+            "cannot convert {} to regular expression: {}", value_type, e
+        )))
 }

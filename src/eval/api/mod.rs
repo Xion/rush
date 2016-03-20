@@ -43,6 +43,8 @@ impl<'a> Context<'a> {
         self.define_unary(      "ln",       math::ln        );
         self.define_binary_ctx( "map",      base::map       );
         self.define_nullary(    "rand",     math::rand      );
+        self.define_unary(      "re",       conv::regex     );
+        self.define_unary(      "regex",    conv::regex     );
         self.define_unary(      "rev",      strings::rev    );
         self.define_unary(      "round",    math::round     );
         self.define_unary(      "sgn",      math::sgn       );
