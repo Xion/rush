@@ -8,6 +8,7 @@ use std::str::FromStr;
 
 use conv::TryFrom;
 use conv::misc::InvalidSentinel;
+use regex::Regex;
 use rustc_serialize::json::{Json, ToJson};
 
 use super::function::Function;
@@ -19,6 +20,7 @@ pub type BooleanRepr = bool;
 pub type IntegerRepr = i64;
 pub type FloatRepr = f64;
 pub type StringRepr = String;
+pub type RegexRepr = Regex;
 pub type ArrayRepr = Vec<Value>;
 pub type ObjectRepr = HashMap<String, Value>;
 pub type FunctionRepr = Function;
@@ -41,6 +43,7 @@ pub enum Value {
     Integer(IntegerRepr),
     Float(FloatRepr),
     String(StringRepr),
+    Regex(RegexRepr),
     Array(ArrayRepr),
     Object(ObjectRepr),
     Function(FunctionRepr),
@@ -57,6 +60,7 @@ impl Value {
             Value::Integer(..) => "int",
             Value::Float(..) => "float",
             Value::String(..) => "str",
+            Value::Regex(..) => "regex",
             Value::Array(..) => "array",
             Value::Object(..) => "object",
             Value::Function(..) => "function",
@@ -64,8 +68,8 @@ impl Value {
     }
 
     #[inline(always)]
-    pub fn is_string(&self) -> bool {
-        match *self { Value::String(..) => true, _ => false, }
+    pub fn is_bool(&self) -> bool {
+        match *self { Value::Boolean(..) => true, _ => false, }
     }
     #[inline(always)]
     pub fn is_int(&self) -> bool {
@@ -76,8 +80,12 @@ impl Value {
         match *self { Value::Float(..) => true, _ => false, }
     }
     #[inline(always)]
-    pub fn is_bool(&self) -> bool {
-        match *self { Value::Boolean(..) => true, _ => false, }
+    pub fn is_string(&self) -> bool {
+        match *self { Value::String(..) => true, _ => false, }
+    }
+    #[inline(always)]
+    pub fn is_regex(&self) -> bool {
+        match *self { Value::Regex(..) => true, _ => false, }
     }
     #[inline(always)]
     pub fn is_array(&self) -> bool {
@@ -93,10 +101,10 @@ impl Value {
     }
 
     #[inline]
-    pub fn unwrap_string(self) -> StringRepr {
+    pub fn unwrap_bool(self) -> BooleanRepr {
         match self {
-            Value::String(s) => s,
-            _ => { panic!("unwrap_string() on {} value", self.typename()) },
+            Value::Boolean(b) => b,
+            _ => { panic!("unwrap_bool() on {} value", self.typename()) },
         }
     }
     #[inline]
@@ -114,10 +122,17 @@ impl Value {
         }
     }
     #[inline]
-    pub fn unwrap_bool(self) -> BooleanRepr {
+    pub fn unwrap_string(self) -> StringRepr {
         match self {
-            Value::Boolean(b) => b,
-            _ => { panic!("unwrap_bool() on {} value", self.typename()) },
+            Value::String(s) => s,
+            _ => { panic!("unwrap_string() on {} value", self.typename()) },
+        }
+    }
+    #[inline]
+    pub fn unwrap_regex(self) -> RegexRepr {
+        match self {
+            Value::Regex(r) => r,
+            _ => { panic!("unwrap_regex() on {} value", self.typename()) },
         }
     }
     #[inline]
@@ -160,6 +175,7 @@ impl fmt::Debug for Value {
             Value::Integer(ref i) => write!(fmt, "{}i", i),
             Value::Float(ref f) => write!(fmt, "{}f", f),
             Value::String(ref s) => write!(fmt, "\"{}\"", s),
+            Value::Regex(ref r) => write!(fmt, "/{}/", r.as_str()),
             Value::Array(ref a) => {
                 write!(fmt, "[{}]", a.iter()
                     .map(|v| format!("{:?}", v)).collect::<Vec<String>>()
@@ -192,9 +208,10 @@ macro_rules! value_from (
 
 // Note how string input is deliberately omitted, for it is ambiguous.
 // (It could result in either Value::String or Value::Symbol).
+value_from!(BooleanRepr => Boolean);
 value_from!(IntegerRepr => Integer);
 value_from!(FloatRepr => Float);
-value_from!(BooleanRepr => Boolean);
+value_from!(RegexRepr => Regex);
 value_from!(ArrayRepr => Array);
 value_from!(ObjectRepr => Object);
 value_from!(FunctionRepr => Function);
@@ -255,6 +272,9 @@ impl<'a> TryFrom<&'a Value> for String {
                 Ok(format!("{}", res))
             },
             Value::String(ref s) => Ok(format!("{}", s)),
+            Value::Regex(..) => Err(io::Error::new(
+                io::ErrorKind::InvalidData, "cannot serialize a regex"
+            )),
             Value::Array(ref a) => {
                 // for final display, an array is assumed to contain lines of output
                 Ok(format!("{}", a.iter()
@@ -319,6 +339,7 @@ impl ToJson for Value {
             Value::Integer(i) => Json::I64(i),
             Value::Float(f) => Json::F64(f),
             Value::String(ref s) => Json::String(s.clone()),
+            Value::Regex(ref r) => Json::String(r.as_str().to_owned()),
             Value::Array(ref a) => Json::Array(
                 a.iter().map(|v| v.to_json()).collect()
             ),
