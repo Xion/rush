@@ -292,6 +292,8 @@ impl BinaryOpNode {
     fn eval_by(left: Value, right: Value) -> eval::Result {
         eval2!(left, right : Integer { left / right });
         eval2!(left, right : Float { left / right });
+        eval2!((left: Integer, right: Float) -> Float { left as FloatRepr / right });
+        eval2!((left: Float, right: Integer) -> Float { left / right as FloatRepr });
 
         // "dividing" string by string is a shorthand for split()
         if left.is_string() && right.is_string() {
@@ -324,7 +326,8 @@ impl BinaryOpNode {
     /// Evaluate the "**" operator for two values.
     fn eval_power(left: Value, right: Value) -> eval::Result {
         eval2!(left, right : Integer {{
-            if right > (u32::max_value() as IntegerRepr) {
+            // TODO(xion): make x**(-y) (negative exponent) return 1/x**y as Float
+            if !(0 <= right && right <= (u32::max_value() as IntegerRepr)) {
                 return Err(eval::Error::new(&format!(
                     "exponent out of range: {}", right
                 )));
