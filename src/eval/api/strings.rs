@@ -30,10 +30,12 @@ pub fn split(delim: Value, string: Value) -> eval::Result {
     eval2!((delim: &String, string: &String) -> Array {
         string.split(delim).map(StringRepr::from).map(Value::String).collect()
     });
+    eval2!((delim: &Regex, string: &String) -> Array {
+        delim.split(&string).map(StringRepr::from).map(Value::String).collect()
+    });
 
-    // TODO(xion): split with regex as delimiter (also as / operator)
     Err(Error::new(&format!(
-        "split() expects string delimiter and string to split, got: {}, {}",
+        "split() expects string/regex delimiter and string to split, got: {}, {}",
         string.typename(), delim.typename()
     )))
 }

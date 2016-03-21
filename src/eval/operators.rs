@@ -295,9 +295,9 @@ impl BinaryOpNode {
         eval2!((left: Integer, right: Float) -> Float { left as FloatRepr / right });
         eval2!((left: Float, right: Integer) -> Float { left / right as FloatRepr });
 
-        // "dividing" string by string is a shorthand for split()
-        if left.is_string() && right.is_string() {
-            return api::strings::split(left, right);
+        // "dividing" string by string or regex is a shorthand for split()
+        if left.is_string() && (right.is_string() || right.is_regex()) {
+            return api::strings::split(right, left);  // split(delim, string)
         }
 
         BinaryOpNode::err("/", left, right)
