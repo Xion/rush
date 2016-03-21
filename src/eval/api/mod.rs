@@ -30,6 +30,8 @@ impl<'a> Context<'a> {
         // Keep the list sorted alphabetically by function names.
         //
         self.define_unary(      "abs",      math::abs       );
+        self.define_binary(     "after",    strings::after  );
+        self.define_binary(     "before",   strings::before );
         self.define_unary(      "bool",     conv::bool      );
         self.define_unary(      "ceil",     math::ceil      );
         self.define_unary(      "exp",      math::exp       );

@@ -45,3 +45,5 @@ fn join_() {
     assert_eval_error(&format!("join(X, {})", "13.42"));
     assert_eval_error(&format!("join(X, {})", "{}"));
 }
+
+// TODO(xion): tests for before() and after()

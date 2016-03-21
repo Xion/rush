@@ -2,6 +2,7 @@
 
 use std::error::Error as _Error;  // just for description() method
 use std::fmt::Display;
+use std::str::from_utf8;
 
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -112,5 +113,39 @@ pub fn format_(fmt: Value, arg: Value) -> eval:: Result {
 
     Err(Error::new(&format!(
         "format() expects a format string, got {}", fmt.typename()
+    )))
+}
+
+/// Return part of a string ("haystack") before given one ("needle"),
+/// or empty string if not found.
+pub fn before(needle: Value, haystack: Value) -> eval::Result {
+    eval2!((needle: &String, haystack: &String) -> String {
+        match haystack.find(&needle as &str) {
+            Some(index) => StringRepr::from(
+                from_utf8(&haystack.as_bytes()[0..index]).unwrap()
+            ),
+            _ => String::new(),
+        }
+    });
+    Err(Error::new(&format!(
+        "before() expects two strings, got {} and {}",
+        needle.typename(), haystack.typename()
+    )))
+}
+
+/// Return part of a string ("haystack") after given one ("needle"),
+/// or empty string if not found.
+pub fn after(needle: Value, haystack: Value) -> eval::Result {
+    eval2!((needle: &String, haystack: &String) -> String {
+        match haystack.find(&needle as &str) {
+            Some(index) => StringRepr::from(
+                from_utf8(&haystack.as_bytes()[index + needle.len()..]).unwrap()
+            ),
+            _ => String::new(),
+        }
+    });
+    Err(Error::new(&format!(
+        "after() expects two strings, got {} and {}",
+        needle.typename(), haystack.typename()
     )))
 }
