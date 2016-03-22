@@ -5,6 +5,6 @@ mod context;
 pub mod function;
 pub mod value;
 
-pub use self::context::Context;
+pub use self::context::{Context, Name};
 pub use self::function::{Args, Arity, Function, Invoke};
 pub use self::value::Value;

@@ -9,14 +9,17 @@ pub mod math;
 pub mod strings;
 
 
+use std::borrow::{Borrow, ToOwned};
 use std::f64;
+use std::fmt::Display;
+use std::hash::Hash;
 
 use eval::{self, Context, Error, Value};
-use eval::model::{Args, Arity, Function};
+use eval::model::{Args, Arity, Function, Name};
 use eval::value::FloatRepr;
 
 
-impl<'a> Context<'a> {
+impl<'c> Context<'c> {
     /// Initialize symbols for the built-in functions and constants.
     /// This should be done only for the root Context (the one w/o a parent).
     pub fn init_builtins(&mut self) {
@@ -75,9 +78,10 @@ impl<'a> Context<'a> {
 // Helper methods for defining the "pure" API functions
 // (those that don't access the Context directly).
 #[allow(dead_code)]
-impl<'a> Context<'a> {
-    fn define<F>(&mut self, name: &'static str, arity: Arity, func: F) -> &mut Self
-        where F: Fn(Args) -> eval::Result + 'static
+impl<'c> Context<'c> {
+    fn define<'n, N: ?Sized, F>(&mut self, name: &'static N, arity: Arity, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Args) -> eval::Result + 'static
     {
         assert!(!self.is_defined_here(name),
              "`{}` has already been defined in this Context!", name);
@@ -90,14 +94,16 @@ impl<'a> Context<'a> {
         self
     }
 
-    fn define_nullary<F>(&mut self, name: &'static str, func: F) -> &mut Self
-        where F: Fn() -> eval::Result + 'static
+    fn define_nullary<N:? Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn() -> eval::Result + 'static
     {
         self.define(name, Arity::Exact(0), move |_| { func() })
     }
 
-    fn define_unary<F>(&mut self, name: &'static str, func: F) -> &mut Self
-        where F: Fn(Value) -> eval::Result + 'static
+    fn define_unary<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Value) -> eval::Result + 'static
     {
         self.define(name, Arity::Exact(1), move |args: Args| {
             let mut args = args.into_iter();
@@ -105,8 +111,9 @@ impl<'a> Context<'a> {
         })
     }
 
-    fn define_binary<F>(&mut self, name: &'static str, func: F) -> &mut Self
-        where F: Fn(Value, Value) -> eval::Result + 'static
+    fn define_binary<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Value, Value) -> eval::Result + 'static
     {
         self.define(name, Arity::Exact(2), move |args: Args| {
             let mut args = args.into_iter();
@@ -114,8 +121,9 @@ impl<'a> Context<'a> {
         })
     }
 
-    fn define_ternary<F>(&mut self, name: &'static str, func: F) -> &mut Self
-        where F: Fn(Value, Value, Value) -> eval::Result + 'static
+    fn define_ternary<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Value, Value, Value) -> eval::Result + 'static
     {
         self.define(name, Arity::Exact(3), move |args: Args| {
             let mut args = args.into_iter();
@@ -128,9 +136,10 @@ impl<'a> Context<'a> {
 
 // Helper methods for defining the API functions which access the Context.
 #[allow(dead_code)]
-impl<'a> Context<'a> {
-    fn define_ctx<F>(&mut self, name: &'static str, arity: Arity, func: F) -> &mut Self
-        where F: Fn(Args, &Context) -> eval::Result + 'static
+impl<'c> Context<'c> {
+    fn define_ctx<N: ?Sized, F>(&mut self, name: &'static N, arity: Arity, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Args, &Context) -> eval::Result + 'static
     {
         assert!(!self.is_defined_here(name),
              "`{}` has already been defined in this Context!", name);
@@ -143,16 +152,18 @@ impl<'a> Context<'a> {
         self
     }
 
-    fn define_nullary_ctx<F>(&mut self, name: &'static str, func: F) -> &mut Self
-        where F: Fn(&Context) -> eval::Result + 'static
+    fn define_nullary_ctx<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(&Context) -> eval::Result + 'static
     {
         self.define_ctx(name, Arity::Exact(0), move |_, context: &Context| {
             func(&context)
         })
     }
 
-    fn define_unary_ctx<F>(&mut self, name: &'static str, func: F) -> &mut Self
-        where F: Fn(Value, &Context) -> eval::Result + 'static
+    fn define_unary_ctx<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Value, &Context) -> eval::Result + 'static
     {
         self.define_ctx(name, Arity::Exact(1), move |args: Args, context: &Context| {
             let mut args = args.into_iter();
@@ -160,8 +171,9 @@ impl<'a> Context<'a> {
         })
     }
 
-    fn define_binary_ctx<F>(&mut self, name: &'static str, func: F) -> &mut Self
-        where F: Fn(Value, Value, &Context) -> eval::Result + 'static
+    fn define_binary_ctx<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Value, Value, &Context) -> eval::Result + 'static
     {
         self.define_ctx(name, Arity::Exact(2), move |args: Args, context: &Context| {
             let mut args = args.into_iter();
@@ -170,8 +182,9 @@ impl<'a> Context<'a> {
         })
     }
 
-    fn define_ternary_ctx<F>(&mut self, name: &'static str, func: F) -> &mut Self
-        where F: Fn(Value, Value, Value, &Context) -> eval::Result + 'static
+    fn define_ternary_ctx<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Value, Value, Value, &Context) -> eval::Result + 'static
     {
         self.define_ctx(name, Arity::Exact(3), move |args: Args, context: &Context| {
             let mut args = args.into_iter();
@@ -188,7 +201,9 @@ impl<'a> Context<'a> {
 /// Usage:
 ///     try!(ensure_argcount("function", min, max));
 ///
-fn ensure_argcount(name: &str, args: &Args, arity: Arity) -> Result<(), Error> {
+fn ensure_argcount<N: ?Sized>(name: &N, args: &Args, arity: Arity) -> Result<(), Error>
+    where N: Display
+{
     let count = args.len();
     if arity.accepts(count) {
         Ok(())

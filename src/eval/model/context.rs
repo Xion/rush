@@ -1,7 +1,9 @@
 //! Evaluation context.
 
+use std::borrow::{Borrow, ToOwned};
 use std::collections::HashMap;
-use std::hash::BuildHasherDefault;
+use std::fmt::Display;
+use std::hash::{BuildHasherDefault, Hash};
 
 use fnv::FnvHasher;
 
@@ -9,6 +11,9 @@ use eval;
 use super::function::{Args, Invoke};
 use super::value::Value;
 
+
+/// Type for names of variables present in the Context.
+pub type Name = String;
 
 /// Custom hasher for hashmap type that stores variables present in Context.
 /// Uses the Fowler-Noll-Vo hashing algorithm which is faster for short keys.
@@ -21,24 +26,24 @@ type Hasher = BuildHasherDefault<FnvHasher>;
 /// when evaluating an expression.
 ///
 /// This is roughly equivalent to a stack frame.
-pub struct Context<'a> {
+pub struct Context<'c> {
     /// Optional parent Context, i.e. a lower "frame" on the "stack".
-    parent: Option<&'a Context<'a>>,
+    parent: Option<&'c Context<'c>>,
 
     /// Names & values present in the context.
-    scope: HashMap<String, Value, Hasher>,
+    scope: HashMap<Name, Value, Hasher>,
 }
 
-impl<'a> Context<'a> {
+impl<'c> Context<'c> {
     /// Create a new root context.
-    pub fn new() -> Context<'a> {
+    pub fn new() -> Context<'c> {
         let mut context = Context{parent: None, scope: HashMap::default()};
         context.init_builtins();
         context
     }
 
     /// Create a new Context that's a child of given parent.
-    pub fn with_parent(parent: &'a Context<'a>) -> Context<'a> {
+    pub fn with_parent(parent: &'c Context<'c>) -> Context<'c> {
         Context{parent: Some(parent), scope: HashMap::default()}
     }
 
@@ -51,7 +56,9 @@ impl<'a> Context<'a> {
     /// Check if given name is defined within this Context
     /// or any of its ancestors.
     #[inline]
-    pub fn is_defined(&self, name: &str) -> bool {
+    pub fn is_defined<N: ?Sized>(&self, name: &N) -> bool
+        where Name: Borrow<N>, N: Hash + Eq
+    {
         self.scope.get(name)
             .or_else(|| self.parent.and_then(|ctx| ctx.get(name)))
             .is_some()
@@ -60,14 +67,18 @@ impl<'a> Context<'a> {
     /// Check if given name is defined in this context.
     /// Does not look at parent Contexts.
     #[inline]
-    pub fn is_defined_here(&self, name: &str) -> bool {
+    pub fn is_defined_here<N: ?Sized>(&self, name: &N) -> bool
+        where Name: Borrow<N>, N: Hash + Eq
+    {
         self.scope.get(name).is_some()
     }
 
     /// Retrieves a value by name from the scope of the context
     /// or any of its parents.
     #[inline(always)]
-    pub fn get(&self, name: &str) -> Option<&Value> {
+    pub fn get<N: ?Sized>(&self, name: &N) -> Option<&Value>
+        where Name: Borrow<N>, N: Hash + Eq
+    {
         self.scope.get(name)
             .or_else(|| self.parent.and_then(|ctx| ctx.get(name)))
     }
@@ -76,7 +87,9 @@ impl<'a> Context<'a> {
     /// If the name already exists in the parent scope (if any),
     /// it will be shadowed.
     #[inline(always)]
-    pub fn set(&mut self, name: &str, value: Value) {
+    pub fn set<N: ?Sized>(&mut self, name: &N, value: Value)
+        where Name: Borrow<N>, N: ToOwned<Owned=Name>
+    {
         self.scope.insert(name.to_owned(), value);
     }
 
@@ -104,7 +117,9 @@ impl<'a> Context<'a> {
     }
 
     /// Call a function of given name with given arguments.
-    pub fn call(&self, name: &str, args: Args) -> eval::Result {
+    pub fn call<N: ?Sized>(&self, name: &N, args: Args) -> eval::Result
+        where Name: Borrow<N>, N: Hash + Eq + Display
+    {
         match self.get(name) {
             Some(&Value::Function(ref f)) => f.invoke(args, &self),
             // Note that when both this & parent context have `name` in scope,
