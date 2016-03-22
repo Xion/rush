@@ -4,6 +4,9 @@ rust:
   - nightly
   - beta
   - stable
+os:
+  - linux
+  - osx
 
 # Test on nightly Rust, but failures there won't break the build.
 matrix:
@@ -11,3 +14,6 @@ matrix:
     - rust: nightly
 
 sudo: false
+script:
+  - cargo build
+  - cargo test --no-fail-fast
