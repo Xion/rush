@@ -1,6 +1,6 @@
 //! String API available to expressions.
 
-use std::error::Error as _Error;  // just for description() method
+use std::error::Error as StdError;  // just for its description() method
 use std::fmt::Display;
 use std::str::from_utf8;
 
@@ -149,5 +149,13 @@ pub fn after(needle: Value, haystack: Value) -> eval::Result {
     Err(Error::new(&format!(
         "after() expects two strings, got {} and {}",
         needle.typename(), haystack.typename()
+    )))
+}
+
+/// Trim the string from whitespace characters at both ends.
+pub fn trim(string: Value) -> eval::Result {
+    eval1!(string : &String { string.trim().to_owned() });
+    Err(Error::new(&format!(
+        "trim() requires a string, got {}", string.typename()
     )))
 }

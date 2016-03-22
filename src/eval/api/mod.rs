@@ -54,6 +54,7 @@ impl<'a> Context<'a> {
         self.define_unary(      "sqrt",     math::sqrt      );
         self.define_unary(      "str",      conv::str_      );
         self.define_ternary(    "sub",      strings::sub    );
+        self.define_unary(      "trim",     strings::trim   );
         self.define_unary(      "trunc",    math::trunc     );
     }
 
