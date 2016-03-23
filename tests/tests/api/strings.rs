@@ -46,4 +46,5 @@ fn join_() {
     assert_eval_error(&format!("join(X, {})", "{}"));
 }
 
+// TODO(xion): tests for sub(), especially w/ regex and replacement function
 // TODO(xion): tests for before() and after()

@@ -4,9 +4,11 @@ use std::error::Error as StdError;  // just for its description() method
 use std::fmt::Display;
 use std::str::from_utf8;
 
+use regex::Captures;
 use unicode_segmentation::UnicodeSegmentation;
 
-use eval::{self, Error, Value};
+use eval::{self, Context, Error, Value};
+use eval::model::function::{Args, Invoke};
 use eval::value::StringRepr;
 use eval::util::fmt::format;
 use super::conv::str_;
@@ -70,14 +72,61 @@ pub fn join(delim: Value, array: Value) -> eval::Result {
 /// Substitute a given string ("needle") with another ("replacement")
 /// within given text ("haystack").
 /// Returns the text after substitution has been made.
-pub fn sub(needle: Value, replacement: Value, haystack: Value) -> eval::Result {
+pub fn sub(needle: Value, replacement: Value, haystack: Value, ctx: &Context) -> eval::Result {
+    // replacing string with string
     if let (&Value::String(ref n),
             &Value::String(ref r),
             &Value::String(ref h)) = (&needle, &replacement, &haystack) {
         return Ok(Value::String(h.replace(n, r)));
     }
+
+    // replacing regex matches with string or function
+    if let (&Value::Regex(ref n),
+            &Value::String(ref r),
+            &Value::String(ref h)) = (&needle, &replacement, &haystack) {
+        return Ok(Value::String(n.replace_all(h, &r as &str)));
+    }
+    if let (&Value::Regex(ref n),
+            &Value::Function(ref f),
+            &Value::String(ref h)) = (&needle, &replacement, &haystack) {
+        // the function should accept the value of each capture group;
+        // note that the 0th one is the whole matched string
+        if !f.arity().accepts(n.captures_len()) {
+            return Err(Error::new(&format!(
+                "replacement function in sub() must accept all \
+                {} capture(s) as arguments, not just {}",
+                n.captures_len(), f.arity()
+            )));
+        }
+
+        // perform the replacement;
+        // since the function that user passed may misbehave and e.g. return
+        // a non-String Value, we need to account for potential errors
+        let mut error: Option<Error> = None;
+        let result = n.replace_all(h, |caps: &Captures| {
+            let args: Args = caps.iter().map(|c| {
+                c.map(StringRepr::from).map(Value::String).unwrap_or(Value::Empty)
+            }).collect();
+
+            let result = f.invoke(args, &ctx)
+                .and_then(str_).map(Value::unwrap_string);
+            match result {
+                Ok(s) => s,
+                Err(e) => {
+                    error = Some(e);
+                    "__INVALID__".to_owned() // won't be used anyway
+                }
+            }
+        });
+        return match error {
+            Some(e) => Err(e),
+            _ => Ok(Value::String(result)),
+        };
+    }
+
     Err(Error::new(&format!(
-        "sub() expects three strings, got: {}, {}, {}",
+        "sub() expects three strings; or regex, string/function and string; \
+        got: {}, {}, {}",
         needle.typename(), replacement.typename(), haystack.typename()
     )))
 }
