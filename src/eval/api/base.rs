@@ -12,8 +12,40 @@ pub fn len(value: Value) -> eval::Result {
     eval1!((value: &Array) -> Integer { value.len() as IntegerRepr });
     eval1!((value: &Object) -> Integer { value.len() as IntegerRepr });
     Err(Error::new(&format!(
-        "len() requires string or array, got {}", value.typename()
+        "len() requires string/array/object, got {}", value.typename()
     )))
+}
+
+
+/// Find an index of given element inside a sequence.
+/// Returns an empty value if the element couldn't be found.
+pub fn index(elem: Value, seq: Value) -> eval::Result {
+    match (elem, seq) {
+        // searching through a string
+        (Value::String(needle), Value::String(haystack)) => Ok(
+            haystack.find(&needle)
+                .map(|i| Value::Integer(i as IntegerRepr))
+                .unwrap_or(Value::Empty)
+        ),
+        (Value::Regex(regex), Value::String(haystack)) => Ok(
+            regex.find(&haystack)
+                .map(|(i, _)| Value::Integer(i as IntegerRepr))
+                .unwrap_or(Value::Empty)
+        ),
+
+        // searching through an array
+        (elem, Value::Array(array)) => Ok(
+            array.iter().position(|item| *item == elem)
+                .map(|i| Value::Integer(i as IntegerRepr))
+                .unwrap_or(Value::Empty)
+        ),
+
+        (elem, seq) => Err(
+            Error::new(&format!(
+                "invalid arguments to index() function: {} and {}",
+                elem.typename(), seq.typename()))
+        ),
+    }
 }
 
 

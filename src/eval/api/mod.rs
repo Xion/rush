@@ -42,6 +42,7 @@ impl<'c> Context<'c> {
         self.define_unary(      "float",    conv::float     );
         self.define_unary(      "floor",    math::floor     );
         self.define_binary(     "format",   strings::format_);
+        self.define_binary(     "index",    base::index     );
         self.define_unary(      "int",      conv::int       );
         self.define_binary(     "join",     strings::join   );
         self.define_unary(      "len",      base::len       );

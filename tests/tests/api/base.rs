@@ -23,4 +23,5 @@ fn len() {
     assert_eval_error("len(|x| x)");
 }
 
+// TODO(xion): tests for index()
 // TODO(xion): tests for map() and filter()
