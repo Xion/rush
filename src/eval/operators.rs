@@ -182,6 +182,8 @@ impl BinaryOpNode {
         }
 
         // string @ regex is a match attempt
+        // TODO(xion): introduce dedicated regex operators:
+        // ~= (^match$), ^= (^match), $= (match$)
         eval2!((left: &String, right: &Regex) -> Boolean { right.is_match(left) });
 
         BinaryOpNode::err("@", left, right)
@@ -422,6 +424,7 @@ impl CurriedBinaryOpNode {
 /// Evaluate the ternary operator / conditional node.
 impl Eval for ConditionalNode {
     fn eval(&self, context: &Context) -> eval::Result {
+        // TODO(xion): cast the result to boolean via bool() function
         let cond = try!(self.cond.eval(&context));
         let cond_type = cond.typename();
         if let Value::Boolean(condition) = cond {

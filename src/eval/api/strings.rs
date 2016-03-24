@@ -69,8 +69,12 @@ pub fn join(delim: Value, array: Value) -> eval::Result {
     )))
 }
 
-/// Substitute a given string ("needle") with another ("replacement")
+/// Substitute a given string or regex ("needle") with something else ("replacement")
 /// within given text ("haystack").
+///
+/// The replacement can be either another string, or -- in case of regex needle --
+/// a function accepting the values of regex captures and returning replacement string.
+///
 /// Returns the text after substitution has been made.
 pub fn sub(needle: Value, replacement: Value, haystack: Value, ctx: &Context) -> eval::Result {
     // replacing string with string

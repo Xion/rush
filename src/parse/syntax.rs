@@ -408,9 +408,8 @@ fn regex_literal(input: &[u8]) -> IResult<&[u8], Regex> {
         // Note that this will handle escaping of the slash
         // (to make it literal part of the regex) through character class [/],
         // since unterminated square bracket won't parse as regex.
-        let parse_result = Regex::new(&r);
-        if parse_result.is_ok() {
-            return expr_res!(input, parse_result);
+        if let Ok(regex) = Regex::new(&r) {
+            return IResult::Done(input, regex);
         }
 
         r.push('/');
