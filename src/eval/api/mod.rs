@@ -68,6 +68,7 @@ impl<'c> Context<'c> {
         //
         self.set(   "Inf",      Value::Float(f64::INFINITY as FloatRepr));
         self.set(   "NaN",      Value::Float(f64::NAN as FloatRepr));
+        self.set(   "nil",      Value::Empty);
         self.set(   "pi",       Value::Float(f64::consts::PI as FloatRepr));
         //
         // Don't add "true" or "false", they are recognized at parser level!
