@@ -151,6 +151,7 @@ named!(conditional( &[u8] ) -> Box<Eval>, map!(
         }
     }
 ));
+// TODO(xion): logical operators: and (&&), or (||)
 
 /// lambda ::== '|' ARGS '|' joint
 named!(lambda( &[u8] ) -> Box<Eval>, chain!(
