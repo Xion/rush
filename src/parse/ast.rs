@@ -159,13 +159,34 @@ impl fmt::Debug for CurriedBinaryOpNode {
 }
 
 
+/// Index used for subscripting.
+pub enum Index {
+    /// Point index, referring to a single element.
+    Point(Box<Eval>),
+
+    /// Range index, referring to a half-open range of elements.
+    /// The upper bound is exclusive.
+    Range(Option<Box<Eval>>, Option<Box<Eval>>),
+}
+
+impl fmt::Debug for Index {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Index::Point(ref p) => write!(fmt, "{:?}", p),
+            Index::Range(ref l, ref r) => write!(fmt, "{}:{}",
+                l.as_ref().map(|p| format!("{:?}", p)).unwrap_or(String::new()),
+                r.as_ref().map(|p| format!("{:?}", p)).unwrap_or(String::new())),
+        }
+    }
+}
+
 /// AST node representing an operation of taking a subscript of an object
 /// (also referred to as "indexing").
 ///
 /// The object is commonly an array or a string.
 pub struct SubscriptNode {
     pub object: Box<Eval>,
-    pub index: Box<Eval>,
+    pub index: Index,
 }
 
 impl fmt::Debug for SubscriptNode {

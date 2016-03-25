@@ -286,11 +286,11 @@ named!(power( &[u8] ) -> Box<Eval>, chain!(
 ));
 
 /// trailer ::== '[' expression ']' | '(' ARGS ')'
-enum Trailer { Subscript(Box<Eval>), Args(Vec<Box<Eval>>) }
+enum Trailer { Subscript(Index), Args(Vec<Box<Eval>>) }
 named!(trailer( &[u8] ) -> Trailer, alt!(
     delimited!(multispaced!(tag!("[")),
                expression,
-               multispaced!(tag!("]"))) => { |s| Trailer::Subscript(s) }
+               multispaced!(tag!("]"))) => { |s| Trailer::Subscript(Index::Point(s)) }
     |
     delimited!(multispaced!(tag!("(")),
                separated_list!(multispaced!(tag!(",")), expression),

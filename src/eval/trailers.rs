@@ -4,7 +4,7 @@
 use eval::{self, api, Context, Eval, Value};
 use eval::model::Invoke;
 use eval::model::value::{ArrayRepr, ObjectRepr, StringRepr};
-use parse::ast::{FunctionCallNode, SubscriptNode};
+use parse::ast::{FunctionCallNode, Index, SubscriptNode};
 
 
 /// Evaluate the function call AST node.
@@ -47,7 +47,10 @@ impl Eval for FunctionCallNode {
 impl Eval for SubscriptNode {
     fn eval(&self, context: &Context) -> eval::Result {
         let object = try!(self.object.eval(&context));
-        let index = try!(self.index.eval(&context));
+        let index = try!(match self.index {
+            Index::Point(ref p) => p.eval(&context),
+            Index::Range(..) => unimplemented!(),
+        });
 
         // TODO(xion): roll this into eval_on_array(), which would require
         // copying parts of the filter() function implementation
