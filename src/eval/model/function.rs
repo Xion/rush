@@ -251,7 +251,10 @@ impl Invoke for Function {
         match self {
             &Function::Raw(ref f) => f.invoke(args, &context),
             &Function::Native(_, ref f) => f(args),
-            &Function::NativeCtx(_, ref f) => f(args, &context),
+            &Function::NativeCtx(_, ref f) => {
+                let context = Context::with_parent(context);
+                f(args, &context)
+            },
             &Function::Custom(ref f) => f.invoke(args, &context),
         }
     }
