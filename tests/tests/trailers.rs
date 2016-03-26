@@ -43,6 +43,8 @@ fn subscript_on_string_input() {
     assert_apply_error("_[-42]", INPUT);
 }
 
+// TODO(xion): tests for subscript ranges
+
 #[test]
 fn function_call_1arg_constant() {
     assert_eq!("42", eval("abs(42)"));

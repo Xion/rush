@@ -286,16 +286,25 @@ named!(power( &[u8] ) -> Box<Eval>, chain!(
     }
 ));
 
-/// trailer ::== '[' expression ']' | '(' ARGS ')'
+/// trailer ::== '[' INDEX ']' | '(' ARGS ')'
 enum Trailer { Subscript(Index), Args(Vec<Box<Eval>>) }
 named!(trailer( &[u8] ) -> Trailer, alt!(
     delimited!(multispaced!(tag!("[")),
-               expression,
-               multispaced!(tag!("]"))) => { |s| Trailer::Subscript(Index::Point(s)) }
+               index,
+               multispaced!(tag!("]"))) => { |idx| Trailer::Subscript(idx) }
     |
     delimited!(multispaced!(tag!("(")),
                separated_list!(multispaced!(tag!(",")), expression),
                multispaced!(tag!(")"))) => { |args| Trailer::Args(args) }
+));
+named!(index( &[u8] ) -> Index, alt!(
+    chain!(
+        left: maybe!(expression) ~
+        multispaced!(tag!(":")) ~
+        right: maybe!(expression),
+        move || { Index::Range(left, right) }
+    ) |
+    expression => { |expr| Index::Point(expr) }
 ));
 
 /// atom ::== OBJECT | ARRAY | BOOLEAN | SYMBOL | FLOAT | INTEGER | REGEX | STRING | '(' expression ')'

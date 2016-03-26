@@ -156,7 +156,7 @@ impl SubscriptNode {
                     else { string.len() };
 
         // copy the character range into the resulting string
-        let len = if left > right { right - left } else { 0 };
+        let len = if left < right { right - left } else { 0 };
         let mut result = String::with_capacity(len);
         for ch in string.chars().skip(left).take(len) {
             result.push(ch);
@@ -183,7 +183,7 @@ impl SubscriptNode {
                     else { array.len() };
 
         // copy the element range into the resulting array
-        let len = if left > right { right - left } else { 0 };
+        let len = if left < right { right - left } else { 0 };
         let mut result = Vec::with_capacity(len);
         for el in array.iter().skip(left).take(len) {
             result.push(el.clone());
