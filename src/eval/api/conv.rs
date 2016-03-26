@@ -1,10 +1,13 @@
 //! Conversion functions.
 
+use csv;
 use regex;
 
 use eval::{self, Error, Value};
 use eval::value::{BooleanRepr, IntegerRepr, FloatRepr, RegexRepr};
 
+
+// Basic data types conversions
 
 /// Convert a value to a boolean, based on its "truthy" value.
 pub fn bool(value: Value) -> eval::Result {
@@ -96,3 +99,42 @@ pub fn regex(value: Value) -> eval::Result {
             "cannot convert {} to regular expression: {}", value_type, e
         )))
 }
+
+
+// Serialization formats conversions
+
+/// Converts a value to or from CSV:
+/// * string input is converted from CSV into an array (of arrays) of strings
+/// * array input is converted to CSV string
+pub fn csv(value: Value) -> eval::Result {
+    eval1!((value: &String) -> Array {{
+        let mut reader = csv::Reader::from_string(value as &str)
+            .flexible(true)  // allow rows to have variable number of fields
+            .has_headers(false)
+            .record_terminator(csv::RecordTerminator::CRLF);
+
+        // if we have been given a single line of CSV without the terminating
+        // newline, return it as a single row
+        // TODO(xion): cross-platform line ending detection
+        if value.find("\n").is_none() {
+            let record = reader.records().next().unwrap();
+            let row = record.unwrap();
+            row.into_iter().map(Value::String).collect()
+        } else {
+            // otherwise, return the parsed CSV as array of array of strings
+            let mut result: Vec<Value> = Vec::new();
+            for row in reader.records() {
+                result.push(Value::Array(
+                    row.unwrap().into_iter().map(Value::String).collect()
+                ));
+            }
+            result
+        }
+    }});
+
+    Err(Error::new(
+        &format!("csv() expects string or array, got {}", value.typename())
+    ))
+}
+
+// TODO(xion): json()

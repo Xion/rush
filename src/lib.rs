@@ -8,6 +8,7 @@ extern crate nom;
 extern crate log;
 
 extern crate conv;
+extern crate csv;
 extern crate fnv;
 #[macro_use]
 extern crate mopa;
