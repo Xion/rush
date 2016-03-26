@@ -122,7 +122,7 @@ impl fmt::Debug for BinaryOpNode {
             ),
             Associativity::Right => unimplemented!(),
         };
-        write!(fmt, "<Op {}>", repr)
+        write!(fmt, "<Op: {}>", repr)
     }
 }
 

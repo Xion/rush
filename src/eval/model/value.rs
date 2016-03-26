@@ -170,7 +170,7 @@ impl fmt::Debug for Value {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Value::Empty => write!(fmt, "{}", "<empty>"),
-            Value::Symbol(ref t) => write!(fmt, ":{}", t),
+            Value::Symbol(ref t) => write!(fmt, "'{}", t),
             Value::Boolean(ref b) => write!(fmt, "{}", b.to_string()),
             Value::Integer(ref i) => write!(fmt, "{}i", i),
             Value::Float(ref f) => write!(fmt, "{}f", f),
