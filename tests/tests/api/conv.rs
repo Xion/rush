@@ -44,3 +44,5 @@ fn bool() {
     assert_eq!("true", eval(&format!("bool({})", "[3]")));
     assert_eq!("true", eval(&format!("bool({})", "{foo: 4}")));
 }
+
+// TODO(xion): tests for csv() function
