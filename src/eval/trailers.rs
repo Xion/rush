@@ -78,14 +78,10 @@ impl SubscriptNode {
                   left: &Option<Box<Eval>>, right: &Option<Box<Eval>>,
                   context: &Context) -> eval::Result {
         let object = try!(self.object.eval(&context));
-        let left = match *left {
-            Some(ref l) => Some(try!(l.eval(&context))),
-            None => None,
-        };
-        let right = match *right {
-            Some(ref r) => Some(try!(r.eval(&context))),
-            None => None,
-        };
+        let left = if let Some(ref l) = *left { Some(try!(l.eval(&context))) }
+                   else { None };
+        let right = if let Some(ref r) = *right { Some(try!(r.eval(&context))) }
+                    else { None };
 
         match object {
             Value::String(ref s) => SubscriptNode::eval_range_on_string(s, left, right),
@@ -103,47 +99,32 @@ impl SubscriptNode {
 // Evaluation of point indices against various value types.
 impl SubscriptNode {
     fn eval_point_on_string(string: &StringRepr, index: Value) -> eval::Result {
-        match index {
-            Value::Integer(i) => {
-                SubscriptNode::resolve_index(i as isize, string.len()).map(|idx| {
-                    let c = string.chars().nth(idx).unwrap();
-                    let mut result = String::new();
-                    result.push(c);
-                    Value::String(result)
-                })
-            },
-            Value::Float(..) => Err(eval::Error::new(
-                &format!("character indices must be integers")
-            )),
-            _ => Err(eval::Error::new(
-                &format!("can't index a string with a {}", index.typename())
-            )),
-        }
+        SubscriptNode::extract_string_index(index)
+            .and_then(|i| SubscriptNode::resolve_index(i, string.len()))
+            .map(|i| {
+                let c = string.chars().nth(i).unwrap();
+                let mut result = String::new();
+                result.push(c);
+                Value::String(result)
+            })
     }
 
     fn eval_point_on_array(array: &ArrayRepr, index: Value) -> eval::Result {
-        match index {
-            Value::Integer(i) => {
-                SubscriptNode::resolve_index(i as isize, array.len()).map(|idx| {
-                    // TODO(xion): this clone() call is very inefficient for
-                    // multi-dimensional arrays; return some Value pointer instead
-                    array[idx].clone()
-                })
-            },
-            Value::Float(..) => Err(eval::Error::new(
-                &format!("array indices must be integers")
-            )),
-            _ => Err(eval::Error::new(
-                &format!("can't index an array with a {}", index.typename())
-            )),
-        }
+        SubscriptNode::extract_array_index(index)
+            .and_then(|i| SubscriptNode::resolve_index(i, array.len()))
+            .map(|i| {
+                // TODO(xion): this clone() call is very inefficient for
+                // multi-dimensional arrays; introduce some kind of
+                // slice Value type and return that instead
+                array[i].clone()
+            })
     }
 
     fn eval_point_on_object(object: &ObjectRepr, index: Value) -> eval::Result {
         match index {
             Value::Symbol(ref s) |
             Value::String(ref s) => object.get(s)
-                .map(Value::clone)  // TODO(xion): same as in eval_on_array()
+                .map(Value::clone)  // TODO(xion): same as in eval_point_on_array()
                 .ok_or_else(|| eval::Error::new(&format!(
                     "object has no attribute `{}`", s
                 ))),
@@ -158,17 +139,85 @@ impl SubscriptNode {
 impl SubscriptNode {
     fn eval_range_on_string(string: &StringRepr,
                             left: Option<Value>, right: Option<Value>) -> eval::Result {
-        unimplemented!()
+        // special case for the full range since we can deal with it quickly
+        if left.is_none() && right.is_none() {
+            return Ok(Value::String(string.clone()));
+        }
+
+        // turn the range with potentially unspecified ends into
+        // fully specified range using the string's length as a limit
+        let resolve_index = |idx| {
+            SubscriptNode::extract_string_index(idx)
+                .and_then(|i| SubscriptNode::resolve_index(i, string.len()))
+        };
+        let left = if let Some(left) = left { try!(resolve_index(left)) }
+                   else { 0 };
+        let right = if let Some(right) = right { try!(resolve_index(right)) }
+                    else { string.len() };
+
+        // copy the character range into the resulting string
+        let len = if left > right { right - left } else { 0 };
+        let mut result = String::with_capacity(len);
+        for ch in string.chars().skip(left).take(len) {
+            result.push(ch);
+        }
+        Ok(Value::String(result))
     }
 
     fn eval_range_on_array(array: &ArrayRepr,
                             left: Option<Value>, right: Option<Value>) -> eval::Result {
-        unimplemented!()
+        // special case for the full range since we can deal with it quickly
+        if left.is_none() && right.is_none() {
+            return Ok(Value::Array(array.clone()));
+        }
+
+        // turn the range with potentially unspecified ends into
+        // fully specified range using the array's size as a limit
+        let resolve_index = |idx| {
+            SubscriptNode::extract_array_index(idx)
+                .and_then(|i| SubscriptNode::resolve_index(i, array.len()))
+        };
+        let left = if let Some(left) = left { try!(resolve_index(left)) }
+                   else { 0 };
+        let right = if let Some(right) = right { try!(resolve_index(right)) }
+                    else { array.len() };
+
+        // copy the element range into the resulting array
+        let len = if left > right { right - left } else { 0 };
+        let mut result = Vec::with_capacity(len);
+        for el in array.iter().skip(left).take(len) {
+            result.push(el.clone());
+        }
+        Ok(Value::Array(result))
     }
 }
 
-// Utility functions.
+// Utility functions for manipulating indices.
 impl SubscriptNode {
+    fn extract_string_index(index: Value) -> Result<isize, eval::Error> {
+        match index {
+            Value::Integer(i) => Ok(i as isize),
+            Value::Float(..) => Err(
+                eval::Error::new("character indices must be integers")
+            ),
+            _ => Err(eval::Error::new(
+                &format!("can't index a string with a {}", index.typename())
+            )),
+        }
+    }
+
+    fn extract_array_index(index: Value) -> Result<isize, eval::Error> {
+        match index {
+            Value::Integer(i) => Ok(i as isize),
+            Value::Float(..) => Err(
+                eval::Error::new("array indices must be integers")
+            ),
+            _ => Err(eval::Error::new(
+                &format!("can't index an array with a {}", index.typename())
+            )),
+        }
+    }
+
     /// Resolve index against the total length of a sequence.
     /// If negative, it will be interpreted as counting from the end.
     fn resolve_index(index: isize, len: usize) -> Result<usize, eval::Error> {
