@@ -138,37 +138,31 @@ pub fn csv(value: Value) -> eval::Result {
     }});
 
     eval1!((value: &Array) -> String {{
+        let mut writer = csv::Writer::from_memory()
+            .flexible(true)  // alow rows to have variable number of fields
+            .record_terminator(csv::RecordTerminator::CRLF);
+
+        // if we have been given an array of just scalar values,
+        // write it as a single CSV row
         let one_row = is_flat_array(&value);
-
-        // TODO(xion): remove those manual memory management shenanginans
-        // once our PR is merged: https://github.com/BurntSushi/rust-csv/pull/38
-        let mut output: Vec<u8> = Vec::new();
-        {
-            let mut writer = csv::Writer::from_writer(&mut output)
-                .flexible(true)  // alow rows to have variable number of fields
-                .record_terminator(csv::RecordTerminator::CRLF);
-
-            // if we have been given an array of just scalar values,
-            // write it as a single CSV row
-            if one_row {
-                try!(write_row(&mut writer, value.clone()));
-            } else {
-                // otherwise, treat each subarray as a row of elements to write
-                for row in value {
-                    if !row.is_array() {
-                        return Err(eval::Error::new(&format!(
-                            "expected a CSV row to be an array, got {}",
-                            row.typename()
-                        )));
-                    }
-                    let row = row.clone().unwrap_array();
-                    try!(ensure_flat_array(&row));
-                    try!(write_row(&mut writer, row));
+        if one_row {
+            try!(write_row(&mut writer, value.clone()));
+        } else {
+            // otherwise, treat each subarray as a row of elements to write
+            for row in value {
+                if !row.is_array() {
+                    return Err(eval::Error::new(&format!(
+                        "expected a CSV row to be an array, got {}",
+                        row.typename()
+                    )));
                 }
+                let row = row.clone().unwrap_array();
+                try!(ensure_flat_array(&row));
+                try!(write_row(&mut writer, row));
             }
         }
 
-        let mut result = String::from_utf8(output).unwrap();
+        let mut result = writer.into_string();
         if one_row {
             result.pop();  // remove trailing newline character
         }

@@ -9,7 +9,7 @@ readme = "README.md"
 [dependencies]
 clap = "2.0.5"
 conv = "0.3.1"
-csv = "0.14.3"
+csv = "0.14.4"
 fnv = "1.0.2"
 log = "0.3"
 mopa = "0.2.1"
