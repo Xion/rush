@@ -44,11 +44,12 @@ impl UnaryOpNode {
 
     /// Evaluate the "!" operator for one value.
     fn eval_bang(arg: Value) -> eval::Result {
-        eval1!(arg : Boolean { !arg });
-        UnaryOpNode::err("!", &arg)
+        let arg = try!(api::conv::bool(arg)).unwrap_bool();
+        Ok(Value::Boolean(!arg))
     }
 
     /// Produce an error about invalid argument for an operator.
+    #[inline(always)]
     fn err(op: &str, arg: &Value) -> eval::Result {
         Err(eval::Error::new(&format!(
             "invalid argument for `{}` operator: `{:?}`", op, arg
@@ -59,6 +60,7 @@ impl UnaryOpNode {
 
 /// Evaluate the binary operator AST node.
 impl Eval for BinaryOpNode {
+    #[inline]
     fn eval(&self, context: &Context) -> eval::Result {
         match self.assoc {
             Associativity::Left => self.eval_left_assoc(&context),
@@ -98,6 +100,7 @@ impl BinaryOpNode {
         unimplemented!()
     }
 
+    #[inline(always)]
     fn is_shortcircuit_op(op: &str) -> bool {
         ["&&", "||"].contains(&op)
     }
@@ -137,6 +140,7 @@ impl BinaryOpNode {
 // Note that these operators can short-circuit.
 impl BinaryOpNode {
     /// Evaluate the "&&" operator for two values.
+    #[inline]
     fn eval_and(left: Value, right: Value) -> ScEvalResult {
         let is_true = try!(api::conv::bool(left.clone())).unwrap_bool();
         if is_true {
@@ -147,6 +151,7 @@ impl BinaryOpNode {
     }
 
     /// Evaluate the "||" operator for two values.
+    #[inline]
     fn eval_or(left: Value, right: Value) -> ScEvalResult {
         let is_true = try!(api::conv::bool(left.clone())).unwrap_bool();
         if is_true {
@@ -414,6 +419,7 @@ impl BinaryOpNode {
 // Utility function.
 impl BinaryOpNode {
     /// Produce an error about invalid arguments for an operator.
+    #[inline(always)]
     fn err(op: &str, left: Value, right: Value) -> eval::Result {
         Err(eval::Error::new(&format!(
             "invalid arguments for `{}` operator: `{:?}` and `{:?}`",
@@ -484,20 +490,15 @@ impl CurriedBinaryOpNode {
 
 /// Evaluate the ternary operator / conditional node.
 impl Eval for ConditionalNode {
+    #[inline]
     fn eval(&self, context: &Context) -> eval::Result {
-        // TODO(xion): cast the result to boolean via bool() function
-        let cond = try!(self.cond.eval(&context));
-        let cond_type = cond.typename();
-        if let Value::Boolean(condition) = cond {
-            if condition {
-                self.then.eval(&context)
-            } else {
-                self.else_.eval(&context)
-            }
+        let condition = try!(
+            self.cond.eval(&context).and_then(api::conv::bool)
+        ).unwrap_bool();
+        if condition {
+            self.then.eval(&context)
         } else {
-            Err(eval::Error::new(&format!(
-                "expected a boolean condition, got {} instead", cond_type
-            )))
+            self.else_.eval(&context)
         }
     }
 }

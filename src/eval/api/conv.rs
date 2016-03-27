@@ -12,6 +12,9 @@ use eval::value::{ArrayRepr, BooleanRepr, IntegerRepr, FloatRepr, RegexRepr, Str
 // Basic data types conversions
 
 /// Convert a value to a boolean, based on its "truthy" value.
+///
+/// NOTE: This conversion is used by logical (!, &&, ||) and conditional (:?)
+/// operators to coerce values to boolean  whenever necessary.
 pub fn bool(value: Value) -> eval::Result {
     match value {
         Value::Boolean(_) => Ok(value),
