@@ -3,6 +3,9 @@
 //! This includes unary and conditional operators, as well as binary operators
 //! and their curried versions (which evaluate into functions).
 
+mod unary;
+
+
 use std::iter;
 
 use eval::{self, api, Context, Eval, Value};
@@ -10,52 +13,6 @@ use eval::model::Invoke;
 use eval::model::function::{Args, Arity, Function};
 use eval::model::value::{ArrayRepr, FloatRepr, IntegerRepr, StringRepr};
 use parse::ast::{Associativity, BinaryOpNode, ConditionalNode, CurriedBinaryOpNode, UnaryOpNode};
-
-
-/// Evaluate the unary operator AST node.
-impl Eval for UnaryOpNode {
-    fn eval(&self, context: &Context) -> eval::Result {
-        let arg = try!(self.arg.eval(&context));
-        match &self.op[..] {
-            "+" => UnaryOpNode::eval_plus(arg),
-            "-" => UnaryOpNode::eval_minus(arg),
-            "!" => UnaryOpNode::eval_bang(arg),
-            _ => Err(eval::Error::new(
-                &format!("unknown unary operator: `{}`", self.op)
-            ))
-        }
-    }
-}
-
-impl UnaryOpNode {
-    /// Evaluate the "+" operator for one value.
-    fn eval_plus(arg: Value) -> eval::Result {
-        eval1!(arg : Integer { arg });
-        eval1!(arg : Float { arg });
-        UnaryOpNode::err("+", &arg)
-    }
-
-    /// Evaluate the "-" operator for one value.
-    fn eval_minus(arg: Value) -> eval::Result {
-        eval1!(arg : Integer { -arg });
-        eval1!(arg : Float { -arg });
-        UnaryOpNode::err("-", &arg)
-    }
-
-    /// Evaluate the "!" operator for one value.
-    fn eval_bang(arg: Value) -> eval::Result {
-        let arg = try!(api::conv::bool(arg)).unwrap_bool();
-        Ok(Value::Boolean(!arg))
-    }
-
-    /// Produce an error about invalid argument for an operator.
-    #[inline(always)]
-    fn err(op: &str, arg: &Value) -> eval::Result {
-        Err(eval::Error::new(&format!(
-            "invalid argument for `{}` operator: `{:?}`", op, arg
-        )))
-    }
-}
 
 
 /// Evaluate the binary operator AST node.
