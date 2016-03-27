@@ -17,7 +17,7 @@ use super::value::Value;
 pub type Args = Vec<Value>;
 
 /// Type for a number of arguments
-/// (both expected by a function, and actuallyp passed).
+/// (both expected by a function, and actually passed).
 pub type ArgCount = usize;
 
 
@@ -34,13 +34,14 @@ pub enum Arity {
 }
 
 impl Arity {
-    #[inline]
+    #[inline(always)]
     pub fn is_exact(&self) -> bool {
         match *self { Arity::Exact(..) => true, _ => false }
     }
 
     /// Whether arity allows/accepts given argument count.
     /// This is equivalent to simple equality check: arity == argcount.
+    #[inline]
     pub fn accepts(&self, argcount: ArgCount) -> bool {
         match *self {
             Arity::Exact(c) => argcount == c,
@@ -75,6 +76,7 @@ impl PartialOrd for Arity {
 }
 
 impl PartialEq<ArgCount> for Arity {
+    #[inline]
     fn eq(&self, count: &ArgCount) -> bool {
         if let Arity::Exact(c) = *self {
             return c == *count;
@@ -89,6 +91,7 @@ impl PartialOrd<ArgCount> for Arity {
     ///
     /// Result indicates whether the count satisfies the arity, or whether
     /// more/fewer arguments would be needed.
+    #[inline]
     fn partial_cmp(&self, count: &ArgCount) -> Option<Ordering> {
         match *self {
             Arity::Exact(c) => c.partial_cmp(&count),
@@ -106,6 +109,7 @@ impl Add<ArgCount> for Arity {
 
     /// Adding a specific argument count to an arity,
     /// equivalent to introducing that many new argument slots to a function.
+    #[inline]
     fn add(self, rhs: ArgCount) -> Self::Output {
         match self {
             Arity::Exact(c) => Arity::Exact(c + rhs),
@@ -170,19 +174,23 @@ pub enum Function {
 }
 
 impl Function {
+    #[inline(always)]
     pub fn from_raw(invoke: Box<Invoke>) -> Function {
         Function::Raw(Rc::new(invoke))
     }
+    #[inline(always)]
     pub fn from_native<F>(arity: Arity, f: F) -> Function
         where F: Fn(Args) -> eval::Result + 'static
     {
         Function::Native(arity, Rc::new(f))
     }
+    #[inline(always)]
     pub fn from_native_ctx<F>(arity: Arity, f: F) -> Function
         where F: Fn(Args, &Context) -> eval::Result + 'static
     {
         Function::NativeCtx(arity, Rc::new(f))
     }
+    #[inline(always)]
     pub fn from_lambda(argnames: Vec<String>, expr: Box<Eval>) -> Function {
         Function::Custom(CustomFunction::new(argnames, expr))
     }
@@ -281,6 +289,7 @@ pub struct CustomFunction {
 }
 
 impl CustomFunction {
+    #[inline(always)]
     pub fn new(argnames: Vec<String>, expr: Box<Eval>) -> CustomFunction {
         CustomFunction{
             argnames: argnames,

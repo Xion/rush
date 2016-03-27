@@ -34,6 +34,7 @@ impl UnaryOpNode {
     }
 
     /// Evaluate the "!" operator for one value.
+    #[inline]
     fn eval_bang(arg: Value) -> eval::Result {
         let arg = try!(api::conv::bool(arg)).unwrap_bool();
         Ok(Value::Boolean(!arg))

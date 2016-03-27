@@ -45,6 +45,7 @@ impl Eval for FunctionCallNode {
 
 /// Evaluate the subscript AST node.
 impl Eval for SubscriptNode {
+    #[inline]
     fn eval(&self, context: &Context) -> eval::Result {
         match self.index {
             Index::Point(ref p) => self.eval_point(p, &context),
@@ -52,6 +53,7 @@ impl Eval for SubscriptNode {
         }
     }
 }
+
 impl SubscriptNode {
     fn eval_point(&self, index: &Box<Eval>, context: &Context) -> eval::Result {
         let object = try!(self.object.eval(&context));

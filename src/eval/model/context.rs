@@ -43,6 +43,7 @@ impl<'c> Context<'c> {
     }
 
     /// Create a new Context that's a child of given parent.
+    #[inline(always)]
     pub fn with_parent(parent: &'c Context<'c>) -> Context<'c> {
         Context{parent: Some(parent), scope: HashMap::default()}
     }

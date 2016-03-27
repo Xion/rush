@@ -19,10 +19,12 @@ pub fn init() -> Result<(), SetLoggerError> {
 struct Logger;
 
 impl Log for Logger {
+    #[inline(always)]
     fn enabled(&self, metadata: &LogMetadata) -> bool {
         metadata.level() <= MAX_LEVEL
     }
 
+    #[inline]
     fn log(&self, record: &LogRecord) {
         if self.enabled(record.metadata()) {
             writeln!(&mut io::stderr(),

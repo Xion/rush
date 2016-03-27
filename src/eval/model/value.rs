@@ -160,6 +160,7 @@ impl Value {
 
 
 impl InvalidSentinel for Value {
+    #[inline(always)]
     fn invalid_sentinel() -> Self { Value::Empty }
 }
 
@@ -245,6 +246,7 @@ impl FromStr for Value {
 impl TryFrom<Value> for String {
     type Err = io::Error;  // TODO(xion): consider a better error type
 
+    #[inline(always)]
     fn try_from(src: Value) -> Result<Self, Self::Err> {
         String::try_from(&src)
     }

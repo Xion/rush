@@ -25,6 +25,7 @@ impl fmt::Debug for ScalarNode {
 impl FromStr for ScalarNode {
     type Err = <Value as FromStr>::Err;
 
+    #[inline(always)]
     fn from_str(s: &str) -> Result<ScalarNode, Self::Err> {
         s.parse::<Value>().map(|v| ScalarNode{value: v})
     }
@@ -106,6 +107,7 @@ pub struct BinaryOpNode {
 }
 
 impl BinaryOpNode {
+    #[inline(always)]
     pub fn new(assoc: Associativity,
                first: Box<Eval>, rest: Vec<(String, Box<Eval>)>) -> BinaryOpNode {
         BinaryOpNode{assoc: assoc, first: first, rest: rest}
@@ -138,12 +140,15 @@ pub struct CurriedBinaryOpNode  {
 }
 
 impl CurriedBinaryOpNode {
+    #[inline(always)]
     pub fn with_none(op: String) -> CurriedBinaryOpNode {
         CurriedBinaryOpNode{op: op, left: None, right: None}
     }
+    #[inline(always)]
     pub fn with_left(op: String, arg: Box<Eval>) -> CurriedBinaryOpNode {
         CurriedBinaryOpNode{op: op, left: Some(arg), right: None}
     }
+    #[inline(always)]
     pub fn with_right(op: String, arg: Box<Eval>) -> CurriedBinaryOpNode {
         CurriedBinaryOpNode{op: op, left: None, right: Some(arg)}
     }

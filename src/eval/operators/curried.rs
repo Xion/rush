@@ -1,7 +1,7 @@
 //! Module implementing evaluation of curried binary operator AST nodes.
 
 use eval::{self, Eval, Context, Value};
-use eval::model::function::{Args, Arity, Function};
+use eval::model::function::{Args, ArgCount, Arity, Function};
 use parse::ast::{BinaryOpNode, CurriedBinaryOpNode};
 
 
@@ -61,7 +61,7 @@ fn take_two_args(args: Args) -> Result<(Value, Value), eval::Error> {
     Ok((args.next().unwrap(), args.next().unwrap()))
 }
 
-fn ensure_argcount(args: &Args, count: usize) -> Result<(), eval::Error> {
+fn ensure_argcount(args: &Args, count: ArgCount) -> Result<(), eval::Error> {
     if args.len() != count {
         return Err(eval::Error::new(&format!(
             "invalid number of arguments: expected {}, got {}",

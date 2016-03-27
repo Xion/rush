@@ -8,12 +8,14 @@ use clap::{self, AppSettings, Arg, ArgSettings, ArgGroup, ArgMatches};
 
 
 /// Parse command line arguments and return matches' object.
+#[inline(always)]
 pub fn parse<'a>() -> ArgMatches<'a> {
     parse_from_argv(env::args_os())
 }
 
 /// Parse application arguments given array of arguments
 /// (*all* arguments, including binary name).
+#[inline(always)]
 pub fn parse_from_argv<'a, I, T>(argv: I) -> ArgMatches<'a>
     where I: IntoIterator<Item=T>, T: Into<OsString>
 {

@@ -29,6 +29,7 @@ pub struct Error {
 }
 
 impl Error {
+    #[inline(always)]
     pub fn new(msg: &str) -> Error {
         Error{message: msg.to_owned()}
     }
@@ -41,8 +42,8 @@ impl fmt::Display for Error {
 }
 
 impl error::Error for Error {
-    fn description(&self) -> &str { &self.message }
-    fn cause(&self) -> Option<&error::Error> { None }
+    #[inline(always)] fn description(&self) -> &str { &self.message }
+    #[inline(always)] fn cause(&self) -> Option<&error::Error> { None }
 }
 
 
