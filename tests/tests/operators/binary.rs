@@ -3,6 +3,8 @@
 use util::*;
 
 
+// TODO(xion): tests for logical operators
+
 #[test]
 fn compare_less_constants() {
     assert_eval_true("1 < 2");

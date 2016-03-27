@@ -82,6 +82,8 @@ impl BinaryOpNode {
 
     fn eval_op(op: &str, left: Value, right: Value, context: &Context) -> eval::Result {
         match op {
+            "&&" => BinaryOpNode::eval_and(left, right),
+            "||" => BinaryOpNode::eval_or(left, right),
             "<" => BinaryOpNode::eval_lt(left, right),
             "<=" => BinaryOpNode::eval_le(left, right),
             ">" => BinaryOpNode::eval_gt(left, right),
@@ -89,7 +91,7 @@ impl BinaryOpNode {
             "==" => BinaryOpNode::eval_eq(left, right),
             "!=" => BinaryOpNode::eval_ne(left, right),
             "@" => BinaryOpNode::eval_at(left, right),
-            "&" => BinaryOpNode::eval_and(left, right),
+            "&" => BinaryOpNode::eval_amp(left, right),
             "$" => BinaryOpNode::eval_dollar(left, right, &context),
             "+" => BinaryOpNode::eval_plus(left, right),
             "-" => BinaryOpNode::eval_minus(left, right),
@@ -99,6 +101,21 @@ impl BinaryOpNode {
             "**" => BinaryOpNode::eval_power(left, right),
             _ => Err(eval::Error::new(&format!("unknown binary operator: `{}`", op))),
         }
+    }
+}
+
+// Logical operators.
+impl BinaryOpNode {
+    /// Evaluate the "&&" operator for two values.
+    fn eval_and(left: Value, right: Value) -> eval::Result {
+        let is_true = try!(api::conv::bool(left.clone())).unwrap_bool();
+        Ok(if is_true { right } else { left /* TODO(xion): short circuit */ })
+    }
+
+    /// Evaluate the "||" operator for two values.
+    fn eval_or(left: Value, right: Value) -> eval::Result {
+        let is_true = try!(api::conv::bool(left.clone())).unwrap_bool();
+        Ok(if is_true { left /* TODO(xion): short circuit */ } else { right })
     }
 }
 
@@ -190,10 +207,10 @@ impl BinaryOpNode {
     }
 }
 
-// Other binary operators.
+// Functional operators.
 impl BinaryOpNode {
     /// Evaluate the "&" operator for two values.
-    fn eval_and(left: Value, right: Value) -> eval::Result {
+    fn eval_amp(left: Value, right: Value) -> eval::Result {
         if left.is_function() && right.is_function() {
             let left = left.unwrap_function();
             let right = right.unwrap_function();
@@ -222,7 +239,10 @@ impl BinaryOpNode {
         }
         BinaryOpNode::err("$", left, right)
     }
+}
 
+/// Arithmetic operators.
+impl BinaryOpNode {
     /// Evaluate the "+" operator for two values.
     fn eval_plus(left: Value, right: Value) -> eval::Result {
         eval2!(left, right : &String { left.clone() + &*right });
@@ -351,7 +371,10 @@ impl BinaryOpNode {
 
         BinaryOpNode::err("**", left, right)
     }
+}
 
+// Utility function.
+impl BinaryOpNode {
     /// Produce an error about invalid arguments for an operator.
     fn err(op: &str, left: Value, right: Value) -> eval::Result {
         Err(eval::Error::new(&format!(
