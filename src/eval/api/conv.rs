@@ -165,7 +165,7 @@ pub fn csv(value: Value) -> eval::Result {
             }
         }
 
-        let mut result =String::from_utf8(output).unwrap();
+        let mut result = String::from_utf8(output).unwrap();
         if one_row {
             result.pop();  // remove trailing newline character
         }

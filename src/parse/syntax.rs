@@ -184,23 +184,20 @@ named!(curried_op( &[u8] ) -> Box<Eval>, delimited!(
         ),
     multispaced!(tag!(")"))
 ));
-named!(binary_op( &[u8] ) -> String, string!(multispaced!(alt_complete!(
-    // TODO(xion): comparison & functional ops
-    tag!(POWER_OP) |
-    char_of!(MULTIPLICATIVE_BINARY_OPS) |
-    char_of!(ADDITIVE_BINARY_OPS)
-))));
+named!(binary_op( &[u8] ) -> String, alt!(
+    comparison_op |
+    string!(multispaced!(alt_complete!(
+        tag!(POWER_OP) |
+        char_of!(MULTIPLICATIVE_BINARY_OPS) |
+        char_of!(ADDITIVE_BINARY_OPS)
+    )))
+));
 
 /// comparison ::== argument [COMPARISON_OP argument]
 named!(comparison( &[u8] ) -> Box<Eval>, chain!(
     // TODO(xion): consider supporting chained comparisons a'la Python
     left: argument ~
-    maybe_right: maybe!(pair!(
-        string!(multispaced!(alt!(
-            tag!("<=") | tag!(">=") | tag!("==") | tag!("!=") | char_of!("<>@")
-        ))),
-        argument
-    )),
+    maybe_right: maybe!(pair!(comparison_op, argument)),
     move || {
         match maybe_right {
             None => left,
@@ -210,6 +207,9 @@ named!(comparison( &[u8] ) -> Box<Eval>, chain!(
         }
     }
 ));
+named!(comparison_op( &[u8] ) -> String, string!(multispaced!(alt_complete!(
+    tag!("<=") | tag!(">=") | tag!("==") | tag!("!=") | char_of!("<>@")
+))));
 
 /// argument ::== term (ADDITIVE_BIN_OP term)*
 named!(argument( &[u8] ) -> Box<Eval>, chain!(
