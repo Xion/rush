@@ -66,12 +66,30 @@ impl Eval for BinaryOpNode {
         }
     }
 }
+
+/// State of a short-circuited operation.
+#[derive(Debug,PartialEq)]
+enum Shortcircuit { Break, Continue }
+
+/// Evaluation result that involves short-circuiting.
+type ScEvalResult = Result<(Value, Shortcircuit), eval::Error>;
+
 impl BinaryOpNode {
     fn eval_left_assoc(&self, context: &Context) -> eval::Result {
         let mut result = try!(self.first.eval(&context));
         for &(ref op, ref arg) in &self.rest {
             let arg = try!(arg.eval(&context));
-            result = try!(BinaryOpNode::eval_op(&op[..], result, arg, &context));
+
+            // allow for terminating evaluation of short-circuiting operators early
+            if BinaryOpNode::is_shortcircuit_op(&op[..]) {
+                let (res, sc) = try!(BinaryOpNode::eval_shortcircuit_op(&op[..], result, arg));
+                result = res;
+                if sc == Shortcircuit::Break {
+                    break;
+                }
+            } else {
+                result = try!(BinaryOpNode::eval_op(&op[..], result, arg, &context));
+            }
         }
         Ok(result)
     }
@@ -80,10 +98,21 @@ impl BinaryOpNode {
         unimplemented!()
     }
 
-    fn eval_op(op: &str, left: Value, right: Value, context: &Context) -> eval::Result {
+    fn is_shortcircuit_op(op: &str) -> bool {
+        ["&&", "||"].contains(&op)
+    }
+
+    fn eval_shortcircuit_op(op: &str, left: Value, right: Value) -> ScEvalResult {
         match op {
             "&&" => BinaryOpNode::eval_and(left, right),
             "||" => BinaryOpNode::eval_or(left, right),
+            // callers should ensure they only pass short-circuiting operators
+            _ => panic!("non-shortcircuiting operator: {}", op),
+        }
+    }
+
+    fn eval_op(op: &str, left: Value, right: Value, context: &Context) -> eval::Result {
+        match op {
             "<" => BinaryOpNode::eval_lt(left, right),
             "<=" => BinaryOpNode::eval_le(left, right),
             ">" => BinaryOpNode::eval_gt(left, right),
@@ -105,17 +134,26 @@ impl BinaryOpNode {
 }
 
 // Logical operators.
+// Note that these operators can short-circuit.
 impl BinaryOpNode {
     /// Evaluate the "&&" operator for two values.
-    fn eval_and(left: Value, right: Value) -> eval::Result {
+    fn eval_and(left: Value, right: Value) -> ScEvalResult {
         let is_true = try!(api::conv::bool(left.clone())).unwrap_bool();
-        Ok(if is_true { right } else { left /* TODO(xion): short circuit */ })
+        if is_true {
+            Ok((right, Shortcircuit::Continue))
+        } else {
+            Ok((left, Shortcircuit::Break))
+        }
     }
 
     /// Evaluate the "||" operator for two values.
-    fn eval_or(left: Value, right: Value) -> eval::Result {
+    fn eval_or(left: Value, right: Value) -> ScEvalResult {
         let is_true = try!(api::conv::bool(left.clone())).unwrap_bool();
-        Ok(if is_true { left /* TODO(xion): short circuit */ } else { right })
+        if is_true {
+            Ok((left, Shortcircuit::Break))
+        } else {
+            Ok((right, Shortcircuit::Continue))
+        }
     }
 }
 
