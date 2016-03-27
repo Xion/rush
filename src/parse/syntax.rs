@@ -115,7 +115,7 @@ const UNDERSCORE_SUFFIXES: &'static str = "bifs";
 /// Root symbol of the grammar.
 named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: functional, || { e }));
 
-/// functional ::== joint [FUNCTIONAL_OP joint]*
+/// functional ::== joint (FUNCTIONAL_OP joint)*
 named!(functional( &[u8] ) -> Box<Eval>, chain!(
     first: joint ~
     rest: many0!(pair!(
@@ -133,11 +133,11 @@ named!(functional( &[u8] ) -> Box<Eval>, chain!(
 /// joint ::== conditional | lambda | curried_op
 named!(joint( &[u8] ) -> Box<Eval>, alt!(conditional | lambda | curried_op));
 
-/// conditional ::== comparison ['?' comparison ':' conditional]
+/// conditional ::== logical ['?' logical ':' conditional]
 named!(conditional( &[u8] ) -> Box<Eval>, map!(
-    pair!(comparison, maybe!(chain!(
+    pair!(logical, maybe!(chain!(
         multispaced!(tag!("?")) ~
-        then: comparison ~
+        then: logical ~
         multispaced!(tag!(":")) ~
         else_: conditional,
         move || (then, else_)
@@ -151,7 +151,6 @@ named!(conditional( &[u8] ) -> Box<Eval>, map!(
         }
     }
 ));
-// TODO(xion): logical operators: and (&&), or (||)
 
 /// lambda ::== '|' ARGS '|' joint
 named!(lambda( &[u8] ) -> Box<Eval>, chain!(
@@ -185,13 +184,28 @@ named!(curried_op( &[u8] ) -> Box<Eval>, delimited!(
     multispaced!(tag!(")"))
 ));
 named!(binary_op( &[u8] ) -> String, alt!(
-    comparison_op |
+    logical_op | comparison_op |
     string!(multispaced!(alt_complete!(
         tag!(POWER_OP) |
         char_of!(MULTIPLICATIVE_BINARY_OPS) |
         char_of!(ADDITIVE_BINARY_OPS)
     )))
 ));
+
+/// logical ::== comparison (LOGICAL_OP comparison)*
+named!(logical( &[u8] ) -> Box<Eval>, chain!(
+    first: comparison ~
+    rest: many0!(pair!(logical_op, comparison)),
+    move || {
+        if rest.is_empty() { first }
+        else { Box::new(
+            BinaryOpNode::new(Associativity::Left, first, rest)
+        ) as Box<Eval> }
+    }
+));
+named!(logical_op( &[u8] ) -> String, string!(multispaced!(alt_complete!(
+    tag!("&&") | tag!("||")
+))));
 
 /// comparison ::== argument [COMPARISON_OP argument]
 named!(comparison( &[u8] ) -> Box<Eval>, chain!(
