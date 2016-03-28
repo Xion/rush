@@ -104,6 +104,12 @@ impl<'c> Context<'c> {
     {
         self.define(name, Arity::Exact(0), move |_| { func() })
     }
+    fn define_nullary_plus<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Args) -> eval::Result + 'static
+    {
+        self.define(name, Arity::Minimum(0), func)
+    }
 
     fn define_unary<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
@@ -114,6 +120,12 @@ impl<'c> Context<'c> {
             func(args.next().unwrap())
         })
     }
+    fn define_unary_plus<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Args) -> eval::Result + 'static
+    {
+        self.define(name, Arity::Minimum(1), func)
+    }
 
     fn define_binary<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
@@ -123,6 +135,12 @@ impl<'c> Context<'c> {
             let mut args = args.into_iter();
             func(args.next().unwrap(), args.next().unwrap())
         })
+    }
+    fn define_binary_plus<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Args) -> eval::Result + 'static
+    {
+        self.define(name, Arity::Minimum(2), func)
     }
 
     fn define_ternary<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
@@ -135,6 +153,12 @@ impl<'c> Context<'c> {
                  args.next().unwrap(),
                  args.next().unwrap())
         })
+    }
+    fn define_ternary_plus<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Args) -> eval::Result + 'static
+    {
+        self.define(name, Arity::Minimum(3), func)
     }
 }
 
@@ -164,6 +188,12 @@ impl<'c> Context<'c> {
             func(&context)
         })
     }
+    fn define_nullary_plus_ctx<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Args, &Context) -> eval::Result + 'static
+    {
+        self.define_ctx(name, Arity::Minimum(0), func)
+    }
 
     fn define_unary_ctx<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
@@ -173,6 +203,12 @@ impl<'c> Context<'c> {
             let mut args = args.into_iter();
             func(args.next().unwrap(), &context)
         })
+    }
+    fn define_unary_plus_ctx<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Args, &Context) -> eval::Result + 'static
+    {
+        self.define_ctx(name, Arity::Minimum(1), func)
     }
 
     fn define_binary_ctx<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
@@ -184,6 +220,12 @@ impl<'c> Context<'c> {
             func(args.next().unwrap(), args.next().unwrap(),
                 &context)
         })
+    }
+    fn define_binary_plus_ctx<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Args, &Context) -> eval::Result + 'static
+    {
+        self.define_ctx(name, Arity::Minimum(2), func)
     }
 
     fn define_ternary_ctx<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
@@ -197,6 +239,12 @@ impl<'c> Context<'c> {
                  args.next().unwrap(),
                  &context)
         })
+    }
+    fn define_ternary_plus_ctx<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Args, &Context) -> eval::Result + 'static
+    {
+        self.define_ctx(name, Arity::Minimum(3), func)
     }
 }
 
