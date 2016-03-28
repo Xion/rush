@@ -34,6 +34,8 @@ impl<'c> Context<'c> {
         //
         self.define_unary(          "abs",      math::abs           );
         self.define_binary(         "after",    strings::after      );
+        self.define_unary(          "all",      base::all           );
+        self.define_unary(          "any",      base::any           );
         self.define_binary(         "before",   strings::before     );
         self.define_unary(          "bool",     conv::bool          );
         self.define_unary(          "ceil",     math::ceil          );
@@ -73,7 +75,7 @@ impl<'c> Context<'c> {
         self.set(   "nil",      Value::Empty);
         self.set(   "pi",       Value::Float(f64::consts::PI as FloatRepr));
         //
-        // Don't add "true" or "false", they are recognized at parser level!
+        // Don't add "true" or "false", they're recognized at the parser level!
         //
     }
 }

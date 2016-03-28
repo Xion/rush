@@ -49,6 +49,51 @@ pub fn index(elem: Value, seq: Value) -> eval::Result {
 }
 
 
+/// Returns true if all elements of an array are truthy (as per bool() functions).
+/// Note that if the array is empty, it also returns true.
+pub fn all(value: Value) -> eval::Result {
+    let value_type = value.typename();
+
+    eval1!((value: Array) -> Boolean {{
+        let mut result = true;
+        for elem in value.into_iter() {
+            let truthy = try!(bool(elem)).unwrap_bool();
+            if !truthy {
+                result = false;
+                break;
+            }
+        }
+        result
+    }});
+
+    Err(Error::new(&format!(
+        "all() requires an array, got {}", value_type
+    )))
+}
+
+/// Returns true if at least one element of the array is truthy
+/// (as per the bool() function).
+pub fn any(value: Value) -> eval::Result {
+    let value_type = value.typename();
+
+    eval1!((value: Array) -> Boolean {{
+        let mut result = false;
+        for elem in value.into_iter() {
+            let truthy = try!(bool(elem)).unwrap_bool();
+            if truthy {
+                result = true;
+                break;
+            }
+        }
+        result
+    }});
+
+    Err(Error::new(&format!(
+        "any() requires an array, got {}", value_type
+    )))
+}
+
+
 /// Map a function over an array.
 /// Returns the array created by applying the function to each element.
 pub fn map(func: Value, array: Value, context: &Context) -> eval::Result {

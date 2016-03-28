@@ -24,4 +24,5 @@ fn len() {
 }
 
 // TODO(xion): tests for index()
+// TODO(xion): tests for all() and any()
 // TODO(xion): tests for map() and filter()
