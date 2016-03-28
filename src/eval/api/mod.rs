@@ -32,35 +32,36 @@ impl<'c> Context<'c> {
         //
         // Keep the list sorted alphabetically by function names.
         //
-        self.define_unary(      "abs",      math::abs       );
-        self.define_binary(     "after",    strings::after  );
-        self.define_binary(     "before",   strings::before );
-        self.define_unary(      "bool",     conv::bool      );
-        self.define_unary(      "ceil",     math::ceil      );
-        self.define_unary(      "csv",      conv::csv       );
-        self.define_unary(      "exp",      math::exp       );
-        self.define_binary_ctx( "filter",   base::filter    );
-        self.define_unary(      "float",    conv::float     );
-        self.define_unary(      "floor",    math::floor     );
-        self.define_binary(     "format",   strings::format_);
-        self.define_binary(     "index",    base::index     );
-        self.define_unary(      "int",      conv::int       );
-        self.define_binary(     "join",     strings::join   );
-        self.define_unary(      "len",      base::len       );
-        self.define_unary(      "ln",       math::ln        );
-        self.define_binary_ctx( "map",      base::map       );
-        self.define_nullary(    "rand",     math::rand      );
-        self.define_unary(      "re",       conv::regex     );
-        self.define_unary(      "regex",    conv::regex     );
-        self.define_unary(      "rev",      strings::rev    );
-        self.define_unary(      "round",    math::round     );
-        self.define_unary(      "sgn",      math::sgn       );
-        self.define_binary(     "split",    strings::split  );
-        self.define_unary(      "sqrt",     math::sqrt      );
-        self.define_unary(      "str",      conv::str_      );
-        self.define_ternary_ctx("sub",      strings::sub    );
-        self.define_unary(      "trim",     strings::trim   );
-        self.define_unary(      "trunc",    math::trunc     );
+        self.define_unary(          "abs",      math::abs           );
+        self.define_binary(         "after",    strings::after      );
+        self.define_binary(         "before",   strings::before     );
+        self.define_unary(          "bool",     conv::bool          );
+        self.define_unary(          "ceil",     math::ceil          );
+        self.define_unary(          "csv",      conv::csv           );
+        self.define_unary(          "exp",      math::exp           );
+        self.define_binary_ctx(     "filter",   base::filter        );
+        self.define_unary(          "float",    conv::float         );
+        self.define_unary(          "floor",    math::floor         );
+        self.define_binary(         "format",   strings::format_    );
+        self.define_binary(         "index",    base::index         );
+        self.define_unary(          "int",      conv::int           );
+        self.define_binary(         "join",     strings::join       );
+        self.define_unary(          "len",      base::len           );
+        self.define_unary(          "ln",       math::ln            );
+        self.define_binary_ctx(     "map",      base::map           );
+        self.define_nullary(        "rand",     math::rand          );
+        self.define_unary(          "re",       conv::regex         );
+        self.define_unary(          "regex",    conv::regex         );
+        self.define_unary(          "regexp",   conv::regex         );
+        self.define_unary(          "rev",      strings::rev        );
+        self.define_unary(          "round",    math::round         );
+        self.define_unary(          "sgn",      math::sgn           );
+        self.define_binary(         "split",    strings::split      );
+        self.define_unary(          "sqrt",     math::sqrt          );
+        self.define_unary(          "str",      conv::str_          );
+        self.define_ternary_ctx(    "sub",      strings::sub        );
+        self.define_unary(          "trim",     strings::trim       );
+        self.define_unary(          "trunc",    math::trunc         );
     }
 
     fn init_constants(&mut self) {

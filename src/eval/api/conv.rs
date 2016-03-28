@@ -14,7 +14,7 @@ use eval::value::{ArrayRepr, BooleanRepr, IntegerRepr, FloatRepr, RegexRepr, Str
 /// Convert a value to a boolean, based on its "truthy" value.
 ///
 /// NOTE: This conversion is used by logical (!, &&, ||) and conditional (:?)
-/// operators to coerce values to boolean  whenever necessary.
+/// operators to coerce values to boolean whenever necessary.
 pub fn bool(value: Value) -> eval::Result {
     match value {
         Value::Boolean(_) => Ok(value),
@@ -169,7 +169,7 @@ pub fn csv(value: Value) -> eval::Result {
         result
     }});
     fn is_flat_array(array: &ArrayRepr) -> bool {
-        !array.iter().any(Value::is_array)
+        array.iter().all(Value::is_scalar)
     }
     fn ensure_flat_array(array: &ArrayRepr) -> Result<(), eval::Error> {
         if !is_flat_array(array) {

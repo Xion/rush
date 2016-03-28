@@ -100,6 +100,14 @@ impl Value {
         match *self { Value::Function(..) => true, _ => false, }
     }
 
+    #[inline(always)]
+    pub fn is_scalar(&self) -> bool {
+        self.is_bool() || self.is_int() || self.is_float() || self.is_string()
+    }
+}
+
+// Methods for consuming the Value and returning its Rust representation.
+impl Value {
     #[inline]
     pub fn unwrap_bool(self) -> BooleanRepr {
         match self {
