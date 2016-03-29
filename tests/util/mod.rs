@@ -7,7 +7,7 @@ use std::io;
 use std::str::from_utf8;
 
 use rustc_serialize::json::Json;
-use ap;
+use rush;
 
 
 /// Construct a hashmap where key & value is turned into its Owned version
@@ -121,7 +121,7 @@ pub fn eval_ex(expr: &str) -> io::Result<String> {
 
 /// Applies an expression to input given as (single line) string.
 /// This is a special variant of map_lines().
-/// Internally, this calls ap::map_lines.
+/// Internally, this calls rush::map_lines.
 pub fn apply<T: ToString>(expr: &str, input: T) -> String {
     match apply_ex(expr, input) {
         Ok(output) => output,
@@ -142,7 +142,7 @@ pub fn apply_ex<T: ToString>(expr: &str, input: T) -> io::Result<String> {
 /// multiline strings are split into individual lines & mapped over with `expr`.
 /// Howeever, if the input didn't end with a newline, output won't either.
 ///
-/// Internally, this calls ap::map_lines.
+/// Internally, this calls rush::map_lines.
 #[allow(dead_code)]
 pub fn map_lines<T: ToString>(expr: &str, input: T) -> String {
     match map_lines_ex(expr, input) {
@@ -160,7 +160,7 @@ pub fn map_lines_ex<T: ToString>(expr: &str, input: T) -> io::Result<String> {
     }
 
     let mut output: Vec<u8> = Vec::new();
-    try!(ap::map_lines(expr, input.as_bytes(), &mut output));
+    try!(rush::map_lines(expr, input.as_bytes(), &mut output));
 
     let mut result = try!(
         from_utf8(&output)
@@ -176,7 +176,7 @@ pub fn map_lines_ex<T: ToString>(expr: &str, input: T) -> io::Result<String> {
 /// Applies an expression to input given as slice of strings.
 /// This input is interpreted as an array by the given expression.
 ///
-/// Internally, this calls ap::apply_lines.
+/// Internally, this calls rush::apply_lines.
 pub fn apply_lines<T: ToString>(expr: &str, input: &[T]) -> String {
     match apply_lines_ex(expr, input) {
         Ok(output) => output,
@@ -188,7 +188,7 @@ pub fn apply_lines_ex<T: ToString>(expr: &str, input: &[T]) -> io::Result<String
     let input  = join(input, "\n");
 
     let mut output: Vec<u8> = Vec::new();
-    try!(ap::apply_lines(expr, input.as_bytes(), &mut output));
+    try!(rush::apply_lines(expr, input.as_bytes(), &mut output));
 
     // if the result turns out to be just a single line,
     // remove the trailing \n

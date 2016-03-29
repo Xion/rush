@@ -1,4 +1,4 @@
-# ap
+# rush
 
 Expression syntax overview
 
@@ -53,7 +53,7 @@ Anonymous functions are defined using `|` (pipe), an argument list, another pipe
 `*` is the composition operator:
 
     abs & |x| x + 2   ===  |x| abs(x + 2)
-    
+
 However, the "reverse composition" (piping) operator is typically more useful:
 
     int & abs & |x| x / 2  ===  |x| abs(int(x)) / 2

@@ -4,7 +4,7 @@ extern crate clap;
 #[macro_use]
 extern crate log;
 
-extern crate ap;
+extern crate rush;
 
 
 mod args;
@@ -30,14 +30,14 @@ fn main() {
     // TODO(xion): implement "words", where each line is an array of words
     let apply: fn(_, _, _) -> _ =
         if args.is_present("all") {
-            ap::apply_lines
+            rush::apply_lines
         } else if args.is_present("lines") {
-            ap::map_lines
+            rush::map_lines
         } else if args.is_present("json") {
-            ap::apply_json
+            rush::apply_json
         } else {
             info!("Using default processing mode (line-by-line)");
-            ap::map_lines
+            rush::map_lines
         };
     if let Err(error) = apply(expr, io::stdin(), &mut io::stdout()) {
         error!("{:?}", error);
@@ -48,7 +48,7 @@ fn main() {
 
 /// Print the AST for given expression to stdout.
 fn print_ast(expr: &str) {
-    match ap::parse(expr) {
+    match rush::parse(expr) {
         Ok(ast) => println!("{:?}", ast),
         Err(error) => { error!("{:?}", error); exit(1); },
     }

@@ -1,9 +1,9 @@
 [package]
-name = "ap"
+name = "rush"
 version = "0.1.0"
 authors = ["Karol Kuczmarski <karol.kuczmarski@gmail.com>"]
 license = "GPL-3.0"
-repository = "https://github.com/Xion/ap"
+repository = "https://github.com/Xion/rush"
 readme = "README.md"
 
 [dependencies]
@@ -30,6 +30,6 @@ test = false
 doctest = false
 
 [[bin]]
-name = "main"
+name = "rh"
 test = false
 doc = false

@@ -26,7 +26,7 @@ pub fn parse_from_argv<'a, I, T>(argv: I) -> ArgMatches<'a>
 /// Creates the argument parser
 /// (which is called an "App" in clap's silly nomenclature).
 fn create_parser<'a>() -> clap::App<'a, 'a> {
-    let mut parser = clap::App::new("ap");
+    let mut parser = clap::App::new("rush");
     if let Some(version) = option_env!("CARGO_PKG_VERSION") {
         parser = parser.version(version);
     }
