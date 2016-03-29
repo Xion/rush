@@ -25,5 +25,5 @@ fn len() {
 
 // TODO(xion): tests for index()
 // TODO(xion): tests for all() and any()
-// TODO(xion): tests for min() and max()
+// TODO(xion): tests for min(), max() amd sum()
 // TODO(xion): tests for map() and filter()

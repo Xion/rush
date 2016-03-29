@@ -91,7 +91,7 @@ pub fn any(value: Value) -> eval::Result {
 }
 
 
-// TODO(xion): make min() and max() accept arbitrary number of scalar values
+// TODO(xion): make min(), max() and sum() accept arbitrary number of scalars
 
 /// Find a minimum value in the array. Returns nil for empty arrays.
 pub fn min(value: Value, context: &Context) -> eval::Result {
@@ -141,6 +141,26 @@ pub fn max(value: Value, context: &Context) -> eval::Result {
     }
 
     Err(Error::new(&format!("max() requires an array, got {}", value_type)))
+}
+
+/// Return a sum of all elements in an array.
+pub fn sum(value: Value, context: &Context) -> eval::Result {
+    let value_type = value.typename();
+
+    if let Value::Array(array) = value {
+        if array.is_empty() {
+            return Ok(Value::Empty);
+        }
+
+        let mut items = array.into_iter();
+        let mut result = items.next().unwrap();
+        for item in items {
+            result = try!(BinaryOpNode::eval_op("+", result, item, context));
+        }
+        return Ok(result);
+    }
+
+    Err(Error::new(&format!("sum() requires an array, got {}", value_type)))
 }
 
 

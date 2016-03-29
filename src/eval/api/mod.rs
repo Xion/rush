@@ -64,6 +64,7 @@ impl<'c> Context<'c> {
         self.define_unary(          "sqrt",     math::sqrt          );
         self.define_unary(          "str",      conv::str_          );
         self.define_ternary_ctx(    "sub",      strings::sub        );
+        self.define_unary_ctx(      "sum",      base::sum           );
         self.define_unary(          "trim",     strings::trim       );
         self.define_unary(          "trunc",    math::trunc         );
     }
