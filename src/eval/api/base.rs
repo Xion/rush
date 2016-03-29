@@ -3,6 +3,7 @@
 use eval::{self, Context, Error, Function, Value};
 use eval::model::Invoke;
 use eval::value::IntegerRepr;
+use parse::ast::BinaryOpNode;
 use super::conv::bool;
 
 
@@ -66,9 +67,7 @@ pub fn all(value: Value) -> eval::Result {
         result
     }});
 
-    Err(Error::new(&format!(
-        "all() requires an array, got {}", value_type
-    )))
+    Err(Error::new(&format!("all() requires an array, got {}", value_type)))
 }
 
 /// Returns true if at least one element of the array is truthy
@@ -88,9 +87,60 @@ pub fn any(value: Value) -> eval::Result {
         result
     }});
 
-    Err(Error::new(&format!(
-        "any() requires an array, got {}", value_type
-    )))
+    Err(Error::new(&format!("any() requires an array, got {}", value_type)))
+}
+
+
+// TODO(xion): make min() and max() accept arbitrary number of scalar values
+
+/// Find a minimum value in the array. Returns nil for empty arrays.
+pub fn min(value: Value, context: &Context) -> eval::Result {
+    let value_type = value.typename();
+
+    if let Value::Array(array) = value {
+        if array.is_empty() {
+            return Ok(Value::Empty);
+        }
+
+        let mut items = array.into_iter();
+        let mut result = items.next().unwrap();
+        for item in items {
+            let is_less = try!(
+                BinaryOpNode::eval_op("<", item.clone(), result.clone(), context)
+            );
+            if is_less.unwrap_bool() {
+                result = item;
+            }
+        }
+        return Ok(result);
+    }
+
+    Err(Error::new(&format!("min() requires an array, got {}", value_type)))
+}
+
+/// Find a maximum value in the array. Returns nil for empty arrays.
+pub fn max(value: Value, context: &Context) -> eval::Result {
+    let value_type = value.typename();
+
+    if let Value::Array(array) = value {
+        if array.is_empty() {
+            return Ok(Value::Empty);
+        }
+
+        let mut items = array.into_iter();
+        let mut result = items.next().unwrap();
+        for item in items {
+            let is_greater = try!(
+                BinaryOpNode::eval_op(">", item.clone(), result.clone(), context)
+            );
+            if is_greater.unwrap_bool() {
+                result = item;
+            }
+        }
+        return Ok(result);
+    }
+
+    Err(Error::new(&format!("max() requires an array, got {}", value_type)))
 }
 
 

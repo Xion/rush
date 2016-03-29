@@ -51,6 +51,8 @@ impl<'c> Context<'c> {
         self.define_unary(          "len",      base::len           );
         self.define_unary(          "ln",       math::ln            );
         self.define_binary_ctx(     "map",      base::map           );
+        self.define_unary_ctx(      "max",      base::max           );
+        self.define_unary_ctx(      "min",      base::min           );
         self.define_nullary(        "rand",     math::rand          );
         self.define_unary(          "re",       conv::regex         );
         self.define_unary(          "regex",    conv::regex         );
@@ -70,10 +72,10 @@ impl<'c> Context<'c> {
         //
         // Keep the list sorted alphabetically by constant names (ignore case).
         //
-        self.set(   "Inf",      Value::Float(f64::INFINITY as FloatRepr));
-        self.set(   "NaN",      Value::Float(f64::NAN as FloatRepr));
-        self.set(   "nil",      Value::Empty);
-        self.set(   "pi",       Value::Float(f64::consts::PI as FloatRepr));
+        self.set(   "Inf",      Value::Float(f64::INFINITY as FloatRepr)    );
+        self.set(   "NaN",      Value::Float(f64::NAN as FloatRepr)         );
+        self.set(   "nil",      Value::Empty                                );
+        self.set(   "pi",       Value::Float(f64::consts::PI as FloatRepr)  );
         //
         // Don't add "true" or "false", they're recognized at the parser level!
         //
