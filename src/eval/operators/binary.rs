@@ -38,8 +38,8 @@ impl Eval for BinaryOpNode {
 impl BinaryOpNode {
     pub fn eval_op(op: &str, left: Value, right: Value, context: &Context) -> eval::Result {
         match op {
-            // These short-circuited operators have to be considered here as well,
-            // because the CurriedOpNode code is requires it to support those operators.
+            // These short-circuited operators have to be considered here as well
+            // because eval_right_assoc() and CurriedBinaryOpNode::eval() rely on this.
             "&&" => BinaryOpNode::eval_and(left, right).map(|(v, _)| v),
             "||" => BinaryOpNode::eval_or(left, right).map(|(v, _)| v),
 
@@ -85,7 +85,41 @@ impl BinaryOpNode {
     }
 
     fn eval_right_assoc(&self, context: &Context) -> eval::Result {
-        unimplemented!()
+        if self.rest.is_empty() {
+            self.first.eval(&context)
+        } else {
+            // evaluate the terms in reverse order; since the AST is tailored
+            // towards left-associative operators, it is slightly awkward
+            // as it always leaves an operation waiting for the next term
+            let mut rest = self.rest.iter().rev();
+
+            // initialize with the "last" term
+            let &(ref op, ref arg) = rest.next().unwrap();
+            let mut op = op;
+            let mut result = try!(arg.eval(&context));
+
+            // go through the remaining terms
+            // (note how current `result` is always the second arg for an operator)
+            for &(ref next_op, ref arg) in rest {
+                let arg = try!(arg.eval(&context));
+
+                // allow for terminating evaluation of short-circuiting operators early
+                if BinaryOpNode::is_shortcircuit_op(&op[..]) {
+                    let (res, sc) = try!(BinaryOpNode::eval_shortcircuit_op(&op[..], arg, result));
+                    result = res;
+                    if sc == Shortcircuit::Break {
+                        return Ok(result);
+                    }
+                } else {
+                    result = try!(BinaryOpNode::eval_op(&op[..], arg, result, &context));
+                }
+                op = next_op;
+            }
+
+            // finish by processing the "first" term
+            let last = try!(self.first.eval(&context));
+            BinaryOpNode::eval_op(&op[..], last, result, &context)
+        }
     }
 
     #[inline(always)]
