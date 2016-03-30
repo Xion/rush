@@ -4,7 +4,7 @@ mod error;
 mod syntax;
 
 pub mod ast;
-pub use self::error::ParseError;
+pub use self::error::Error;
 
 
 use std::str::from_utf8;
@@ -16,9 +16,9 @@ use self::syntax::expression;
 
 
 /// Parse given expression, returning the AST that represents it.
-pub fn parse(input: &str) -> Result<Box<Eval>, ParseError> {
+pub fn parse(input: &str) -> Result<Box<Eval>, Error> {
     if input.is_empty() {
-        return Err(ParseError::Empty);
+        return Err(Error::Empty);
     }
 
     match expression(input.trim().as_bytes()) {
@@ -27,14 +27,14 @@ pub fn parse(input: &str) -> Result<Box<Eval>, ParseError> {
                 Ok(node)
             } else {
                 Err(match from_utf8(input) {
-                    Ok(i) => ParseError::Excess(i.to_owned()),
+                    Ok(i) => Error::Excess(i.to_owned()),
                     // TODO(xion): bubble the error from the various
-                    // from_utf8 calls in gramamar rules
-                    _ => ParseError::Corrupted,
+                    // from_utf8 calls in grammar rules
+                    _ => Error::Corrupted,
                 })
             }
         },
-        IResult::Incomplete(needed) => Err(ParseError::Incomplete(needed)),
-        IResult::Error(_) => Err(ParseError::Invalid),
+        IResult::Incomplete(needed) => Err(Error::Incomplete(needed)),
+        IResult::Error(_) => Err(Error::Invalid),
     }
 }
