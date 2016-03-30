@@ -40,8 +40,13 @@ impl fmt::Display for Error {
 
 impl StdError for Error {
     fn description(&self) -> &str {
-        // TODO(xion): error descriptions
-        "Parse error"
+        match *self {
+            Error::Empty => "empty input",
+            Error::Corrupted => "non-UTF8 input",
+            Error::Invalid => "syntax error",
+            Error::Excess(_) => "unexpected input",
+            Error::Incomplete(_) => "unexpected end of input",
+        }
     }
 
     fn cause(&self) -> Option<&StdError> {
