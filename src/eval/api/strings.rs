@@ -1,5 +1,6 @@
 //! String API available to expressions.
 
+use std::char;
 use std::error::Error as StdError;  // just for its description() method
 use std::fmt::Display;
 use std::str::from_utf8;
@@ -9,9 +10,42 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use eval::{self, Context, Error, Value};
 use eval::model::function::{Args, Invoke};
-use eval::value::StringRepr;
+use eval::value::{IntegerRepr, StringRepr};
 use eval::util::fmt::format;
 use super::conv::str_;
+
+
+/// Returns a one-character string with the character of given ordinal value.
+pub fn chr(value: Value) -> eval::Result {
+    eval1!((value: Integer) -> String {{
+        let ord = value as u32;
+        let ch = try!(char::from_u32(ord)
+            .ok_or_else(|| Error::new(&format!(
+                "invalid character ordinal: {}", ord
+            ))));
+        let mut result = String::with_capacity(1);
+        result.push(ch);
+        result
+    }});
+    Err(Error::new(&format!(
+        "chr() expects an integer, got {}", value.typename()
+    )))
+}
+
+/// Returns the ordinal value for a single character in a string.
+pub fn ord(value: Value) -> eval::Result {
+    eval1!((value: &String) -> Integer {
+        match value.len() {
+            1 => value.chars().next().unwrap() as IntegerRepr,
+            len@_ => return Err(Error::new(&format!(
+                "ord() requires string of length 1, got {}", len
+            ))),
+        }
+    });
+    Err(Error::new(&format!(
+        "ord() expects a string, got {}", value.typename()
+    )))
+}
 
 
 /// Reverse the characters in a string.

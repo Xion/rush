@@ -39,6 +39,7 @@ impl<'c> Context<'c> {
         self.define_binary(         "before",   strings::before     );
         self.define_unary(          "bool",     conv::bool          );
         self.define_unary(          "ceil",     math::ceil          );
+        self.define_unary(          "chr",      strings::chr        );
         self.define_unary(          "csv",      conv::csv           );
         self.define_unary(          "exp",      math::exp           );
         self.define_binary_ctx(     "filter",   base::filter        );
@@ -53,6 +54,7 @@ impl<'c> Context<'c> {
         self.define_binary_ctx(     "map",      base::map           );
         self.define_unary_ctx(      "max",      base::max           );
         self.define_unary_ctx(      "min",      base::min           );
+        self.define_unary(          "ord",      strings::ord        );
         self.define_nullary(        "rand",     math::rand          );
         self.define_unary(          "re",       conv::regex         );
         self.define_unary(          "regex",    conv::regex         );
