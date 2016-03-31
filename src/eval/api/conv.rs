@@ -4,6 +4,7 @@ use std::io::Write;
 
 use csv;
 use regex;
+use rustc_serialize::json::Json;
 
 use eval::{self, Error, Value};
 use eval::value::{ArrayRepr, BooleanRepr, IntegerRepr, FloatRepr, RegexRepr, StringRepr};
@@ -106,7 +107,7 @@ pub fn regex(value: Value) -> eval::Result {
 }
 
 
-// Serialization formats conversions
+// Serialization to and from various formats
 
 /// Converts a value to or from CSV:
 /// * string input is converted from CSV into an array (of arrays) of strings
@@ -193,4 +194,17 @@ pub fn csv(value: Value) -> eval::Result {
     ))
 }
 
-// TODO(xion): json()
+/// Converts a value to or from JSON:
+/// * an array or object input is converted to JSON string
+/// * a string input is parsed as JSON
+pub fn json(value: Value) -> eval::Result {
+    if let Value::String(ref json_string) = value {
+        let json_obj = try!(Json::from_str(json_string)
+            .map_err(|e| Error::new(&format!("invalid JSON string: {}", e))));
+        return Ok(Value::from(json_obj));
+    }
+
+    Err(Error::new(&format!(
+        "json() expects a JSON string, an object or array, got {}", value.typename()
+    )))
+}
