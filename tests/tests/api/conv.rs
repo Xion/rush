@@ -46,3 +46,4 @@ fn bool() {
 }
 
 // TODO(xion): tests for csv() function
+// TODO(xion): tests for json() function

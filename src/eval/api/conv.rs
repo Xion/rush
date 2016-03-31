@@ -4,7 +4,7 @@ use std::io::Write;
 
 use csv;
 use regex;
-use rustc_serialize::json::Json;
+use rustc_serialize::json::{Json, ToJson};
 
 use eval::{self, Error, Value};
 use eval::value::{ArrayRepr, BooleanRepr, IntegerRepr, FloatRepr, RegexRepr, StringRepr};
@@ -203,6 +203,9 @@ pub fn json(value: Value) -> eval::Result {
             .map_err(|e| Error::new(&format!("invalid JSON string: {}", e))));
         return Ok(Value::from(json_obj));
     }
+
+    eval1!((value: &Array) -> String { value.to_json().to_string() });
+    eval1!((value: &Object) -> String { value.to_json().to_string() });
 
     Err(Error::new(&format!(
         "json() expects a JSON string, an object or array, got {}", value.typename()
