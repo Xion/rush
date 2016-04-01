@@ -158,11 +158,9 @@ named!(lambda( &[u8] ) -> Box<Eval>, chain!(
     args: separated_list!(multispaced!(tag!(",")), identifier) ~
     multispaced!(tag!("|")) ~
     body: joint,
-    move || {
-        Box::new(ScalarNode{
-            value: Value::from(Function::from_lambda(args, body))
-        }) as Box<Eval>
-    }
+    move || { Box::new(
+        ScalarNode::from(Function::from_lambda(args, body))
+    ) as Box<Eval> }
 ));
 
 /// curried_op ::== '(' (atom BINARY_OP) | (BINARY_OP atom) | BINARY_OP ')'
@@ -353,12 +351,12 @@ named!(array_value( &[u8] ) -> Box<Eval>, map!(
 ));
 
 named!(bool_value( &[u8] ) -> Box<Eval>, alt!(
-    tag!("false") => { |_| Box::new(ScalarNode{value: Value::from(false)}) } |
-    tag!("true") => { |_| Box::new(ScalarNode{value: Value::from(true)}) }
+    tag!("false") => { |_| Box::new(ScalarNode::from(false)) } |
+    tag!("true") => { |_| Box::new(ScalarNode::from(true)) }
 ));
 
 named!(symbol_value( &[u8] ) -> Box<Eval>, map!(identifier, |value: String| {
-    Box::new(ScalarNode{value: Value::Symbol(value)})
+    Box::new(ScalarNode::from(Value::Symbol(value)))
 }));
 named!(identifier( &[u8] ) -> String, alt!(
     string!(seq!(tag!("_"), maybe!(char_of!(UNDERSCORE_SUFFIXES)))) |
@@ -377,14 +375,14 @@ named!(identifier( &[u8] ) -> String, alt!(
 ));
 
 named!(int_value( &[u8] ) -> Box<Eval>, map_res!(int_literal, |value: String| {
-    value.parse::<IntegerRepr>().map(|i| Box::new(ScalarNode{value: Value::from(i)}))
+    value.parse::<IntegerRepr>().map(ScalarNode::from).map(Box::new)
 }));
 named!(int_literal( &[u8] ) -> String, string!(alt!(
     seq!(char_of!(&DIGITS[1..]), many0!(char_of!(DIGITS))) | tag!("0")
 )));
 
 named!(float_value( &[u8] ) -> Box<Eval>, map_res!(float_literal, |value: String| {
-    value.parse::<FloatRepr>().map(|f| Box::new(ScalarNode{value: Value::from(f)}))
+    value.parse::<FloatRepr>().map(ScalarNode::from).map(Box::new)
 }));
 fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
     let (_, input) = try_parse!(input, expr_res!(from_utf8(input)));
@@ -409,8 +407,8 @@ fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
     }
 }
 
-named!(regex_value( &[u8] ) -> Box<Eval>, map!(regex_literal, |value: RegexRepr| {
-    Box::new(ScalarNode{value: Value::Regex(value)})
+named!(regex_value( &[u8] ) -> Box<Eval>,map!(regex_literal, |value: RegexRepr| {
+    Box::new(ScalarNode::from(value))
 }));
 fn regex_literal(input: &[u8]) -> IResult<&[u8], Regex> {
     let (mut input, _) = try_parse!(input, tag!("/"));

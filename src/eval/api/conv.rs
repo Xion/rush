@@ -140,7 +140,7 @@ pub fn csv(value: Value) -> eval::Result {
 
     eval1!((value: &Array) -> String {{
         let mut writer = csv::Writer::from_memory()
-            .flexible(true)  // alow rows to have variable number of fields
+            .flexible(true)  // allow rows to have variable number of fields
             .record_terminator(csv::RecordTerminator::CRLF);
 
         // if we have been given an array of just scalar values,

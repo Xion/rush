@@ -21,13 +21,20 @@ impl fmt::Debug for ScalarNode {
     }
 }
 
+impl<T> From<T> for ScalarNode where Value: From<T> {
+    #[inline(always)]
+    fn from(input: T) -> Self {
+        ScalarNode{value: Value::from(input)}
+    }
+}
+
 // TODO(xion): note from `impl FromStr for Value` applies here, too
 impl FromStr for ScalarNode {
     type Err = <Value as FromStr>::Err;
 
     #[inline(always)]
     fn from_str(s: &str) -> Result<ScalarNode, Self::Err> {
-        s.parse::<Value>().map(|v| ScalarNode{value: v})
+        s.parse::<Value>().map(ScalarNode::from)
     }
 }
 
