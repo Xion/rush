@@ -27,10 +27,13 @@ fn main() {
     }
 
     // choose a function to process the input with, depending on flags
+    let input_mode = |mode| {
+        args.value_of("mode") == Some(mode) || args.is_present(mode)
+    };
     let apply: fn(_, _, _) -> _ =
-        if args.is_present("all") {
-            rush::apply_lines
-        } else if args.is_present("lines") {
+        if input_mode("string") {
+            rush::apply_string
+        } else if input_mode("lines") {
             rush::map_lines
        } else {
             info!("Using default processing mode (line-by-line)");
