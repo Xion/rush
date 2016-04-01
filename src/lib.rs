@@ -33,6 +33,27 @@ use conv::TryFrom;
 use self::eval::{Eval, Context, Invoke};
 
 
+/// Apply the expresion to a complete input stream, processed as single string,
+/// writing to the given output stream.
+pub fn apply_string<R: Read, W: Write>(expr: &str, input: R, mut output: &mut W) -> io::Result<()> {
+    let ast = try!(parse_expr(expr));
+
+    let mut reader = BufReader::new(input);
+    let mut input = String::new();
+    let byte_count = try!(reader.read_to_string(&mut input));
+
+    let mut context = Context::new();
+    update_context(&mut context, &input);
+
+    let value = context.get("_").unwrap();
+    let result = try!(evaluate(&ast, value, &context));
+    try!(write_result(&mut output, result));
+
+    info!("Processed {} character(s), or {} byte(s), of input", input.len(), byte_count);
+    Ok(())
+}
+
+
 /// Apply the expression to given input stream, line by line,
 /// writing to the given output stream.
 pub fn map_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
@@ -45,15 +66,7 @@ pub fn map_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
     let mut count = 0;
     for line in reader.lines() {
         let line = try!(line);
-
-        // add the input the context, incl. all the various conversions thereof
-        context.set("_", line.parse::<Value>().unwrap_or_else(|_| Value::String(line.to_owned())));
-        context.set("_b", line.parse::<BooleanRepr>().map(Value::Boolean).unwrap_or(Value::Empty));
-        context.set("_f", line.parse::<FloatRepr>().map(Value::Float).unwrap_or(Value::Empty));
-        // TODO(xion): consider also trying to parse the line as f64
-        // and exposing the rounded version as _i
-        context.set("_i", line.parse::<IntegerRepr>().map(Value::Integer).unwrap_or(Value::Empty));
-        context.set("_s", Value::String(line.to_owned()));
+        update_context(&mut context, &line);
 
         let value = context.get("_").unwrap();
         let result = try!(evaluate(&ast, value, &context));
@@ -99,6 +112,16 @@ pub fn apply_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> i
 fn parse_expr(expr: &str) -> io::Result<Box<Eval>> {
     debug!("Using expression: {}", expr);
     parse(expr).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
+}
+
+fn update_context(context: &mut Context, input: &str) {
+    context.set("_", input.parse::<Value>().unwrap_or_else(|_| Value::String(input.to_owned())));
+    context.set("_b", input.parse::<BooleanRepr>().map(Value::Boolean).unwrap_or(Value::Empty));
+    context.set("_f", input.parse::<FloatRepr>().map(Value::Float).unwrap_or(Value::Empty));
+    // TODO(xion): consider also trying to parse the input as f64
+    // and exposing the rounded version as _i
+    context.set("_i", input.parse::<IntegerRepr>().map(Value::Integer).unwrap_or(Value::Empty));
+    context.set("_s", Value::String(input.to_owned()));
 }
 
 fn evaluate<'a>(ast: &Box<Eval>, input: &'a Value, context: &'a Context) -> io::Result<Value> {
