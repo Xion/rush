@@ -146,7 +146,7 @@ named!(conditional( &[u8] ) -> Box<Eval>, map!(
         match maybe_then_else {
             None => cond,
             Some((then, else_)) => Box::new(
-                ConditionalNode{cond: cond, then: then, else_: else_}
+                ConditionalNode::new(cond, then, else_)
             ) as Box<Eval>,
         }
     }
@@ -281,9 +281,9 @@ named!(power( &[u8] ) -> Box<Eval>, chain!(
         for trailer in trailers {
             result = match trailer {
                 Trailer::Subscript(index) =>
-                    Box::new(SubscriptNode{object: result, index: index}),
+                    Box::new(SubscriptNode::new(result, index)),
                 Trailer::Args(args) =>
-                    Box::new(FunctionCallNode{func: result, args: args}),
+                    Box::new(FunctionCallNode::new(result, args)),
             };
         }
 
@@ -291,7 +291,7 @@ named!(power( &[u8] ) -> Box<Eval>, chain!(
         // prepended to the whole thing (in reverse order,
         // so that `---foo` means `-(-(-foo))`)
         for op in ops.into_iter().rev() {
-            result = Box::new(UnaryOpNode{op: op, arg: result});
+            result = Box::new(UnaryOpNode::new(op, result));
         }
 
         result
@@ -337,7 +337,7 @@ named!(object_value( &[u8] ) -> Box<Eval>, map!(
         ),
         multispaced!(tag!("}"))
     ),
-    |attrs| { Box::new(ObjectNode{attributes: attrs}) }
+    |attrs| { Box::new(ObjectNode::new(attrs)) }
 ));
 
 /// ARRAY ::== '[' [expression] (',' expression)* ']'
@@ -347,7 +347,7 @@ named!(array_value( &[u8] ) -> Box<Eval>, map!(
         separated_list!(multispaced!(tag!(",")), expression),
         multispaced!(tag!("]"))
     ),
-    |items| { Box::new(ArrayNode{elements: items}) }
+    |items| { Box::new(ArrayNode::new(items)) }
 ));
 
 named!(bool_value( &[u8] ) -> Box<Eval>, alt!(
@@ -443,7 +443,7 @@ fn regex_literal(input: &[u8]) -> IResult<&[u8], Regex> {
 }
 
 named!(string_value( &[u8] ) -> Box<Eval>, map!(string_literal, |value: StringRepr| {
-    Box::new(ScalarNode{value: Value::String(value)})
+    Box::new(ScalarNode::from(Value::String(value)))
 }));
 fn string_literal(input: &[u8]) -> IResult<&[u8], String> {
     let (mut input, _) = try_parse!(input, tag!("\""));

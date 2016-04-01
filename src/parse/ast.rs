@@ -44,6 +44,13 @@ pub struct ArrayNode {
     pub elements: Vec<Box<Eval>>
 }
 
+impl ArrayNode {
+    #[inline(always)]
+    pub fn new(elements: Vec<Box<Eval>>) -> ArrayNode {
+        ArrayNode{elements: elements}
+    }
+}
+
 impl fmt::Debug for ArrayNode {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "<Array: [{}]>", self.elements.iter()
@@ -62,6 +69,13 @@ pub struct ObjectNode {
     pub attributes: Vec<(Box<Eval>, Box<Eval>)>,
 }
 
+impl ObjectNode {
+    #[inline(always)]
+    pub fn new(attributes: Vec<(Box<Eval>, Box<Eval>)>) -> ObjectNode {
+        ObjectNode{attributes: attributes}
+    }
+}
+
 impl fmt::Debug for ObjectNode {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         // The result is <Object: {$KEY: $VALUE}>, but braces have to be
@@ -77,6 +91,13 @@ impl fmt::Debug for ObjectNode {
 pub struct UnaryOpNode {
     pub op: String,
     pub arg: Box<Eval>,
+}
+
+impl UnaryOpNode {
+    #[inline(always)]
+    pub fn new(op: String, arg: Box<Eval>) -> UnaryOpNode {
+        UnaryOpNode{op: op, arg: arg}
+    }
 }
 
 impl fmt::Debug for UnaryOpNode {
@@ -201,6 +222,13 @@ pub struct SubscriptNode {
     pub index: Index,
 }
 
+impl SubscriptNode {
+    #[inline(always)]
+    pub fn new(object: Box<Eval>, index: Index) -> SubscriptNode {
+        SubscriptNode{object: object, index: index}
+    }
+}
+
 impl fmt::Debug for SubscriptNode {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "<Index: {:?}[{:?}]>", self.object, self.index)
@@ -216,6 +244,13 @@ impl fmt::Debug for SubscriptNode {
 pub struct FunctionCallNode {
     pub func: Box<Eval>,
     pub args: Vec<Box<Eval>>,
+}
+
+impl FunctionCallNode {
+    #[inline(always)]
+    pub fn new(func: Box<Eval>, args: Vec<Box<Eval>>) -> FunctionCallNode {
+        FunctionCallNode{func: func, args: args}
+    }
 }
 
 impl fmt::Debug for FunctionCallNode {
@@ -236,6 +271,13 @@ pub struct ConditionalNode {
     pub cond: Box<Eval>,
     pub then: Box<Eval>,
     pub else_: Box<Eval>,
+}
+
+impl ConditionalNode {
+    #[inline(always)]
+    pub fn new(cond: Box<Eval>, then: Box<Eval>, else_: Box<Eval>) -> ConditionalNode {
+        ConditionalNode{cond: cond, then: then, else_: else_}
+    }
 }
 
 impl fmt::Debug for ConditionalNode {
