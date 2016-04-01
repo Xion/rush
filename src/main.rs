@@ -27,15 +27,12 @@ fn main() {
     }
 
     // choose a function to process the input with, depending on flags
-    // TODO(xion): implement "words", where each line is an array of words
     let apply: fn(_, _, _) -> _ =
         if args.is_present("all") {
             rush::apply_lines
         } else if args.is_present("lines") {
             rush::map_lines
-        } else if args.is_present("json") {
-            rush::apply_json
-        } else {
+       } else {
             info!("Using default processing mode (line-by-line)");
             rush::map_lines
         };
@@ -48,6 +45,7 @@ fn main() {
 
 /// Print the AST for given expression to stdout.
 fn print_ast(expr: &str) {
+    debug!("Printing the AST of:  {}", expr);
     match rush::parse(expr) {
         Ok(ast) => println!("{:?}", ast),
         Err(error) => { error!("{:?}", error); exit(1); },

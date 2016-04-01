@@ -54,9 +54,6 @@ fn create_parser<'a>() -> clap::App<'a, 'a> {
         .arg(Arg::with_name("words")
             .short("w").long("words")
             .help("Apply the expression to each line of input as array of words (NYI)"))
-        .arg(Arg::with_name("json")
-            .short("j").long("json")
-            .help("Apply the expression to the whole output interpreted as JSON"))
 
         .arg(Arg::with_name("parse")
             .set(ArgSettings::Hidden)

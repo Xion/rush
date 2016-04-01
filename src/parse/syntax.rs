@@ -403,7 +403,7 @@ fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
             IResult::Done(rest.as_bytes(), String::from(parsed)),
         IResult::Incomplete(i) => IResult::Incomplete(i),
         IResult::Error(nom::Err::Code(e)) => IResult::Error(nom::Err::Code(e)),
-        _ => panic!("unexpected IResult from re_find!"),
+        r@_ => unreachable!("unexpected result from parsing float: {:?}", r),
     }
 }
 
