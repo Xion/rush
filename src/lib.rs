@@ -53,6 +53,33 @@ pub fn apply_string<R: Read, W: Write>(expr: &str, input: R, mut output: &mut W)
     Ok(())
 }
 
+/// Apply the expression to given input taken as array of lines,
+/// writing result to the given output stream.
+pub fn apply_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
+    let ast = try!(parse_expr(expr));
+
+    // parse input lines into a vector of Value objects
+    let lines: Vec<_> = BufReader::new(input).lines()
+        .map(|r| {
+            r.ok().expect("failed to read input line")
+                .parse::<Value>().unwrap_or(Value::Empty)
+        })
+        .filter(|v| *v != Value::Empty)
+        .collect();
+    let count = lines.len();
+
+    let mut context = Context::new();
+    context.set("_", Value::Array(lines));
+    let value = context.get("_").unwrap();
+
+    let mut writer = BufWriter::new(output);
+    let result = try!(evaluate(&ast, value, &context));
+    try!(write_result(&mut writer, result));
+
+    info!("Processed {} line(s) of input", count);
+    Ok(())
+}
+
 
 /// Apply the expression to given input stream, line by line,
 /// writing to the given output stream.
@@ -79,31 +106,42 @@ pub fn map_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
     Ok(())
 }
 
-
-/// Apply the expression to given input taken as array of lines,
-/// writing result to the given output stream.
-pub fn apply_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
+/// Apply the expression to given input stream, character by character
+/// (treated as 1-character string in the expression itself),
+/// and writing to the given output stream.
+pub fn map_chars<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
     let ast = try!(parse_expr(expr));
 
-    // parse input lines into a vector of Value objects
-    let lines: Vec<_> = BufReader::new(input).lines()
-        .map(|r| {
-            r.ok().expect("failed to read input line")
-                .parse::<Value>().unwrap_or(Value::Empty)
-        })
-        .filter(|v| *v != Value::Empty)
-        .collect();
-    let count = lines.len();
-
-    let mut context = Context::new();
-    context.set("_", Value::Array(lines));
-    let value = context.get("_").unwrap();
-
+    let reader = BufReader::new(input);
     let mut writer = BufWriter::new(output);
-    let result = try!(evaluate(&ast, value, &context));
-    try!(write_result(&mut writer, result));
+    let mut context = Context::new();
 
-    info!("Processed {} line(s) of input", count);
+    let mut count = 0;
+    {
+        let mut process_char = |ch: char| -> io::Result<()> {
+            context.set("_", Value::from(ch));
+            let value = context.get("_").unwrap();
+
+            let result = try!(evaluate(&ast, value, &context));
+            try!(write_result(&mut writer, result));
+
+            count += 1;
+            Ok(())
+        };
+
+        // TODO(xion): rather than reading the input line by line,
+        // use Read::chars() when the feature is stable
+        for line in reader.lines() {
+            let line = try!(line);
+            for ch in line.chars() {
+                try!(process_char(ch));
+            }
+            // TODO(xion): cross-platfrorm line ending
+            try!(process_char('\n'));
+        }
+    }
+
+    info!("Processed {} character(s) of input", count);
     Ok(())
 }
 

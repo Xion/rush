@@ -32,6 +32,7 @@ fn main() {
     let apply: fn(_, _, _) -> _ = match opts.input_mode.unwrap() {
         InputMode::String => rush::apply_string,
         InputMode::Lines => rush::map_lines,
+        InputMode::Chars => rush::map_chars,
     };
     if let Err(error) = apply(&expr, io::stdin(), &mut io::stdout()) {
         error!("{:?}", error);

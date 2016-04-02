@@ -225,6 +225,14 @@ value_from!(ArrayRepr => Array);
 value_from!(ObjectRepr => Object);
 value_from!(FunctionRepr => Function);
 
+impl From<char> for Value {
+    fn from(input: char) -> Self {
+        let mut string = String::new();
+        string.push(input);
+        Value::String(string)
+    }
+}
+
 
 // TODO(xion): given the numerous ways we can & want to interpret the input,
 // it makes less and less sense to have this as default;
