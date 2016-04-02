@@ -3,6 +3,9 @@
 use std::env;
 use std::ffi::OsString;
 use std::iter::IntoIterator;
+use std::io;
+
+use conv::TryFrom;
 
 use clap::{self, AppSettings, Arg, ArgSettings, ArgGroup, ArgMatches};
 
@@ -47,22 +50,34 @@ impl Default for InputMode {
     fn default() -> Self { InputMode::Lines }
 }
 
+impl<'s> TryFrom<&'s str> for InputMode {
+    type Err = io::Error;
+
+    fn try_from(mode: &'s str) -> Result<Self, Self::Err> {
+        match mode {
+            "string" => Ok(InputMode::String),
+            "lines" => Ok(InputMode::Lines),
+            "chars" => Ok(InputMode::Chars),
+            _ => Err(
+                io::Error::new(io::ErrorKind::InvalidData,
+                    format!("'{}' is not a valid input mode", mode))
+            ),
+        }
+    }
+}
+
 impl<'a> From<ArgMatches<'a>> for InputMode {
     fn from(matches: ArgMatches<'a>) -> Self {
         // decide the input mode based either on --input flag's value
         // or dedicated flags, like --string
-        let mode_is = |mode| {
-            matches.value_of(OPT_INPUT_MODE) == Some(mode) || matches.is_present(mode)
-        };
-
-        if mode_is("string")        { InputMode::String }
-        else if mode_is("lines")    { InputMode::Lines }
-        else if mode_is("chars")    { InputMode::Chars }
-        else {
-            let default = InputMode::default();
-            info!("Using default processing mode ({})", default.description());
-            default
+        for &mode in INPUT_MODES {
+            if matches.value_of(OPT_INPUT_MODE) == Some(mode) || matches.is_present(mode) {
+                return InputMode::try_from(mode).unwrap();
+            }
         }
+        let default = InputMode::default();
+        info!("Using default processing mode ({})", default.description());
+        default
     }
 }
 
@@ -155,4 +170,26 @@ fn create_parser<'p>() -> Parser<'p> {
 
         .help_short("H")
         .version_short("V")
+}
+
+
+// Tests verifying the soundness of the above definition
+
+#[test]
+fn input_modes_are_consistent() {
+    use case::CaseExt;
+
+    for &mode in INPUT_MODES {
+        assert!(InputMode::try_from(mode).is_ok(),
+            format!("Undefined InputMode variant: {}", mode.to_capitalized()));
+    }
+}
+
+#[test]
+fn usage_contains_all_input_modes() {
+    for mode in INPUT_MODES {
+        let flag = "--".to_owned() + mode;
+        assert!(USAGE.contains(&flag),
+            "Input mode '{}' is missing from usage string", mode);
+    }
 }

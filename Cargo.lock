@@ -2,6 +2,7 @@
 name = "rush"
 version = "0.1.0"
 dependencies = [
+ "case 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "conv 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "csv 0.14.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -37,6 +38,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "byteorder"
 version = "0.3.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "case"
+version = "0.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]

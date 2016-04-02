@@ -1,6 +1,8 @@
 //! Module with the entry point of the binary.
 
+extern crate case;
 extern crate clap;
+extern crate conv;
 #[macro_use]
 extern crate log;
 
