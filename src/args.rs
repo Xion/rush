@@ -113,6 +113,10 @@ fn create_parser<'p>() -> Parser<'p> {
         .author(APP_AUTHOR)
         .usage(USAGE)
 
+        .setting(AppSettings::ArgRequiredElseHelp)
+        .setting(AppSettings::UnifiedHelpMessage)
+        .setting(AppSettings::DeriveDisplayOrder)
+
         // TODO(xion): consider implementing more input modes:
         // * words - each word evaluated separately
         // * bytes - each byte separately (as integer)
@@ -124,7 +128,8 @@ fn create_parser<'p>() -> Parser<'p> {
             .takes_value(true)
             .possible_values(INPUT_MODES)
             .help("Defines how the input should be treated when processed by EXPRESSION")
-            .value_name("MODE"))
+            .value_name("MODE")
+            .set(ArgSettings::NextLineHelp))
         .arg(Arg::with_name("string")
             .short("s").long("string")
             .help("Apply the expression once to the whole input as single string"))
@@ -147,8 +152,6 @@ fn create_parser<'p>() -> Parser<'p> {
             .value_name("EXPRESSION")
             .required(true))
 
-        .setting(AppSettings::ArgRequiredElseHelp)
-
-        .help_short("h")
-        .version_short("v")
+        .help_short("H")
+        .version_short("V")
 }
