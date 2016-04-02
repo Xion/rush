@@ -101,7 +101,8 @@ pub fn parse_from_argv<I, T>(argv: I) -> Options
 
 // Parser configuration
 
-// Type of the argument parser object.
+/// Type of the argument parser object
+/// (which is called an "App" in clap's silly nomenclature).
 type Parser<'p> = clap::App<'p, 'p>;
 
 
@@ -109,7 +110,9 @@ const APP_NAME: &'static str = "rush";
 const APP_DESC: &'static str = "Succint & readable processing language";
 const APP_AUTHOR: &'static str = "Karol Kuczmarski";
 
-const USAGE: &'static str = "rush [--input <MODE> | --string | --lines | --chars] <EXPRESSION>";
+const USAGE: &'static str = concat!("rush", " [",
+    "--input <MODE>", " | ", "--string | --lines | --chars",
+    "] ", "<EXPRESSION>");
 
 const ARG_EXPRESSION: &'static str = "expr";
 const OPT_INPUT_MODE: &'static str = "mode";
@@ -117,10 +120,9 @@ const INPUT_MODES: &'static [&'static str] = &["string", "lines", "chars"];
 const OPT_PARSE: &'static str = "parse";
 
 
-/// Creates the argument parser
-/// (which is called an "App" in clap's silly nomenclature).
+/// Creates the argument parser.
 fn create_parser<'p>() -> Parser<'p> {
-    let mut parser = clap::App::new(APP_NAME);
+    let mut parser = Parser::new(APP_NAME);
     if let Some(version) = option_env!("CARGO_PKG_VERSION") {
         parser = parser.version(version);
     }
@@ -181,8 +183,14 @@ fn input_modes_are_consistent() {
 
     for &mode in INPUT_MODES {
         assert!(InputMode::try_from(mode).is_ok(),
-            format!("Undefined InputMode variant: {}", mode.to_capitalized()));
+            "Undefined InputMode variant: {}", mode.to_capitalized());
     }
+}
+
+#[test]
+fn usage_starts_with_app_name() {
+    let prefix = APP_NAME.to_owned() + " ";
+    assert!(USAGE.starts_with(&prefix), "Usage string must start with APP_NAME");
 }
 
 #[test]
