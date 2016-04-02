@@ -14,32 +14,26 @@ mod logging;
 use std::io;
 use std::process::exit;
 
+use args::InputMode;
+
 
 fn main() {
     logging::init().unwrap();
 
-    let args = args::parse();
-    let expr = args.value_of("expr").unwrap();
+    let opts = args::parse();
+    let expr = opts.expression;
 
-    if args.is_present("parse") {
-        print_ast(expr);
+    if opts.input_mode.is_none() {
+        print_ast(&expr);
         return;
     }
 
     // choose a function to process the input with, depending on flags
-    let input_mode = |mode| {
-        args.value_of("mode") == Some(mode) || args.is_present(mode)
+    let apply: fn(_, _, _) -> _ = match opts.input_mode.unwrap() {
+        InputMode::String => rush::apply_string,
+        InputMode::Lines => rush::map_lines,
     };
-    let apply: fn(_, _, _) -> _ =
-        if input_mode("string") {
-            rush::apply_string
-        } else if input_mode("lines") {
-            rush::map_lines
-       } else {
-            info!("Using default processing mode (line-by-line)");
-            rush::map_lines
-        };
-    if let Err(error) = apply(expr, io::stdin(), &mut io::stdout()) {
+    if let Err(error) = apply(&expr, io::stdin(), &mut io::stdout()) {
         error!("{:?}", error);
         exit(1);
     }
