@@ -7,6 +7,23 @@ use std::iter::IntoIterator;
 use clap::{self, AppSettings, Arg, ArgSettings, ArgGroup, ArgMatches};
 
 
+/// Structure holding the options parsed from command line.
+#[derive(Clone)]
+pub struct Options {
+    pub expression: String,
+    pub input_mode: Option<InputMode>,
+}
+
+impl<'a> From<ArgMatches<'a>> for Options {
+    fn from(matches: ArgMatches<'a>) -> Self {
+        Options{
+            expression: matches.value_of(ARG_EXPRESSION).unwrap().to_owned(),
+            input_mode: if matches.is_present(OPT_PARSE) { None }
+                        else { Some(InputMode::from(matches)) },
+        }
+    }
+}
+
 /// Defines possible options as to how the program's input
 /// may be processed by the expression.
 #[derive(Clone)]
@@ -30,37 +47,21 @@ impl Default for InputMode {
     fn default() -> Self { InputMode::Lines }
 }
 
-/// Structure holding the options parsed from command line.
-#[derive(Clone)]
-pub struct Options {
-    pub expression: String,
-    pub input_mode: Option<InputMode>,
-}
-
-impl<'a> From<ArgMatches<'a>> for Options {
+impl<'a> From<ArgMatches<'a>> for InputMode {
     fn from(matches: ArgMatches<'a>) -> Self {
-        let input_mode = if matches.is_present(OPT_PARSE) {
-            None
-        } else {
-            // decide the input mode based either on --input flag's value
-            // or dedicated flags, like --string
-            let mode_is = |mode| {
-                matches.value_of(OPT_INPUT_MODE) == Some(mode) || matches.is_present(mode)
-            };
-            Some(
-                if mode_is("string")        { InputMode::String }
-                else if mode_is("lines")    { InputMode::Lines }
-                else if mode_is("chars")    { InputMode::Chars }
-                else {
-                    let default = InputMode::default();
-                    info!("Using default processing mode ({})", default.description());
-                    default
-                }
-            )
+        // decide the input mode based either on --input flag's value
+        // or dedicated flags, like --string
+        let mode_is = |mode| {
+            matches.value_of(OPT_INPUT_MODE) == Some(mode) || matches.is_present(mode)
         };
-        Options{
-            expression: matches.value_of(ARG_EXPRESSION).unwrap().to_owned(),
-            input_mode: input_mode,
+
+        if mode_is("string")        { InputMode::String }
+        else if mode_is("lines")    { InputMode::Lines }
+        else if mode_is("chars")    { InputMode::Chars }
+        else {
+            let default = InputMode::default();
+            info!("Using default processing mode ({})", default.description());
+            default
         }
     }
 }
