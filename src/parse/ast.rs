@@ -28,7 +28,6 @@ impl<T> From<T> for ScalarNode where Value: From<T> {
     }
 }
 
-// TODO(xion): note from `impl FromStr for Value` applies here, too
 impl FromStr for ScalarNode {
     type Err = <Value as FromStr>::Err;
 

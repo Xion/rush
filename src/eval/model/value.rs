@@ -247,9 +247,8 @@ impl From<u8> for Value {
 }
 
 
-// TODO(xion): given the numerous ways we can & want to interpret the input,
-// it makes less and less sense to have this as default;
-// consider removing this impl
+// This is a somewhat special "default" and "intelligent" conversion that's
+// automatically applied to the expresion's input (the _ symbol).
 impl FromStr for Value {
     type Err = NoError;
 
