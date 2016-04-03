@@ -3,9 +3,9 @@
 use std::env;
 use std::ffi::OsString;
 use std::iter::IntoIterator;
-use std::io;
 
 use conv::TryFrom;
+use conv::errors::GeneralError;
 
 use clap::{self, AppSettings, Arg, ArgSettings, ArgGroup, ArgMatches};
 
@@ -53,7 +53,7 @@ impl Default for InputMode {
 }
 
 impl<'s> TryFrom<&'s str> for InputMode {
-    type Err = io::Error;
+    type Err = GeneralError<String>;
 
     fn try_from(mode: &'s str) -> Result<Self, Self::Err> {
         match mode {
@@ -61,10 +61,9 @@ impl<'s> TryFrom<&'s str> for InputMode {
             "lines" => Ok(InputMode::Lines),
             "chars" => Ok(InputMode::Chars),
             "bytes" => Ok(InputMode::Bytes),
-            _ => Err(
-                io::Error::new(io::ErrorKind::InvalidData,
-                    format!("'{}' is not a valid input mode", mode))
-            ),
+            _ => Err(GeneralError::Unrepresentable(
+                    format!("'{}' is not a valid input mode", mode)
+            )),
         }
     }
 }

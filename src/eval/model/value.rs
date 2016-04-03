@@ -1,12 +1,18 @@
 //! Value type.
+//!
+//! Everything that expressions can operate on is encapsulated into values,
+//! which are tagged unions (Rust enums), with the basic types as variants.
+//!
+//! This module implements the Value type itself, as well as all the various
+//! conversions to and from Rust types, and serialization formats like JSON.
 
 use std::collections::HashMap;
 use std::convert::From;
 use std::fmt;
-use std::io;
 use std::str::FromStr;
 
 use conv::TryFrom;
+use conv::errors::{GeneralError, NoError};
 use conv::misc::InvalidSentinel;
 use regex::Regex;
 use rustc_serialize::json::{Json, ToJson};
@@ -245,7 +251,7 @@ impl From<u8> for Value {
 // it makes less and less sense to have this as default;
 // consider removing this impl
 impl FromStr for Value {
-    type Err = ();
+    type Err = NoError;
 
     /// Create a Value from string, reinterpreting input as number
     /// if we find out it's in numeric form.
@@ -267,7 +273,7 @@ impl FromStr for Value {
 // Producing string output
 
 impl TryFrom<Value> for String {
-    type Err = io::Error;  // TODO(xion): consider a better error type
+    type Err = GeneralError<&'static str>;
 
     #[inline(always)]
     fn try_from(src: Value) -> Result<Self, Self::Err> {
@@ -281,8 +287,8 @@ impl<'a> TryFrom<&'a Value> for String {
     /// as a final result of a computation.
     fn try_from(src: &'a Value) -> Result<Self, Self::Err> {
         match *src {
-            Value::Empty => Err(io::Error::new(
-                io::ErrorKind::InvalidData, "cannot serialize an empty value"
+            Value::Empty => Err(GeneralError::Unrepresentable(
+                "cannot serialize an empty value"
             )),
             Value::Symbol(ref t) => Ok(format!("{}", t)),
             Value::Boolean(ref b) => Ok(format!("{}", b)),
@@ -297,8 +303,8 @@ impl<'a> TryFrom<&'a Value> for String {
                 Ok(format!("{}", res))
             },
             Value::String(ref s) => Ok(format!("{}", s)),
-            Value::Regex(..) => Err(io::Error::new(
-                io::ErrorKind::InvalidData, "cannot serialize a regex"
+            Value::Regex(..) => Err(GeneralError::Unrepresentable(
+                "cannot serialize a regex"
             )),
             Value::Array(ref a) => {
                 // for final display, an array is assumed to contain lines of output
@@ -307,8 +313,8 @@ impl<'a> TryFrom<&'a Value> for String {
                     .join("\n")))
             },
             Value::Object(..) => Ok(format!("{}", src.to_json().to_string())),
-            Value::Function(..) => Err(io::Error::new(
-                io::ErrorKind::InvalidData, "cannot serialize a function"
+            Value::Function(..) => Err(GeneralError::Unrepresentable(
+                "cannot serialize a function"
             )),
         }
     }
@@ -335,7 +341,7 @@ impl From<Json> for Value {
             Json::Boolean(b) => Value::Boolean(b),
             Json::I64(i) => Value::Integer(i),
             Json::U64(u) => {
-                // TODO(xion): implement optional parsing
+                // TODO(xion): implement optional parsing using TryFrom
                 if u > (IntegerRepr::max_value() as u64) {
                     panic!("JSON integer too large: {}", u);
                 }

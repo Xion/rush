@@ -219,6 +219,7 @@ fn maybe_apply_result<'a>(result: Value, input: &'a Value, context: &'a Context)
 }
 
 fn write_result<W: Write>(output: &mut W, result: Value) -> io::Result<()> {
-    let result = try!(String::try_from(result));
+    let result = try!(String::try_from(result)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e)));
     write!(output, "{}\n", result)
 }
