@@ -150,7 +150,6 @@ impl Sub<ArgCount> for Arity {
 /// (This isn't named Call because call() function would conflict with
 /// the quasi-intrinsic method on Fn types in Rust).
 pub trait Invoke {
-    // TODO(xion): make arity() optionally accept &Args for variadic API functions
     fn arity(&self) -> Arity;
     fn invoke(&self, args: Args, context: &Context) -> eval::Result;
 }

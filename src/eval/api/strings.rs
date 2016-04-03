@@ -175,11 +175,13 @@ pub fn format_(fmt: Value, arg: Value) -> eval:: Result {
         let mut args: Vec<&Display> = Vec::new();
 
         match &arg {
-            &Value::Empty |
-            &Value::Symbol(..) |
-            &Value::Function(..) => return Err(Error::new(&format!(
-                "invalid argument for string formatting: {}", arg.typename()
-            ))),
+            &Value::Boolean(..) |
+            &Value::Integer(..) |
+            &Value::Float(..) |
+            &Value::String(..) => args.push(&arg),
+            &Value::Array(ref a) => {
+                args = a.iter().map(|v| v as &Display).collect();
+            },
             &Value::Object(..) => {
                 // TODO(xion): Object should be possible but the formatting code
                 // doesn't support named placeholders yet :(
@@ -187,10 +189,9 @@ pub fn format_(fmt: Value, arg: Value) -> eval:: Result {
                     "objects are not supported as string formatting arguments"
                 ));
             },
-            &Value::Array(ref a) => {
-                args = a.iter().map(|v| v as &Display).collect();
-            },
-            _ => args.push(&arg),
+            _ => return Err(Error::new(&format!(
+                "invalid argument for string formatting: {}", arg.typename()
+            ))),
         }
 
         return format(&fmt, &args)
