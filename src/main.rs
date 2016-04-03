@@ -35,6 +35,7 @@ fn main() {
         InputMode::String => rush::apply_string,
         InputMode::Lines => rush::map_lines,
         InputMode::Chars => rush::map_chars,
+        InputMode::Bytes => rush::map_bytes,
     };
     if let Err(error) = apply(&expr, io::stdin(), &mut io::stdout()) {
         error!("{:?}", error);

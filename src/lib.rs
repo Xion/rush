@@ -27,6 +27,7 @@ pub use self::parse::parse;
 
 
 use std::io::{self, Read, Write, BufRead, BufReader, BufWriter};
+use std::u8;
 
 use conv::TryFrom;
 
@@ -142,6 +143,41 @@ pub fn map_chars<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
     }
 
     info!("Processed {} character(s) of input", count);
+    Ok(())
+}
+
+/// Apply the expression to bytes of given input stream,
+/// writing the transformed bytes into given output stream.
+///
+/// Note that the expression must always produce a byte (i.e. an integer from the 0-255 range).
+pub fn map_bytes<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
+    let ast = try!(parse_expr(expr));
+
+    // we will be handling individual bytes, but buffering can still be helpful
+    // if the underlying reader/writer is something slow like a disk or network
+    let reader = BufReader::new(input);
+    let mut writer = BufWriter::new(output);
+    let mut context = Context::new();
+
+    let mut count = 0;
+    for byte in reader.bytes() {
+        let byte = try!(byte);
+        context.set("_", Value::from(byte));
+        let value = context.get("_").unwrap();
+
+        let result = try!(evaluate(&ast, value, &context));
+        match result {
+            Value::Integer(i) if 0 <= i && i < u8::MAX as IntegerRepr => {
+                try!(writer.write_all(&[i as u8]))
+            },
+            _ => return Err(io::Error::new(io::ErrorKind::InvalidData,
+                format!("expected a byte-sized integer, got {}", result))),
+        }
+
+        count += 1;
+    }
+
+    info!("Processed {} byte(s) of input", count);
     Ok(())
 }
 

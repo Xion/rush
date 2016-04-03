@@ -225,11 +225,18 @@ value_from!(ArrayRepr => Array);
 value_from!(ObjectRepr => Object);
 value_from!(FunctionRepr => Function);
 
+
 impl From<char> for Value {
     fn from(input: char) -> Self {
         let mut string = String::new();
         string.push(input);
         Value::String(string)
+    }
+}
+
+impl From<u8> for Value {
+    fn from(input: u8) -> Self {
+        Value::Integer(input as IntegerRepr)
     }
 }
 

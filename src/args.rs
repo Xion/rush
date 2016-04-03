@@ -34,6 +34,7 @@ pub enum InputMode {
     String,
     Lines,
     Chars,
+    Bytes,
 }
 
 impl InputMode {
@@ -42,6 +43,7 @@ impl InputMode {
             InputMode::String => "whole input as string",
             InputMode::Lines => "line by line",
             InputMode::Chars => "character by character",
+            InputMode::Bytes => "byte by byte",
         }
     }
 }
@@ -58,6 +60,7 @@ impl<'s> TryFrom<&'s str> for InputMode {
             "string" => Ok(InputMode::String),
             "lines" => Ok(InputMode::Lines),
             "chars" => Ok(InputMode::Chars),
+            "bytes" => Ok(InputMode::Bytes),
             _ => Err(
                 io::Error::new(io::ErrorKind::InvalidData,
                     format!("'{}' is not a valid input mode", mode))
@@ -111,12 +114,12 @@ const APP_DESC: &'static str = "Succint & readable processing language";
 const APP_AUTHOR: &'static str = "Karol Kuczmarski";
 
 const USAGE: &'static str = concat!("rush", " [",
-    "--input <MODE>", " | ", "--string | --lines | --chars",
+    "--input <MODE>", " | ", "--string | --lines | --chars | --bytes",
     "] ", "<EXPRESSION>");
 
 const ARG_EXPRESSION: &'static str = "expr";
 const OPT_INPUT_MODE: &'static str = "mode";
-const INPUT_MODES: &'static [&'static str] = &["string", "lines", "chars"];
+const INPUT_MODES: &'static [&'static str] = &["string", "lines", "chars", "bytes"];
 const OPT_PARSE: &'static str = "parse";
 
 
@@ -137,7 +140,6 @@ fn create_parser<'p>() -> Parser<'p> {
 
         // TODO(xion): consider implementing more input modes:
         // * words - each word evaluated separately
-        // * bytes - each byte separately (as integer)
         .group(ArgGroup::with_name("input_group")
             .arg(OPT_INPUT_MODE)
             .args(INPUT_MODES))
@@ -156,7 +158,12 @@ fn create_parser<'p>() -> Parser<'p> {
             .help("Apply the expression to each line of input as string. This is the default"))
         .arg(Arg::with_name("chars")
             .short("c").long("chars")
-            .help("Apply the expression to each character of input (which is treated as 1-character string)."))
+            .help("Apply the expression to each character of input \
+                   (which is treated as 1-character string)."))
+        .arg(Arg::with_name("bytes")
+            .short("b").long("bytes")
+            .help("Apply the expression to input bytes. \
+                   The expression must take byte value as integer and return integer output."))
 
         .arg(Arg::with_name(OPT_PARSE)
             .set(ArgSettings::Hidden)
