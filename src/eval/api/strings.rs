@@ -217,8 +217,17 @@ pub fn before(needle: Value, haystack: Value) -> eval::Result {
             _ => String::new(),
         }
     });
+    eval2!((needle: &Regex, haystack: &String) -> String {
+        match needle.find(&haystack) {
+            Some((index, _)) => StringRepr::from(
+                from_utf8(&haystack.as_bytes()[0..index]).unwrap()
+            ),
+            _ => String::new(),
+        }
+    });
+
     Err(Error::new(&format!(
-        "before() expects two strings, got {} and {}",
+        "before() expects two strings, or regex and string, got {} and {}",
         needle.typename(), haystack.typename()
     )))
 }
@@ -234,8 +243,17 @@ pub fn after(needle: Value, haystack: Value) -> eval::Result {
             _ => String::new(),
         }
     });
+    eval2!((needle: &Regex, haystack: &String) -> String {
+        match needle.find(&haystack) {
+            Some((_, index)) => StringRepr::from(
+                from_utf8(&haystack.as_bytes()[index..]).unwrap()
+            ),
+            _ => String::new(),
+        }
+    });
+
     Err(Error::new(&format!(
-        "after() expects two strings, got {} and {}",
+        "after() expects two strings, or regex and string, got {} and {}",
         needle.typename(), haystack.typename()
     )))
 }
