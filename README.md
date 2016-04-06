@@ -11,7 +11,7 @@ Succinct & readable processing language for a Unix shell. Written in Rust.
     Hello world
 
     $ echo '1,2,3' | rh 'csv & map(int & (*2)) & csv'
-    2, 4, 6
+    2,4,6
 
 ## Requirements
 
