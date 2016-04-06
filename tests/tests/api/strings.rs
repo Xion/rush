@@ -11,8 +11,8 @@ fn chr() {
     assert_apply_error("chr(_)", "foo");
     assert_apply_error("chr(_)", "3.14");
     assert_apply_error("chr(_)", "-1");
-    assert_apply_error("chr(_)", "[]");
-    assert_apply_error("chr(_)", "{}");
+    assert_eval_error("chr([])");
+    assert_eval_error("chr({})");
 }
 
 #[test]
@@ -23,8 +23,8 @@ fn ord() {
     assert_apply_error("ord(_)", "42");
     assert_apply_error("ord(_)", "-12");
     assert_apply_error("ord(_)", "2.71");
-    assert_apply_error("ord(_)", "[]");
-    assert_apply_error("ord(_)", "{}");
+    assert_eval_error("ord([])");
+    assert_eval_error("ord({})");
 }
 
 #[test]
@@ -71,4 +71,55 @@ fn join_() {
 }
 
 // TODO(xion): tests for sub(), especially w/ regex and replacement function
-// TODO(xion): tests for before() and after()
+
+#[test]
+fn before_string() {
+    assert_eq!("", apply("before(\"\", _)", ""));
+    assert_eq!("", apply("before(bar, _)", ""));
+    assert_eq!("", apply("before(bar, _)", "bar"));
+    assert_eq!("foo", apply("before(bar, _)", "foobar"));
+    assert_eq!("", apply("before(baz, _)", "foobar"));
+    assert_apply_error("before(bar, _)", "42");
+    assert_apply_error("before(bar, _)", "3.14");
+    assert_eval_error("before(bar, [])");
+    assert_eval_error("before(bar, {})");
+}
+
+#[test]
+fn before_regex() {
+    assert_eq!("", apply("before(//, _)", ""));
+    assert_eq!("", apply("before(/bar/, _)", ""));
+    assert_eq!("", apply("before(/bar/, _)", "bar"));
+    assert_eq!("foo", apply("before(/bar/, _)", "foobar"));
+    assert_eq!("", apply("before(/baz/, _)", "foobar"));
+    assert_apply_error("before(/bar/, _)", "42");
+    assert_apply_error("before(/bar/, _)", "3.14");
+    assert_eval_error("before(/bar/, [])");
+    assert_eval_error("before(/bar/, {})");
+}
+
+#[test]
+fn after_string() {
+    assert_eq!("", apply("after(\"\", _)", ""));
+    assert_eq!("", apply("after(foo, _)", ""));
+    assert_eq!("", apply("after(foo, _)", "foo"));
+    assert_eq!("bar", apply("after(foo, _)", "foobar"));
+    assert_eq!("", apply("after(baz, _)", "foobar"));
+    assert_apply_error("after(foo, _)", "42");
+    assert_apply_error("after(foo, _)", "3.14");
+    assert_eval_error("after(foo, [])");
+    assert_eval_error("after(foo, {})");
+}
+
+#[test]
+fn after_regex() {
+    assert_eq!("", apply("after(//, _)", ""));
+    assert_eq!("", apply("after(/foo/, _)", ""));
+    assert_eq!("", apply("after(/foo/, _)", "foo"));
+    assert_eq!("bar", apply("after(/foo/, _)", "foobar"));
+    assert_eq!("", apply("after(/baz/, _)", "foobar"));
+    assert_apply_error("after(/foo/, _)", "42");
+    assert_apply_error("after(/foo/, _)", "3.14");
+    assert_eval_error("after(/foo/, [])");
+    assert_eval_error("after(/foo/, {})");
+}

@@ -39,6 +39,7 @@ impl<'c> Context<'c> {
         self.define_binary(         "before",   strings::before     );
         self.define_unary(          "bool",     conv::bool          );
         self.define_unary(          "ceil",     math::ceil          );
+        self.define_unary(          "char",     strings::chr        );
         self.define_unary(          "chr",      strings::chr        );
         self.define_unary(          "csv",      conv::csv           );
         self.define_unary(          "exp",      math::exp           );
