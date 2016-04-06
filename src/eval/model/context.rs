@@ -67,7 +67,7 @@ impl<'c> Context<'c> {
 
     /// Check if given name is defined in this context.
     /// Does not look at parent Contexts.
-    #[inline]
+    #[inline(always)]
     pub fn is_defined_here<N: ?Sized>(&self, name: &N) -> bool
         where Name: Borrow<N>, N: Hash + Eq
     {
@@ -76,7 +76,7 @@ impl<'c> Context<'c> {
 
     /// Retrieves a value by name from the scope of the context
     /// or any of its parents.
-    #[inline(always)]
+    #[inline]
     pub fn get<N: ?Sized>(&self, name: &N) -> Option<&Value>
         where Name: Borrow<N>, N: Hash + Eq
     {

@@ -150,7 +150,15 @@ impl Sub<ArgCount> for Arity {
 /// (This isn't named Call because call() function would conflict with
 /// the quasi-intrinsic method on Fn types in Rust).
 pub trait Invoke {
+    /// Returns the arity of the invokable object,
+    /// i.e. how many arguments it can accept.
     fn arity(&self) -> Arity;
+
+    /// Invokes the object.
+    ///
+    /// The Context passed here should be the one where the invocation
+    /// has been found. It is the object itself which can decide whether or not
+    /// it wants to create its own Context ("stack frame") for the invocation.
     fn invoke(&self, args: Args, context: &Context) -> eval::Result;
 }
 
