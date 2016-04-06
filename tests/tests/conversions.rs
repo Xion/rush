@@ -59,5 +59,3 @@ fn input_conversion_string() {
     assert_noop_apply("_s", "true");
     assert_noop_apply("_s", "foo");
 }
-
-// TODO(xion): test str(), int(), etc. functions

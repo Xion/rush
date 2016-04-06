@@ -4,6 +4,30 @@ use util::*;
 
 
 #[test]
+fn chr() {
+    assert_eq!("A", apply("chr(_)", "65"));
+    assert_eq!("a", apply("chr(_)", "97"));
+    assert_apply_error("chr(_)", "a");
+    assert_apply_error("chr(_)", "foo");
+    assert_apply_error("chr(_)", "3.14");
+    assert_apply_error("chr(_)", "-1");
+    assert_apply_error("chr(_)", "[]");
+    assert_apply_error("chr(_)", "{}");
+}
+
+#[test]
+fn ord() {
+    assert_eq!("65", apply("ord(_)", "A"));
+    assert_eq!("97", apply("ord(_)", "a"));
+    assert_apply_error("ord(_)", "foo");
+    assert_apply_error("ord(_)", "42");
+    assert_apply_error("ord(_)", "-12");
+    assert_apply_error("ord(_)", "2.71");
+    assert_apply_error("ord(_)", "[]");
+    assert_apply_error("ord(_)", "{}");
+}
+
+#[test]
 fn rev() {
     assert_eq!("oof", apply("rev(_)", "foo"));
     assert_noop_apply("rev(_)", "racecar");
@@ -46,6 +70,5 @@ fn join_() {
     assert_eval_error(&format!("join(X, {})", "{}"));
 }
 
-// TODO(xion): tests for chr() and ord()
 // TODO(xion): tests for sub(), especially w/ regex and replacement function
 // TODO(xion): tests for before() and after()

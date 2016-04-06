@@ -17,7 +17,7 @@ use super::conv::str_;
 
 /// Returns a one-character string with the character of given ordinal value.
 pub fn chr(value: Value) -> eval::Result {
-    eval1!((value: Integer) -> String {{
+    eval1!((value: Integer) -> String where (value >= 0) {{
         let ord = value as u32;
         let ch = try!(char::from_u32(ord)
             .ok_or_else(|| Error::new(&format!(
@@ -28,7 +28,7 @@ pub fn chr(value: Value) -> eval::Result {
         result
     }});
     Err(Error::new(&format!(
-        "chr() expects an integer, got {}", value.typename()
+        "chr() expects a positive integer, got {}", value.typename()
     )))
 }
 
