@@ -10,17 +10,26 @@ use super::ops::*;
 named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: functional, || { e }));
 
 
+/// Macro shorteing the repetitive parts of defining syntactical constructs
+/// involving binary operators.
+macro_rules! left_assoc (
+    ($name:ident => $op:ident $arg:ident) => (
+        named!($name( &[u8] ) -> Box<Eval>, chain!(
+            first: $arg ~
+            rest: many0!(pair!($op, $arg)),
+            move || {
+                if rest.is_empty() { first }
+                else { Box::new(
+                    BinaryOpNode::new(Associativity::Left, first, rest)
+                ) as Box<Eval> }
+            }
+        ));
+    );
+);
+
+
 /// functional ::== joint (FUNCTIONAL_OP joint)*
-named!(functional( &[u8] ) -> Box<Eval>, chain!(
-    first: joint ~
-    rest: many0!(pair!(functional_op, joint)),
-    move || {
-        if rest.is_empty() { first }
-        else { Box::new(
-            BinaryOpNode::new(Associativity::Left, first, rest)
-        ) as Box<Eval> }
-    }
-));
+left_assoc!(functional => functional_op joint);
 
 /// joint ::== conditional | lambda | curried_op
 named!(joint( &[u8] ) -> Box<Eval>, alt!(conditional | lambda | curried_op));
@@ -75,20 +84,12 @@ named!(curried_op( &[u8] ) -> Box<Eval>, delimited!(
 ));
 
 /// logical ::== comparison (LOGICAL_OP comparison)*
-named!(logical( &[u8] ) -> Box<Eval>, chain!(
-    first: comparison ~
-    rest: many0!(pair!(logical_op, comparison)),
-    move || {
-        if rest.is_empty() { first }
-        else { Box::new(
-            BinaryOpNode::new(Associativity::Left, first, rest)
-        ) as Box<Eval> }
-    }
-));
+left_assoc!(logical => logical_op comparison);
 
 /// comparison ::== argument [COMPARISON_OP argument]
 named!(comparison( &[u8] ) -> Box<Eval>, chain!(
     // TODO(xion): consider supporting chained comparisons a'la Python
+    // (we could use the left_assoc! macro then)
     left: argument ~
     maybe_right: maybe!(pair!(comparison_op, argument)),
     move || {
@@ -103,40 +104,13 @@ named!(comparison( &[u8] ) -> Box<Eval>, chain!(
 
 
 /// argument ::== term (ADDITIVE_BIN_OP term)*
-named!(argument( &[u8] ) -> Box<Eval>, chain!(
-    first: term ~
-    rest: many0!(pair!(additive_op, term)),
-    move || {
-        if rest.is_empty() { first }
-        else { Box::new(
-            BinaryOpNode::new(Associativity::Left, first, rest)
-        ) as Box<Eval> }
-    }
-));
+left_assoc!(argument => additive_op term);
 
 /// term ::== factor (MULTIPLICATIVE_BIN_OP factor)*
-named!(term( &[u8] ) -> Box<Eval>, chain!(
-    first: factor ~
-    rest: many0!(pair!(multiplicative_op, factor)),
-    move || {
-        if rest.is_empty() { first }
-        else { Box::new(
-            BinaryOpNode::new(Associativity::Left, first, rest)
-        ) as Box<Eval> }
-    }
-));
+left_assoc!(term => multiplicative_op factor);
 
 /// factor ::== power (POWER_OP power)*
-named!(factor( &[u8] ) -> Box<Eval>, chain!(
-    first: power ~
-    rest: many0!(pair!(power_op, power)),
-    move || {
-        if rest.is_empty() { first }
-        else { Box::new(
-            BinaryOpNode::new(Associativity::Left, first, rest)
-        ) as Box<Eval> }
-    }
-));
+left_assoc!(factor => power_op power);
 
 /// power ::== UNARY_OP* atom trailer*
 named!(power( &[u8] ) -> Box<Eval>, chain!(
