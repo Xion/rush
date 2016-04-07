@@ -184,6 +184,7 @@ named!(curried_op( &[u8] ) -> Box<Eval>, delimited!(
 named!(binary_op( &[u8] ) -> String, alt!(
     logical_op | comparison_op |
     string!(multispaced!(alt_complete!(
+        char_of!(FUNCTIONAL_BINARY_OPS) |
         tag!(POWER_OP) |
         char_of!(MULTIPLICATIVE_BINARY_OPS) |
         char_of!(ADDITIVE_BINARY_OPS)
