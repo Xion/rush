@@ -3,7 +3,7 @@
 # Handy script for printing the grammar definition.
 
 
-SYNTAX_SOURCE='parse/syntax.rs'
+SYNTAX_SOURCE='parse/syntax/*.rs'
 EBNF_EQUALS='::=='
 
 
