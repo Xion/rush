@@ -34,6 +34,7 @@ fn main() {
     let apply: fn(_, _, _) -> _ = match opts.input_mode.unwrap() {
         InputMode::String => rush::apply_string,
         InputMode::Lines => rush::map_lines,
+        InputMode::Words => rush::map_words,
         InputMode::Chars => rush::map_chars,
         InputMode::Bytes => rush::map_bytes,
     };

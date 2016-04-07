@@ -33,6 +33,7 @@ impl<'a> From<ArgMatches<'a>> for Options {
 pub enum InputMode {
     String,
     Lines,
+    Words,
     Chars,
     Bytes,
 }
@@ -42,6 +43,7 @@ impl InputMode {
         match *self {
             InputMode::String => "whole input as string",
             InputMode::Lines => "line by line",
+            InputMode::Words => "word by word",
             InputMode::Chars => "character by character",
             InputMode::Bytes => "byte by byte",
         }
@@ -59,6 +61,7 @@ impl<'s> TryFrom<&'s str> for InputMode {
         match mode {
             "string" => Ok(InputMode::String),
             "lines" => Ok(InputMode::Lines),
+            "words" => Ok(InputMode::Words),
             "chars" => Ok(InputMode::Chars),
             "bytes" => Ok(InputMode::Bytes),
             _ => Err(GeneralError::Unrepresentable(
@@ -113,12 +116,14 @@ const APP_DESC: &'static str = "Succint & readable processing language";
 const APP_AUTHOR: &'static str = "Karol Kuczmarski";
 
 const USAGE: &'static str = concat!("rush", " [",
-    "--input <MODE>", " | ", "--string | --lines | --chars | --bytes",
+    "--input <MODE>", " | ", "--string | --lines | --words | --chars | --bytes",
     "] ", "<EXPRESSION>");
 
 const ARG_EXPRESSION: &'static str = "expr";
 const OPT_INPUT_MODE: &'static str = "mode";
-const INPUT_MODES: &'static [&'static str] = &["string", "lines", "chars", "bytes"];
+const INPUT_MODES: &'static [&'static str] = &[
+    "string", "lines", "words", "chars", "bytes"
+];
 const OPT_PARSE: &'static str = "parse";
 
 
@@ -137,8 +142,6 @@ fn create_parser<'p>() -> Parser<'p> {
         .setting(AppSettings::UnifiedHelpMessage)
         .setting(AppSettings::DeriveDisplayOrder)
 
-        // TODO(xion): consider implementing more input modes:
-        // * words - each word evaluated separately
         .group(ArgGroup::with_name("input_group")
             .arg(OPT_INPUT_MODE)
             .args(INPUT_MODES))
@@ -155,6 +158,9 @@ fn create_parser<'p>() -> Parser<'p> {
         .arg(Arg::with_name("lines")
             .short("l").long("lines")
             .help("Apply the expression to each line of input as string. This is the default"))
+        .arg(Arg::with_name("words")
+            .short("w").long("words")
+            .help("Apply the expression to each word in the input as string."))
         .arg(Arg::with_name("chars")
             .short("c").long("chars")
             .help("Apply the expression to each character of input \

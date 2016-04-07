@@ -83,6 +83,52 @@ pub fn map_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
     Ok(())
 }
 
+/// Apply the expression to given input stream, word by word,
+/// (each word treated as string in the expression itself),
+/// and writing to the given output stream.
+pub fn map_words<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
+    let ast = try!(parse_expr(expr));
+
+    let reader = BufReader::new(input);
+    let mut writer = BufWriter::new(output);
+    let mut context = Context::new();
+
+    let mut count = 0;
+    {
+        let mut maybe_process_word = |w: &mut String| -> io::Result<()> {
+            if w.is_empty() {
+                return Ok(());
+            }
+            context.set("_", Value::String(w.clone()));
+            let value = context.get("_").unwrap();
+
+            // TODO(xion): write result also as separate *word*, not line
+            let result = try!(evaluate(&ast, value, &context));
+            try!(write_result(&mut writer, result));
+
+            count += 1;
+            w.clear();
+            Ok(())
+        };
+
+        let mut word = String::new();
+        for line in reader.lines() {
+            let line = try!(line);
+            for ch in line.chars() {
+                if ch.is_whitespace() {
+                    try!(maybe_process_word(&mut word));
+                } else {
+                    word.push(ch);
+                }
+            }
+            try!(maybe_process_word(&mut word));
+        }
+    }
+
+    info!("Processed {} word(s) of input", count);
+    Ok(())
+}
+
 /// Apply the expression to given input stream, character by character
 /// (treated as 1-character string in the expression itself),
 /// and writing to the given output stream.
@@ -107,7 +153,7 @@ pub fn map_chars<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
         };
 
         // TODO(xion): rather than reading the input line by line,
-        // use Read::chars() when the feature is stable
+        // use Read::chars() when the feature is stable (same in map_words)
         for line in reader.lines() {
             let line = try!(line);
             for ch in line.chars() {
