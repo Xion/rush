@@ -102,9 +102,11 @@ pub fn map_words<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
             context.set("_", Value::String(w.clone()));
             let value = context.get("_").unwrap();
 
-            // TODO(xion): write result also as separate *word*, not line
+            // TODO(xion): preserve the exact sequences of whitespace between words
             let result = try!(evaluate(&ast, value, &context));
-            try!(write_result(&mut writer, result));
+            let retval = try!(String::try_from(result)
+                .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e)));
+            try!(write!(writer, "{} ", retval));
 
             count += 1;
             w.clear();
