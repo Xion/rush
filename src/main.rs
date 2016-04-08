@@ -23,10 +23,13 @@ fn main() {
     logging::init().unwrap();
 
     let opts = args::parse();
-    let expr = opts.expression;
+    if opts.expressions.len() > 1 {
+        panic!("Multiple expressions are NYI");
+    }
+    let expr = &opts.expressions[0];  // TODO(xion): handle multiple expressions
 
     if opts.input_mode.is_none() {
-        print_ast(&expr);
+        print_ast(expr);
         return;
     }
 
@@ -38,7 +41,7 @@ fn main() {
         InputMode::Chars => rush::map_chars,
         InputMode::Bytes => rush::map_bytes,
     };
-    if let Err(error) = apply(&expr, io::stdin(), &mut io::stdout()) {
+    if let Err(error) = apply(expr, io::stdin(), &mut io::stdout()) {
         error!("{:?}", error);
         exit(1);
     }

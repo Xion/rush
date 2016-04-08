@@ -13,14 +13,16 @@ use clap::{self, AppSettings, Arg, ArgSettings, ArgGroup, ArgMatches};
 /// Structure holding the options parsed from command line.
 #[derive(Clone)]
 pub struct Options {
-    pub expression: String,
+    pub expressions: Vec<String>,
     pub input_mode: Option<InputMode>,
 }
 
 impl<'a> From<ArgMatches<'a>> for Options {
     fn from(matches: ArgMatches<'a>) -> Self {
         Options{
-            expression: matches.value_of(ARG_EXPRESSION).unwrap().to_owned(),
+            expressions: matches
+                             .values_of(ARG_EXPRESSION).unwrap()
+                             .map(String::from).collect(),
             input_mode: if matches.is_present(OPT_PARSE) { None }
                         else { Some(InputMode::from(matches)) },
         }
@@ -117,7 +119,7 @@ const APP_AUTHOR: &'static str = "Karol Kuczmarski";
 
 const USAGE: &'static str = concat!("rush", " [",
     "--input <MODE>", " | ", "--string | --lines | --words | --chars | --bytes",
-    "] ", "<EXPRESSION>");
+    "] ", "<EXPRESSION> ", "[<EXPRESSION> ...]");
 
 const ARG_EXPRESSION: &'static str = "expr";
 const OPT_INPUT_MODE: &'static str = "mode";
@@ -149,9 +151,9 @@ fn create_parser<'p>() -> Parser<'p> {
             .short("i").long("input")
             .takes_value(true)
             .possible_values(INPUT_MODES)
-            .help("Defines how the input should be treated when processed by EXPRESSION")
-            .value_name("MODE")
-            .set(ArgSettings::NextLineHelp))
+            .help("Defines how the input should be treated \
+                   when processed by EXPRESSION").next_line_help(true)
+            .value_name("MODE"))
         .arg(Arg::with_name("string")
             .short("s").long("string")
             .help("Apply the expression once to the whole input as single string"))
@@ -177,10 +179,13 @@ fn create_parser<'p>() -> Parser<'p> {
             .help("Only parse the expression, printing its AST"))
 
         .arg(Arg::with_name(ARG_EXPRESSION)
+            .required(true)
+            .multiple(true)
             .use_delimiter(false)  // don't interpret comma as arg separator
-            .help("Expression to apply to input")
-            .value_name("EXPRESSION")
-            .required(true))
+            .help("Expression(s) to apply to input. \
+                   When multiple expressions are given, the result of one is \
+                   passed as input to the next one.").next_line_help(true)
+            .value_name("EXPRESSION"))
 
         .help_short("H")
         .version_short("V")
