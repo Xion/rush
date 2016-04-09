@@ -25,7 +25,8 @@ type Hasher = BuildHasherDefault<FnvHasher>;
 /// Contains all the variable and function bindings that are used
 /// when evaluating an expression.
 ///
-/// This is roughly equivalent to a stack frame.
+/// This is roughly equivalent to a stack frame,
+/// or a block of code in languages with local scoping (like C++ or Rust).
 pub struct Context<'c> {
     /// Optional parent Context, i.e. a lower "frame" on the "stack".
     parent: Option<&'c Context<'c>>,
@@ -92,6 +93,21 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name>
     {
         self.scope.insert(name.to_owned(), value);
+    }
+
+    /// "Unset" the value of a variable, making the symbol undefined
+    /// in this context.
+    ///
+    /// Returns a boolean indicating whether the context changed
+    /// (i.e. the variable was actually defined before).
+    ///
+    /// Note how regardless of the return value, the variable won't be defined
+    /// in this context after the call to this method. It may, however,
+    /// still **be** defined in a parent Context, if any.
+    pub fn unset_here<N: ?Sized>(&mut self, name: &N) -> bool
+        where Name: Borrow<N>, N: Hash + Eq
+    {
+        self.scope.remove(name).is_some()
     }
 
     /// Resolve a possible variable reference.

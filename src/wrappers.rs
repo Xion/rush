@@ -1,5 +1,6 @@
 //! Convenience wrappers around parsing and evaluation.
 
+use std::iter::Iterator;
 use std::io::{self, Read, Write, BufRead, BufReader, BufWriter};
 use std::u8;
 
@@ -24,11 +25,50 @@ pub fn apply_string<R: Read, W: Write>(expr: &str, input: R, mut output: &mut W)
 
     let value = context.get("_").unwrap();
     let result = try!(evaluate(&ast, value, &context));
-    try!(write_result(&mut output, result));
+    try!(write_result(&mut output, &result));
 
     info!("Processed {} character(s), or {} byte(s), of input", input.len(), byte_count);
     Ok(())
 }
+
+pub fn apply_string_multi<'e, E, R, W>(exprs: E, input: R, mut output: &mut W) -> io::Result<()>
+    where E: Iterator<Item=&'e str>, R: Read, W: Write
+{
+    let asts = try!(parse_exprs(exprs));
+    let expr_count = asts.len();
+
+    let mut reader = BufReader::new(input);
+    let mut input = String::new();
+    let byte_count = try!(reader.read_to_string(&mut input));
+
+    let mut context = Context::new();
+    update_context(&mut context, &input);
+
+    for ast in asts {
+        let result = {
+            let value = context.get("_").unwrap();
+            try!(evaluate(&ast, value, &context))
+        };
+
+        // TODO(xion): really consider deprecating the _X conversion placeholders,
+        // as this is another reason why they are cumbersome (in addition to dubious FromStr
+        // impl on Value); _ would then ALWAYS be a string
+        // context.unset_here("_b");
+        // context.unset_here("_f");
+        // context.unset_here("_i");
+        // context.unset_here("_s");
+        // XXX: can't actually do the above because of `value` borrowing `context` immutably -_-
+
+        context.set("_", result);
+    }
+    let result = context.get("_").unwrap();
+    try!(write_result(&mut output, result));
+
+    info!("Processed {} character(s), or {} byte(s), through {} expression(s)",
+          input.len(), byte_count, expr_count);
+    Ok(())
+}
+
 
 /// Apply the expression to given input taken as array of lines,
 /// writing result to the given output stream.
@@ -51,7 +91,7 @@ pub fn apply_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> i
 
     let mut writer = BufWriter::new(output);
     let result = try!(evaluate(&ast, value, &context));
-    try!(write_result(&mut writer, result));
+    try!(write_result(&mut writer, &result));
 
     info!("Processed {} line(s) of input", count);
     Ok(())
@@ -74,7 +114,7 @@ pub fn map_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
 
         let value = context.get("_").unwrap();
         let result = try!(evaluate(&ast, value, &context));
-        try!(write_result(&mut writer, result));
+        try!(write_result(&mut writer, &result));
 
         count += 1;
     }
@@ -148,7 +188,7 @@ pub fn map_chars<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
             let value = context.get("_").unwrap();
 
             let result = try!(evaluate(&ast, value, &context));
-            try!(write_result(&mut writer, result));
+            try!(write_result(&mut writer, &result));
 
             count += 1;
             Ok(())
@@ -208,8 +248,19 @@ pub fn map_bytes<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
 // Utility functions.
 
 fn parse_expr(expr: &str) -> io::Result<Box<Eval>> {
-    debug!("Using expression: {}", expr);
     parse(expr).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
+}
+
+fn parse_exprs<'e, E>(exprs: E) -> io::Result<Vec<Box<Eval>>>
+    where E: Iterator<Item=&'e str>
+{
+    let mut result = Vec::new();
+    for expr in exprs {
+        debug!("Parsing expression: {}", expr);
+        let ast = try!(parse_expr(expr));
+        result.push(ast);
+    }
+    Ok(result)
 }
 
 fn update_context(context: &mut Context, input: &str) {
@@ -242,7 +293,7 @@ fn maybe_apply_result<'a>(result: Value, input: &'a Value, context: &'a Context)
     Ok(result)
 }
 
-fn write_result<W: Write>(output: &mut W, result: Value) -> io::Result<()> {
+fn write_result<W: Write>(output: &mut W, result: &Value) -> io::Result<()> {
     let result = try!(String::try_from(result)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e)));
     write!(output, "{}\n", result)
