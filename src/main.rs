@@ -23,25 +23,24 @@ fn main() {
     logging::init().unwrap();
 
     let opts = args::parse();
-    if opts.expressions.len() > 1 {
-        panic!("Multiple expressions are NYI");
-    }
-    let expr = &opts.expressions[0];  // TODO(xion): handle multiple expressions
+    let exprs: Vec<&str> = opts.expressions.iter().map(|e| e as &str).collect();
 
     if opts.input_mode.is_none() {
-        print_ast(expr);
+        for expr in exprs {
+            print_ast(expr);
+        }
         return;
     }
 
     // choose a function to process the input with, depending on flags
-    let apply: fn(_, _, _) -> _ = match opts.input_mode.unwrap() {
-        InputMode::String => rush::apply_string,
-        InputMode::Lines => rush::map_lines,
-        InputMode::Words => rush::map_words,
-        InputMode::Chars => rush::map_chars,
-        InputMode::Bytes => rush::map_bytes,
+    let apply_multi: fn(_, _, _) -> _ = match opts.input_mode.unwrap() {
+        InputMode::String => rush::apply_string_multi,
+        InputMode::Lines => rush::map_lines_multi,
+        InputMode::Words => rush::map_words_multi,
+        InputMode::Chars => rush::map_chars_multi,
+        InputMode::Bytes => rush::map_bytes_multi,
     };
-    if let Err(error) = apply(expr, io::stdin(), &mut io::stdout()) {
+    if let Err(error) = apply_multi(&exprs, io::stdin(), &mut io::stdout()) {
         error!("{:?}", error);
         exit(1);
     }
