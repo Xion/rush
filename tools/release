@@ -1,0 +1,75 @@
+#!/bin/sh
+
+# Script for preparing the release bundles
+#
+# This essentially a wrapper script around fpm (https://github.com/jordansissel/fpm).
+# Requires fpm to be installed first, which may in turn require Ruby with C headers.
+#
+# Refer to fpm's README for instructions.
+#
+
+
+PACKAGE_NAME='rush'
+SOURCE_DIR="./target/release"
+BIN='rh'
+
+
+main() {
+    [ -f "Cargo.toml" ] || fatal "Release script must be run from project's root!"
+
+    require cargo
+    require fpm
+
+    log "Creating release bundles..."
+
+    prepare_deb_package
+
+    log "Release bundles created."
+}
+
+
+cargo_build() {
+    cargo build --release
+    [ -f "$BIN" ] || fatal "Failed to build the release binary, aborting."
+}
+
+prepare_deb_package() {
+    log "Preparing Debian package..."
+
+    fpm_ -t deb --prefix /usr/bin
+    if [ "$?" -ne 0 ]; then
+        fatal "Failed to create Debian package."
+    fi
+}
+
+fpm_() {
+    # Invoke `fpm` with common parameters
+    fpm --force --log error \
+        --name "$PACKAGE_NAME" --license 'GPL v3' --url 'http://github.com/Xion/rush' \
+        -s dir -C "$SOURCE_DIR" "$@" \
+        "$BIN"
+}
+
+
+# General Utility functions
+
+require() {
+    # Require for an external program to exist, abort the script if not found
+    local prog="$1"
+    local msg="${2-$prog not found, aborting.}"
+    which "$prog" >/dev/null ||  fatal "$msg\n"
+}
+
+fatal() {
+    local fmt="$1" ; shift
+    log "FATAL: $fmt" "$@"
+    exit 1
+}
+
+log() {
+    local fmt="$1" ; shift
+    printf >&2 "\n>>> $fmt\n" "$@"
+}
+
+
+main "$@"
