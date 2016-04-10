@@ -222,8 +222,8 @@ pub fn map_chars<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
 
 /// Apply a sequence of expressions to the input stream, character by character.
 ///
-/// Every character read from the stream is fed to the first expression,
-/// whose result is then passed to the second one, etc.
+/// Every character read from the stream is fed to the first expression
+/// (as 1-character string), whose result is then passed to the second one, etc.
 ///
 /// The final result is written then to the given output stream.
 /// This continues for each character of input.
@@ -277,7 +277,19 @@ pub fn map_chars_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
 ///
 /// Note that the expression must always produce a byte (i.e. an integer from the 0-255 range).
 pub fn map_bytes<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
-    let ast = try!(parse_expr(expr));
+    map_bytes_multi(&[expr], input, output)
+}
+
+/// Apply a sequence of expressions to the input stream, byte by byte.
+///
+/// Every byte read from the stream is fed to the first expression
+/// (as an integer from 0-255 range), whose result is then passed to the second one, etc.
+///
+/// The final result -- which has to be a 0-255 integer -- is written then
+/// to the given output stream. This continues for each byte of input.
+pub fn map_bytes_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
+    let asts = try!(parse_exprs(exprs));
+    let expr_count = asts.len();
 
     // we will be handling individual bytes, but buffering can still be helpful
     // if the underlying reader/writer is something slow like a disk or network
@@ -285,14 +297,21 @@ pub fn map_bytes<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
     let mut writer = BufWriter::new(output);
     let mut context = Context::new();
 
-    let mut count = 0;
+    let mut byte_count = 0;
     for byte in reader.bytes() {
         let byte = try!(byte);
         context.set(CURRENT, Value::from(byte));
-        let value = context.get(CURRENT).unwrap();
 
-        let result = try!(evaluate(&ast, value, &context));
-        match result {
+        for ast in asts.iter() {
+            let result = {
+                let value = context.get(CURRENT).unwrap();
+                try!(evaluate(ast, value, &context))
+            };
+            context.set(CURRENT, result);
+        }
+        let result = context.get(CURRENT).unwrap();
+
+        match *result {
             Value::Integer(i) if 0 <= i && i < u8::MAX as IntegerRepr => {
                 try!(writer.write_all(&[i as u8]))
             },
@@ -300,10 +319,11 @@ pub fn map_bytes<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
                 format!("expected a byte-sized integer, got {}", result))),
         }
 
-        count += 1;
+        byte_count += 1;
     }
 
-    info!("Processed {} byte(s) of input", count);
+    info!("Processed {} byte(s) of input through {} expression(s)",
+          byte_count, expr_count);
     Ok(())
 }
 
