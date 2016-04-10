@@ -26,10 +26,7 @@ Floats are additionally `[+-]?([0-9]\.)?[0-9]+(e$INTEGER)?` (i.e. regular & scie
 
 ## Special symbols
 
-* `_` (underscore) -- Current item (without specifying its type).
-* `_s` -- Current item as string.
-* `_i` -- Current item as integer.
-* `_f` -- Current item as float.
+* `_` (underscore) -- Current item.
 
 ## Operators
 

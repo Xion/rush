@@ -7,7 +7,7 @@ use std::u8;
 use conv::TryFrom;
 
 use super::eval::{self, Eval, Context, Invoke, Value};
-use super::eval::value::{BooleanRepr, FloatRepr, IntegerRepr};
+use super::eval::value::IntegerRepr;
 use super::parse::parse;
 
 
@@ -19,15 +19,16 @@ pub fn apply_string<R: Read, W: Write>(expr: &str, input: R, mut output: &mut W)
     let mut reader = BufReader::new(input);
     let mut input = String::new();
     let byte_count = try!(reader.read_to_string(&mut input));
+    let char_count = input.chars().count();
 
     let mut context = Context::new();
-    update_context(&mut context, &input);
+    context.set("_", Value::String(input));
 
     let value = context.get("_").unwrap();
     let result = try!(evaluate(&ast, value, &context));
     try!(write_result(&mut output, &result));
 
-    info!("Processed {} character(s), or {} byte(s), of input", input.len(), byte_count);
+    info!("Processed {} character(s), or {} byte(s), of input", char_count, byte_count);
     Ok(())
 }
 
@@ -40,32 +41,23 @@ pub fn apply_string_multi<'e, E, R, W>(exprs: E, input: R, mut output: &mut W) -
     let mut reader = BufReader::new(input);
     let mut input = String::new();
     let byte_count = try!(reader.read_to_string(&mut input));
+    let char_count = input.chars().count();
 
     let mut context = Context::new();
-    update_context(&mut context, &input);
+    context.set("_", Value::String(input));
 
     for ast in asts {
         let result = {
             let value = context.get("_").unwrap();
             try!(evaluate(&ast, value, &context))
         };
-
-        // TODO(xion): really consider deprecating the _X conversion placeholders,
-        // as this is another reason why they are cumbersome (in addition to dubious FromStr
-        // impl on Value); _ would then ALWAYS be a string
-        // context.unset_here("_b");
-        // context.unset_here("_f");
-        // context.unset_here("_i");
-        // context.unset_here("_s");
-        // XXX: can't actually do the above because of `value` borrowing `context` immutably -_-
-
         context.set("_", result);
     }
     let result = context.get("_").unwrap();
     try!(write_result(&mut output, result));
 
     info!("Processed {} character(s), or {} byte(s), through {} expression(s)",
-          input.len(), byte_count, expr_count);
+          char_count, byte_count, expr_count);
     Ok(())
 }
 
@@ -110,7 +102,7 @@ pub fn map_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
     let mut count = 0;
     for line in reader.lines() {
         let line = try!(line);
-        update_context(&mut context, &line);
+        context.set("_", to_value(line));
 
         let value = context.get("_").unwrap();
         let result = try!(evaluate(&ast, value, &context));
@@ -139,7 +131,7 @@ pub fn map_words<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
             if w.is_empty() {
                 return Ok(());
             }
-            context.set("_", Value::String(w.clone()));
+            context.set("_", to_value(w.clone()));
             let value = context.get("_").unwrap();
 
             // TODO(xion): preserve the exact sequences of whitespace between words
@@ -263,14 +255,8 @@ fn parse_exprs<'e, E>(exprs: E) -> io::Result<Vec<Box<Eval>>>
     Ok(result)
 }
 
-fn update_context(context: &mut Context, input: &str) {
-    context.set("_", input.parse::<Value>().unwrap_or_else(|_| Value::String(input.to_owned())));
-    context.set("_b", input.parse::<BooleanRepr>().map(Value::Boolean).unwrap_or(Value::Empty));
-    context.set("_f", input.parse::<FloatRepr>().map(Value::Float).unwrap_or(Value::Empty));
-    // TODO(xion): consider also trying to parse the input as f64
-    // and exposing the rounded version as _i
-    context.set("_i", input.parse::<IntegerRepr>().map(Value::Integer).unwrap_or(Value::Empty));
-    context.set("_s", Value::String(input.to_owned()));
+fn to_value(input: String) -> Value {
+    input.parse::<Value>().unwrap_or_else(|_| Value::String(input))
 }
 
 fn evaluate<'a>(ast: &Box<Eval>, input: &'a Value, context: &'a Context) -> io::Result<Value> {
