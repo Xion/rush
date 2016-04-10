@@ -14,11 +14,54 @@ use super::parse::parse;
 const CURRENT: &'static str = "_";
 
 
+// Single-expression processing.
+
 /// Apply the expresion to a complete input stream, processed as single string,
 /// writing to the given output stream.
+#[inline(always)]
 pub fn apply_string<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
     apply_string_multi(&[expr], input, output)
 }
+
+/// Apply the expression to given input taken as array of lines,
+/// writing result to the given output stream.
+#[inline(always)]
+pub fn apply_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
+    apply_lines_multi(&[expr], input, output)
+}
+
+/// Apply the expression to given input stream, line by line,
+/// writing to the given output stream.
+#[inline(always)]
+pub fn map_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
+    map_lines_multi(&[expr], input, output)
+}
+
+/// Apply the expression to given input stream, word by word,
+/// (each word treated as string in the expression itself),
+/// and writing to the given output stream.
+#[inline(always)]
+pub fn map_words<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
+    map_words_multi(&[expr], input, output)
+}
+
+/// Apply the expression to given input stream, character by character
+/// (treated as 1-character string in the expression itself),
+/// and writing to the given output stream.
+pub fn map_chars<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
+    map_chars_multi(&[expr], input, output)
+}
+
+/// Apply the expression to bytes of given input stream,
+/// writing the transformed bytes into given output stream.
+///
+/// Note that the expression must always produce a byte (i.e. an integer from the 0-255 range).
+pub fn map_bytes<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
+    map_bytes_multi(&[expr], input, output)
+}
+
+
+// Multi-expression processing.
 
 /// Apply a sequence of expressions to the input stream taken as single string.
 ///
@@ -39,18 +82,11 @@ pub fn apply_string_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &
     context.set(CURRENT, Value::String(input));
 
     let result = try!(process(&mut context, &asts));
-    try!(write_result(output, result));
+    try!(write_result_line(output, result));
 
     info!("Processed {} character(s), or {} byte(s), through {} expression(s)",
           char_count, byte_count, expr_count);
     Ok(())
-}
-
-
-/// Apply the expression to given input taken as array of lines,
-/// writing result to the given output stream.
-pub fn apply_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
-    apply_lines_multi(&[expr], input, output)
 }
 
 /// Apply a sequence of expressions to the input stream taken as an array of lines
@@ -77,18 +113,11 @@ pub fn apply_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &m
     context.set(CURRENT, Value::Array(lines));
 
     let result = try!(process(&mut context, &asts));
-    try!(write_result(output, result));
+    try!(write_result_line(output, result));
 
     info!("Processed {} line(s) of input through {} expression(s)",
           line_count, expr_count);
     Ok(())
-}
-
-
-/// Apply the expression to given input stream, line by line,
-/// writing to the given output stream.
-pub fn map_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
-    map_lines_multi(&[expr], input, output)
 }
 
 /// Apply a sequence of expressions to the input stream, line by line.
@@ -112,7 +141,7 @@ pub fn map_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
         context.set(CURRENT, to_value(line));
 
         let result = try!(process(&mut context, &asts));
-        try!(write_result(&mut writer, result));
+        try!(write_result_line(&mut writer, result));
 
         line_count += 1;
     }
@@ -120,14 +149,6 @@ pub fn map_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
     info!("Processed {} line(s) of input through {} expression(s)",
           expr_count, line_count);
     Ok(())
-}
-
-
-/// Apply the expression to given input stream, word by word,
-/// (each word treated as string in the expression itself),
-/// and writing to the given output stream.
-pub fn map_words<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
-    map_words_multi(&[expr], input, output)
 }
 
 /// Apply a sequence of expressions to the input stream, word by word.
@@ -184,14 +205,6 @@ pub fn map_words_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
     Ok(())
 }
 
-
-/// Apply the expression to given input stream, character by character
-/// (treated as 1-character string in the expression itself),
-/// and writing to the given output stream.
-pub fn map_chars<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
-    map_chars_multi(&[expr], input, output)
-}
-
 /// Apply a sequence of expressions to the input stream, character by character.
 ///
 /// Every character read from the stream is fed to the first expression
@@ -212,8 +225,10 @@ pub fn map_chars_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
         let mut process_char = |ch: char| -> io::Result<()> {
             context.set(CURRENT, Value::from(ch));
 
+            // TODO(xion): consider enforcing for the final result to also be 1-char string
+            // and writing those characters as a contiguous string
             let result = try!(process(&mut context, &asts));
-            try!(write_result(&mut writer, &result));
+            try!(write_result_line(&mut writer, &result));
 
             char_count += 1;
             Ok(())
@@ -234,15 +249,6 @@ pub fn map_chars_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
     info!("Processed {} character(s) of input through {} expression(s)",
           char_count, expr_count);
     Ok(())
-}
-
-
-/// Apply the expression to bytes of given input stream,
-/// writing the transformed bytes into given output stream.
-///
-/// Note that the expression must always produce a byte (i.e. an integer from the 0-255 range).
-pub fn map_bytes<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
-    map_bytes_multi(&[expr], input, output)
 }
 
 /// Apply a sequence of expressions to the input stream, byte by byte.
@@ -305,20 +311,20 @@ fn process<'c>(context: &'c mut Context, exprs: &[Box<Eval>]) -> io::Result<&'c 
     for ast in exprs.iter() {
         let result = {
             let value = context.get(CURRENT).unwrap();
-            try!(evaluate(ast, value, &context))
+            try!(evaluate(ast, value, context))
         };
         context.set(CURRENT, result);
     }
     Ok(context.get(CURRENT).unwrap())
 }
 
-fn evaluate<'a>(ast: &Box<Eval>, input: &'a Value, context: &'a Context) -> io::Result<Value> {
-    ast.eval(&context)
+fn evaluate<'c>(ast: &Box<Eval>, input: &'c Value, context: &'c Context) -> io::Result<Value> {
+    ast.eval(context)
         .and_then(|result| maybe_apply_result(result, input, &context))
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
 }
 
-fn maybe_apply_result<'a>(result: Value, input: &'a Value, context: &'a Context) -> eval::Result {
+fn maybe_apply_result<'c>(result: Value, input: &'c Value, context: &'c Context) -> eval::Result {
     // result might be a function, in which case we will try to apply to original input
     if let Value::Function(func) = result {
         if func.arity() != 1 {
@@ -332,7 +338,7 @@ fn maybe_apply_result<'a>(result: Value, input: &'a Value, context: &'a Context)
     Ok(result)
 }
 
-fn write_result<W: Write>(output: &mut W, result: &Value) -> io::Result<()> {
+fn write_result_line<W: Write>(output: &mut W, result: &Value) -> io::Result<()> {
     let result = try!(String::try_from(result)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e)));
     write!(output, "{}\n", result)
