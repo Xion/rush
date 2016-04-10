@@ -38,14 +38,7 @@ pub fn apply_string_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &
     let mut context = Context::new();
     context.set(CURRENT, Value::String(input));
 
-    for ast in asts {
-        let result = {
-            let value = context.get(CURRENT).unwrap();
-            try!(evaluate(&ast, value, &context))
-        };
-        context.set(CURRENT, result);
-    }
-    let result = context.get(CURRENT).unwrap();
+    let result = try!(process(&mut context, &asts));
     try!(write_result(output, result));
 
     info!("Processed {} character(s), or {} byte(s), through {} expression(s)",
@@ -83,14 +76,7 @@ pub fn apply_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &m
     let mut context = Context::new();
     context.set(CURRENT, Value::Array(lines));
 
-    for ast in asts {
-        let result = {
-            let value = context.get(CURRENT).unwrap();
-            try!(evaluate(&ast, value, &context))
-        };
-        context.set(CURRENT, result);
-    }
-    let result = context.get(CURRENT).unwrap();
+    let result = try!(process(&mut context, &asts));
     try!(write_result(output, result));
 
     info!("Processed {} line(s) of input through {} expression(s)",
@@ -125,14 +111,7 @@ pub fn map_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
         let line = try!(line);
         context.set(CURRENT, to_value(line));
 
-        for ast in asts.iter() {
-            let result = {
-                let value = context.get(CURRENT).unwrap();
-                try!(evaluate(ast, value, &context))
-            };
-            context.set(CURRENT, result);
-        }
-        let result = context.get(CURRENT).unwrap();
+        let result = try!(process(&mut context, &asts));
         try!(write_result(&mut writer, result));
 
         line_count += 1;
@@ -172,16 +151,9 @@ pub fn map_words_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
             if w.is_empty() {
                 return Ok(());
             }
-            context.set(CURRENT, to_value(w.clone()));
 
-            for ast in asts.iter() {
-                let result = {
-                    let value = context.get(CURRENT).unwrap();
-                    try!(evaluate(ast, value, &context))
-                };
-                context.set(CURRENT, result);
-            }
-            let result = context.get(CURRENT).unwrap();
+            context.set(CURRENT, to_value(w.clone()));
+            let result = try!(process(&mut context, &asts));
 
             // TODO(xion): preserve the exact sequences of whitespace between words
             let retval = try!(String::try_from(result)
@@ -240,14 +212,7 @@ pub fn map_chars_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
         let mut process_char = |ch: char| -> io::Result<()> {
             context.set(CURRENT, Value::from(ch));
 
-            for ast in asts.iter() {
-                let result = {
-                    let value = context.get(CURRENT).unwrap();
-                    try!(evaluate(ast, value, &context))
-                };
-                context.set(CURRENT, result);
-            }
-            let result = context.get(CURRENT).unwrap();
+            let result = try!(process(&mut context, &asts));
             try!(write_result(&mut writer, &result));
 
             char_count += 1;
@@ -255,7 +220,7 @@ pub fn map_chars_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
         };
 
         // TODO(xion): rather than reading the input line by line,
-        // use Read::chars() when the feature is stable (same in map_words)
+        // use Read::chars() when the feature is stable (same in map_words_multi)
         for line in reader.lines() {
             let line = try!(line);
             for ch in line.chars() {
@@ -302,15 +267,7 @@ pub fn map_bytes_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
         let byte = try!(byte);
         context.set(CURRENT, Value::from(byte));
 
-        for ast in asts.iter() {
-            let result = {
-                let value = context.get(CURRENT).unwrap();
-                try!(evaluate(ast, value, &context))
-            };
-            context.set(CURRENT, result);
-        }
-        let result = context.get(CURRENT).unwrap();
-
+        let result = try!(process(&mut context, &asts));
         match *result {
             Value::Integer(i) if 0 <= i && i < u8::MAX as IntegerRepr => {
                 try!(writer.write_all(&[i as u8]))
@@ -329,15 +286,12 @@ pub fn map_bytes_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
 
 // Utility functions.
 
-fn parse_expr(expr: &str) -> io::Result<Box<Eval>> {
-    parse(expr).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
-}
-
 fn parse_exprs(exprs: &[&str]) -> io::Result<Vec<Box<Eval>>> {
     let mut result = Vec::new();
     for expr in exprs {
         debug!("Parsing expression: {}", expr);
-        let ast = try!(parse_expr(expr));
+        let ast = try!(parse(expr)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e)));
         result.push(ast);
     }
     Ok(result)
@@ -345,6 +299,17 @@ fn parse_exprs(exprs: &[&str]) -> io::Result<Vec<Box<Eval>>> {
 
 fn to_value(input: String) -> Value {
     input.parse::<Value>().unwrap_or_else(|_| Value::String(input))
+}
+
+fn process<'c>(context: &'c mut Context, exprs: &[Box<Eval>]) -> io::Result<&'c Value> {
+    for ast in exprs.iter() {
+        let result = {
+            let value = context.get(CURRENT).unwrap();
+            try!(evaluate(ast, value, &context))
+        };
+        context.set(CURRENT, result);
+    }
+    Ok(context.get(CURRENT).unwrap())
 }
 
 fn evaluate<'a>(ast: &Box<Eval>, input: &'a Value, context: &'a Context) -> io::Result<Value> {
