@@ -60,7 +60,6 @@ pub fn apply_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> i
     apply_lines_multi(&[expr], input, output)
 }
 
-
 /// Apply a sequence of expressions to the input stream taken as an array of lines
 ///
 /// The stream is provided as an array of strings to the first expression,
@@ -103,54 +102,93 @@ pub fn apply_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &m
 /// Apply the expression to given input stream, line by line,
 /// writing to the given output stream.
 pub fn map_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
-    let ast = try!(parse_expr(expr));
+    map_lines_multi(&[expr], input, output)
+}
+
+/// Apply a sequence of expressions to the input stream, line by line.
+///
+/// Every line read from the stream is fed to the first expression
+/// (without the \n char) whose result is then passed to the second one, etc.
+///
+/// The final result is written then to the given output stream.
+/// This continues for each line of input.
+pub fn map_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
+    let asts = try!(parse_exprs(exprs));
+    let expr_count = asts.len();
 
     let reader = BufReader::new(input);
     let mut writer = BufWriter::new(output);
     let mut context = Context::new();
 
-    let mut count = 0;
+    let mut line_count = 0;
     for line in reader.lines() {
         let line = try!(line);
         context.set(CURRENT, to_value(line));
 
-        let value = context.get(CURRENT).unwrap();
-        let result = try!(evaluate(&ast, value, &context));
-        try!(write_result(&mut writer, &result));
+        for ast in asts.iter() {
+            let result = {
+                let value = context.get(CURRENT).unwrap();
+                try!(evaluate(ast, value, &context))
+            };
+            context.set(CURRENT, result);
+        }
+        let result = context.get(CURRENT).unwrap();
+        try!(write_result(&mut writer, result));
 
-        count += 1;
+        line_count += 1;
     }
 
-    info!("Processed {} line(s) of input", count);
+    info!("Processed {} line(s) of input through {} expression(s)",
+          expr_count, line_count);
     Ok(())
 }
+
 
 /// Apply the expression to given input stream, word by word,
 /// (each word treated as string in the expression itself),
 /// and writing to the given output stream.
 pub fn map_words<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
-    let ast = try!(parse_expr(expr));
+    map_words_multi(&[expr], input, output)
+}
+
+/// Apply a sequence of expressions to the input stream, word by word.
+///
+/// Every word read from the stream is fed to the first expression,
+/// whose result is then passed to the second one, etc.
+///
+/// The final result is written then to the given output stream.
+/// This continues for each word of input.
+pub fn map_words_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
+    let asts = try!(parse_exprs(exprs));
+    let expr_count = asts.len();
 
     let reader = BufReader::new(input);
     let mut writer = BufWriter::new(output);
     let mut context = Context::new();
 
-    let mut count = 0;
+    let mut word_count = 0;
     {
         let mut maybe_process_word = |w: &mut String| -> io::Result<()> {
             if w.is_empty() {
                 return Ok(());
             }
             context.set(CURRENT, to_value(w.clone()));
-            let value = context.get(CURRENT).unwrap();
+
+            for ast in asts.iter() {
+                let result = {
+                    let value = context.get(CURRENT).unwrap();
+                    try!(evaluate(ast, value, &context))
+                };
+                context.set(CURRENT, result);
+            }
+            let result = context.get(CURRENT).unwrap();
 
             // TODO(xion): preserve the exact sequences of whitespace between words
-            let result = try!(evaluate(&ast, value, &context));
             let retval = try!(String::try_from(result)
                 .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e)));
             try!(write!(writer, "{} ", retval));
 
-            count += 1;
+            word_count += 1;
             w.clear();
             Ok(())
         };
@@ -169,9 +207,11 @@ pub fn map_words<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
         }
     }
 
-    info!("Processed {} word(s) of input", count);
+    info!("Processed {} word(s) of input through {} expression(s)",
+          word_count, expr_count);
     Ok(())
 }
+
 
 /// Apply the expression to given input stream, character by character
 /// (treated as 1-character string in the expression itself),
