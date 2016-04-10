@@ -1,6 +1,5 @@
 //! Convenience wrappers around parsing and evaluation.
 
-use std::iter::Iterator;
 use std::io::{self, Read, Write, BufRead, BufReader, BufWriter};
 use std::u8;
 
@@ -11,30 +10,23 @@ use super::eval::value::IntegerRepr;
 use super::parse::parse;
 
 
+/// Name of the variable within expression context that holds the current/input value.
+const CURRENT: &'static str = "_";
+
+
 /// Apply the expresion to a complete input stream, processed as single string,
 /// writing to the given output stream.
 pub fn apply_string<R: Read, W: Write>(expr: &str, input: R, mut output: &mut W) -> io::Result<()> {
-    let ast = try!(parse_expr(expr));
-
-    let mut reader = BufReader::new(input);
-    let mut input = String::new();
-    let byte_count = try!(reader.read_to_string(&mut input));
-    let char_count = input.chars().count();
-
-    let mut context = Context::new();
-    context.set("_", Value::String(input));
-
-    let value = context.get("_").unwrap();
-    let result = try!(evaluate(&ast, value, &context));
-    try!(write_result(&mut output, &result));
-
-    info!("Processed {} character(s), or {} byte(s), of input", char_count, byte_count);
-    Ok(())
+    apply_string_multi(&[expr], input, &mut output)
 }
 
-pub fn apply_string_multi<'e, E, R, W>(exprs: E, input: R, mut output: &mut W) -> io::Result<()>
-    where E: Iterator<Item=&'e str>, R: Read, W: Write
-{
+/// Apply a sequence of expressions to a complete input stream.
+///
+/// The stream is provided as a single string to the first expression,
+/// whose result is then passed to the second one, etc.
+///
+/// The final result is written to the given output stream.
+pub fn apply_string_multi<R: Read, W: Write>(exprs: &[&str], input: R, mut output: &mut W) -> io::Result<()> {
     let asts = try!(parse_exprs(exprs));
     let expr_count = asts.len();
 
@@ -44,16 +36,16 @@ pub fn apply_string_multi<'e, E, R, W>(exprs: E, input: R, mut output: &mut W) -
     let char_count = input.chars().count();
 
     let mut context = Context::new();
-    context.set("_", Value::String(input));
+    context.set(CURRENT, Value::String(input));
 
     for ast in asts {
         let result = {
-            let value = context.get("_").unwrap();
+            let value = context.get(CURRENT).unwrap();
             try!(evaluate(&ast, value, &context))
         };
-        context.set("_", result);
+        context.set(CURRENT, result);
     }
-    let result = context.get("_").unwrap();
+    let result = context.get(CURRENT).unwrap();
     try!(write_result(&mut output, result));
 
     info!("Processed {} character(s), or {} byte(s), through {} expression(s)",
@@ -78,8 +70,8 @@ pub fn apply_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> i
     let count = lines.len();
 
     let mut context = Context::new();
-    context.set("_", Value::Array(lines));
-    let value = context.get("_").unwrap();
+    context.set(CURRENT, Value::Array(lines));
+    let value = context.get(CURRENT).unwrap();
 
     let mut writer = BufWriter::new(output);
     let result = try!(evaluate(&ast, value, &context));
@@ -102,9 +94,9 @@ pub fn map_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
     let mut count = 0;
     for line in reader.lines() {
         let line = try!(line);
-        context.set("_", to_value(line));
+        context.set(CURRENT, to_value(line));
 
-        let value = context.get("_").unwrap();
+        let value = context.get(CURRENT).unwrap();
         let result = try!(evaluate(&ast, value, &context));
         try!(write_result(&mut writer, &result));
 
@@ -131,8 +123,8 @@ pub fn map_words<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
             if w.is_empty() {
                 return Ok(());
             }
-            context.set("_", to_value(w.clone()));
-            let value = context.get("_").unwrap();
+            context.set(CURRENT, to_value(w.clone()));
+            let value = context.get(CURRENT).unwrap();
 
             // TODO(xion): preserve the exact sequences of whitespace between words
             let result = try!(evaluate(&ast, value, &context));
@@ -176,8 +168,8 @@ pub fn map_chars<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
     let mut count = 0;
     {
         let mut process_char = |ch: char| -> io::Result<()> {
-            context.set("_", Value::from(ch));
-            let value = context.get("_").unwrap();
+            context.set(CURRENT, Value::from(ch));
+            let value = context.get(CURRENT).unwrap();
 
             let result = try!(evaluate(&ast, value, &context));
             try!(write_result(&mut writer, &result));
@@ -218,8 +210,8 @@ pub fn map_bytes<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
     let mut count = 0;
     for byte in reader.bytes() {
         let byte = try!(byte);
-        context.set("_", Value::from(byte));
-        let value = context.get("_").unwrap();
+        context.set(CURRENT, Value::from(byte));
+        let value = context.get(CURRENT).unwrap();
 
         let result = try!(evaluate(&ast, value, &context));
         match result {
@@ -243,9 +235,7 @@ fn parse_expr(expr: &str) -> io::Result<Box<Eval>> {
     parse(expr).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
 }
 
-fn parse_exprs<'e, E>(exprs: E) -> io::Result<Vec<Box<Eval>>>
-    where E: Iterator<Item=&'e str>
-{
+fn parse_exprs(exprs: &[&str]) -> io::Result<Vec<Box<Eval>>> {
     let mut result = Vec::new();
     for expr in exprs {
         debug!("Parsing expression: {}", expr);
