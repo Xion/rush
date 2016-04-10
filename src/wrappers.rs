@@ -217,22 +217,40 @@ pub fn map_words_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
 /// (treated as 1-character string in the expression itself),
 /// and writing to the given output stream.
 pub fn map_chars<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
-    let ast = try!(parse_expr(expr));
+    map_chars_multi(&[expr], input, output)
+}
+
+/// Apply a sequence of expressions to the input stream, character by character.
+///
+/// Every character read from the stream is fed to the first expression,
+/// whose result is then passed to the second one, etc.
+///
+/// The final result is written then to the given output stream.
+/// This continues for each character of input.
+pub fn map_chars_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
+    let asts = try!(parse_exprs(exprs));
+    let expr_count = asts.len();
 
     let reader = BufReader::new(input);
     let mut writer = BufWriter::new(output);
     let mut context = Context::new();
 
-    let mut count = 0;
+    let mut char_count = 0;
     {
         let mut process_char = |ch: char| -> io::Result<()> {
             context.set(CURRENT, Value::from(ch));
-            let value = context.get(CURRENT).unwrap();
 
-            let result = try!(evaluate(&ast, value, &context));
+            for ast in asts.iter() {
+                let result = {
+                    let value = context.get(CURRENT).unwrap();
+                    try!(evaluate(ast, value, &context))
+                };
+                context.set(CURRENT, result);
+            }
+            let result = context.get(CURRENT).unwrap();
             try!(write_result(&mut writer, &result));
 
-            count += 1;
+            char_count += 1;
             Ok(())
         };
 
@@ -248,9 +266,11 @@ pub fn map_chars<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
         }
     }
 
-    info!("Processed {} character(s) of input", count);
+    info!("Processed {} character(s) of input through {} expression(s)",
+          char_count, expr_count);
     Ok(())
 }
+
 
 /// Apply the expression to bytes of given input stream,
 /// writing the transformed bytes into given output stream.
