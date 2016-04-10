@@ -16,17 +16,17 @@ const CURRENT: &'static str = "_";
 
 /// Apply the expresion to a complete input stream, processed as single string,
 /// writing to the given output stream.
-pub fn apply_string<R: Read, W: Write>(expr: &str, input: R, mut output: &mut W) -> io::Result<()> {
-    apply_string_multi(&[expr], input, &mut output)
+pub fn apply_string<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
+    apply_string_multi(&[expr], input, output)
 }
 
-/// Apply a sequence of expressions to a complete input stream.
+/// Apply a sequence of expressions to the input stream taken as single string.
 ///
 /// The stream is provided as a single string to the first expression,
 /// whose result is then passed to the second one, etc.
 ///
 /// The final result is written to the given output stream.
-pub fn apply_string_multi<R: Read, W: Write>(exprs: &[&str], input: R, mut output: &mut W) -> io::Result<()> {
+pub fn apply_string_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
     let asts = try!(parse_exprs(exprs));
     let expr_count = asts.len();
 
@@ -46,7 +46,7 @@ pub fn apply_string_multi<R: Read, W: Write>(exprs: &[&str], input: R, mut outpu
         context.set(CURRENT, result);
     }
     let result = context.get(CURRENT).unwrap();
-    try!(write_result(&mut output, result));
+    try!(write_result(output, result));
 
     info!("Processed {} character(s), or {} byte(s), through {} expression(s)",
           char_count, byte_count, expr_count);
@@ -57,7 +57,19 @@ pub fn apply_string_multi<R: Read, W: Write>(exprs: &[&str], input: R, mut outpu
 /// Apply the expression to given input taken as array of lines,
 /// writing result to the given output stream.
 pub fn apply_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
-    let ast = try!(parse_expr(expr));
+    apply_lines_multi(&[expr], input, output)
+}
+
+
+/// Apply a sequence of expressions to the input stream taken as an array of lines
+///
+/// The stream is provided as an array of strings to the first expression,
+/// whose result is then passed to the second one, etc.
+///
+/// The final result is written to the given output stream.
+pub fn apply_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
+    let asts = try!(parse_exprs(exprs));
+    let expr_count = asts.len();
 
     // parse input lines into a vector of Value objects
     let lines: Vec<_> = BufReader::new(input).lines()
@@ -67,17 +79,23 @@ pub fn apply_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> i
         })
         .filter(|v| *v != Value::Empty)
         .collect();
-    let count = lines.len();
+    let line_count = lines.len();
 
     let mut context = Context::new();
     context.set(CURRENT, Value::Array(lines));
-    let value = context.get(CURRENT).unwrap();
 
-    let mut writer = BufWriter::new(output);
-    let result = try!(evaluate(&ast, value, &context));
-    try!(write_result(&mut writer, &result));
+    for ast in asts {
+        let result = {
+            let value = context.get(CURRENT).unwrap();
+            try!(evaluate(&ast, value, &context))
+        };
+        context.set(CURRENT, result);
+    }
+    let result = context.get(CURRENT).unwrap();
+    try!(write_result(output, result));
 
-    info!("Processed {} line(s) of input", count);
+    info!("Processed {} line(s) of input through {} expression(s)",
+          line_count, expr_count);
     Ok(())
 }
 
