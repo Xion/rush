@@ -114,7 +114,7 @@ type Parser<'p> = clap::App<'p, 'p>;
 
 
 const APP_NAME: &'static str = "rush";
-const APP_DESC: &'static str = "Succint & readable processing language";
+const APP_DESC: &'static str = "Succinct & readable processing language";
 const APP_AUTHOR: &'static str = "Karol Kuczmarski";
 
 const USAGE: &'static str = concat!("rush", " [",
