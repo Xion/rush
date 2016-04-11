@@ -110,6 +110,15 @@ impl<'c> Context<'c> {
         self.scope.remove(name).is_some()
     }
 
+    /// Reset the context, removing all variable bindings.
+    /// Built-in functions and constants are preserved.
+    pub fn reset(&mut self) {
+        self.scope.clear();
+        if self.is_root() {
+            self.init_builtins();
+        }
+    }
+
     /// Resolve a possible variable reference.
     ///
     /// Returns the variable's Value (which may be just variable name as string),
