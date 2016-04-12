@@ -37,6 +37,7 @@ main() {
     log "Creating release bundles..."
     ensure_output_dir
     prepare_deb_package
+    prepare_rpm_package
 
     log "Release finished."
 }
@@ -66,6 +67,20 @@ prepare_deb_package() {
     fi
 }
 
+prepare_rpm_package() {
+    if ! exists rpm; then
+        warn "`rpm` not found -- skipping creation of the RedHat package."
+        return 1
+    fi
+
+    log "Preparing RedHat package..."
+
+    bundle rpm --prefix "$INSTALL_DIR"
+    if [ "$?" -ne 0 ]; then
+        fatal "Failed to create RedHat package."
+    fi
+}
+
 bundle() {
     # Create a release bundle by invoking `fpm` with common parameters
     local target="$1" ; shift
@@ -80,17 +95,26 @@ bundle() {
 
 # General utility functions
 
+exists() {
+    which "$1" >/dev/null
+}
+
 require() {
     # Require for an external program to exist, abort the script if not found
     local prog="$1"
     local msg="${2-$prog not found, aborting.}"
-    which "$prog" >/dev/null || fatal "$msg\n"
+    exists "$prog" || fatal "$msg\n"
 }
 
 fatal() {
     local fmt="$1" ; shift
     log "FATAL: $fmt" "$@"
     exit 1
+}
+
+warn() {
+    local fmt="$1" ; shift
+    log "WARN: $fmt" "$@"
 }
 
 log() {
