@@ -14,11 +14,13 @@ VERSION='0.1.0'
 DESCRIPTON='Succinct & readable processing language'
 URL='http://github.com/Xion/rush'
 LICENSE='GPL v3'
+MAINTAINER='Karol Kuczmarski'
 # TODO(xion): share these between this script, Cargo.toml, and the argument parser
 # (the last one probably requires custom build.rs)
 
 SOURCE_DIR="./target/release"
 BIN='rh'
+LICENSE_FILE='./LICENSE'
 OUTPUT_DIR="./release"
 
 INSTALL_DIR='/usr/bin'
@@ -55,6 +57,10 @@ cargo_build() {
     if [ ! -f "${SOURCE_DIR}/$BIN" ]; then
         fatal "Failed to build the release binary, aborting."
     fi
+
+    # ensure a license file is available in the source directory
+    cp --force --no-target-directory "$LICENSE_FILE" "$SOURCE_DIR/$LICENSE_FILE"
+    # TODO(xion): include the license file in the final bundles
 }
 
 
@@ -84,9 +90,12 @@ prepare_rpm_package() {
 bundle() {
     # Create a release bundle by invoking `fpm` with common parameters
     local target="$1" ; shift
+
+    local iteration=$(git rev-parse --short HEAD)  # Use Git SHA of HEAD as iteration.
     fpm --force --log error \
-        --name "$NAME" --version "$VERSION" --description="$DESCRIPTON" \
-        --license "$LICENSE" --url "$URL" \
+        --name "$NAME" --version "$VERSION" --iteration="$iteration" \
+        --description="$DESCRIPTON" --license "$LICENSE" --url "$URL" \
+        --maintainer "$MAINTAINER" --vendor '<unspecified>' \
         -s dir -t "$target" -C "$SOURCE_DIR" --package "${OUTPUT_DIR}/${NAME}.$target" \
         "$@" \
         "$BIN"
