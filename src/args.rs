@@ -115,7 +115,6 @@ type Parser<'p> = clap::App<'p, 'p>;
 
 const APP_NAME: &'static str = "rush";
 const APP_DESC: &'static str = "Succinct & readable processing language";
-const APP_AUTHOR: &'static str = "Karol Kuczmarski";
 
 const USAGE: &'static str = concat!("rush", " [",
     "--input <MODE>", " | ", "--string | --lines | --words | --chars | --bytes",
@@ -137,7 +136,6 @@ fn create_parser<'p>() -> Parser<'p> {
     }
     parser
         .about(APP_DESC)
-        .author(APP_AUTHOR)
         .usage(USAGE)
 
         .setting(AppSettings::ArgRequiredElseHelp)
