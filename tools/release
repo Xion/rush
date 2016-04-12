@@ -10,6 +10,7 @@
 
 # Package information
 NAME='rush'
+VERSION='0.1.0'
 DESCRIPTON='Succinct & readable processing language'
 URL='http://github.com/Xion/rush'
 LICENSE='GPL v3'
@@ -18,8 +19,10 @@ LICENSE='GPL v3'
 
 SOURCE_DIR="./target/release"
 BIN='rh'
-
 OUTPUT_DIR="./release"
+
+INSTALL_DIR='/usr/bin'
+
 
 
 main() {
@@ -28,17 +31,18 @@ main() {
     require cargo
     require fpm
 
-    ensure_release_dir
+    log "Building the release binary..."
+    cargo_build
 
     log "Creating release bundles..."
-
+    ensure_output_dir
     prepare_deb_package
 
-    log "Release bundles created."
+    log "Release finished."
 }
 
 
-ensure_release_dir() {
+ensure_output_dir() {
     if [ ! -d "$OUTPUT_DIR" ]; then
         log "Creating output directory ($OUTPUT_DIR)..."
         mkdir -p "$OUTPUT_DIR"
@@ -47,14 +51,16 @@ ensure_release_dir() {
 
 cargo_build() {
     cargo build --release
-    [ -f "$BIN" ] || fatal "Failed to build the release binary, aborting."
+    if [ ! -f "${SOURCE_DIR}/$BIN" ]; then
+        fatal "Failed to build the release binary, aborting."
+    fi
 }
 
 
 prepare_deb_package() {
     log "Preparing Debian package..."
 
-    bundle deb --prefix /usr/bin
+    bundle deb --prefix "$INSTALL_DIR"
     if [ "$?" -ne 0 ]; then
         fatal "Failed to create Debian package."
     fi
@@ -64,14 +70,15 @@ bundle() {
     # Create a release bundle by invoking `fpm` with common parameters
     local target="$1" ; shift
     fpm --force --log error \
-        --name "$NAME" --description="$DESCRIPTON" --license "$LICENSE" --url "$URL" \
+        --name "$NAME" --version "$VERSION" --description="$DESCRIPTON" \
+        --license "$LICENSE" --url "$URL" \
         -s dir -t "$target" -C "$SOURCE_DIR" --package "${OUTPUT_DIR}/${NAME}.$target" \
         "$@" \
         "$BIN"
 }
 
 
-# General Utility functions
+# General utility functions
 
 require() {
     # Require for an external program to exist, abort the script if not found
