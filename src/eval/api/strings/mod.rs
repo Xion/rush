@@ -12,7 +12,7 @@ use std::str::from_utf8;
 
 use unicode_segmentation::UnicodeSegmentation;
 
-use eval::{self, Context, Error, Value};
+use eval::{self, Error, Value};
 use eval::value::{IntegerRepr, StringRepr};
 use eval::util::fmt::format;
 use super::conv::str_;
