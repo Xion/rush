@@ -1,7 +1,7 @@
 //! Module implementing evaluation of curried binary operator AST nodes.
 
 use eval::{self, Eval, Context, Value};
-use eval::model::function::{Args, ArgCount, Arity, Function};
+use eval::model::{Args, ArgCount, Arity, Function};
 use parse::ast::{BinaryOpNode, CurriedBinaryOpNode};
 
 

@@ -8,8 +8,7 @@ use std::hash::{BuildHasherDefault, Hash};
 use fnv::FnvHasher;
 
 use eval;
-use super::function::{Args, Invoke};
-use super::value::Value;
+use super::{Args, Invoke, Value};
 
 
 /// Type for names of variables present in the Context.

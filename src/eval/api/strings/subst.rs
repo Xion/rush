@@ -4,7 +4,7 @@ use regex::{self, Captures, Regex};
 
 use eval::{self, Context, Error, Value};
 use eval::api::conv::str_;
-use eval::model::function::{Args, Invoke};
+use eval::model::{Args, Invoke};
 use eval::value::StringRepr;
 
 
