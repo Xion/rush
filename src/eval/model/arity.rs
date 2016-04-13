@@ -3,6 +3,7 @@
 use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::fmt;
 use std::ops::{Add, Sub};
+use std::usize;
 
 use super::value::Value;
 
@@ -29,13 +30,33 @@ pub enum Arity {
     /// Arity range.
     /// Function requires at least as many arguments as the lower bound,
     /// but no more than the upper bound.
-    Range(ArgCount, ArgCount),
+    Range(ArgCount, ArgCount),  // inclusive range!
 }
 
 impl Arity {
     #[inline(always)]
     pub fn is_exact(&self) -> bool {
         match *self { Arity::Exact(..) => true, _ => false }
+    }
+
+    /// Returns the minimum number of arguments accepted by function with this arity.
+    #[inline]
+    pub fn minimum(&self) -> ArgCount {
+        match *self {
+            Arity::Exact(c) => c,
+            Arity::Minimum(c) => c,
+            Arity::Range(c, _) => c,
+        }
+    }
+
+    /// Returns the maximum number of arguments accepted by function with this arity.
+    #[inline]
+    pub fn maximum(&self) -> ArgCount {
+        match *self {
+            Arity::Exact(c) => c,
+            Arity::Minimum(_) => usize::MAX as ArgCount,
+            Arity::Range(_, c) => c,
+        }
     }
 
     /// Whether arity allows/accepts given argument count.
@@ -62,16 +83,30 @@ impl fmt::Display for Arity {
 
 impl PartialOrd for Arity {
     /// Compare arities with each other.
-    /// The ordering is only defined for exact arities.
+    ///
+    /// The ordering is only defined for those cases when the set of accepted
+    /// argument counts either doesn't overlap at all, or overlaps completely.
     fn partial_cmp(&self, other: &Arity) -> Option<Ordering> {
-        match *self {
-            Arity::Exact(c1) => {
-                if let Arity::Exact(c2) = *other {
-                    return Some(c1.cmp(&c2));
-                }
-                None
+        match (self, other) {
+            (&Arity::Exact(c1), &Arity::Exact(c2)) => Some(c1.cmp(&c2)),
+
+            (&Arity::Exact(c), &Arity::Range(a, b)) => {
+                if c < a        { Some(Ordering::Less) }
+                else if c > b   { Some(Ordering::Greater) }
+                else            { None }
             },
-            // TODO(xion): ordering can be defined for any combination of Range & Exact
+            (&Arity::Range(a, b), &Arity::Exact(c)) => {
+                if b < c        { Some(Ordering::Less) }
+                else if a > c   { Some(Ordering::Greater) }
+                else            { None }
+            },
+
+            (&Arity::Range(a1, b1), &Arity::Range(a2, b2)) => {
+                if b1 < a2      { Some(Ordering::Less) }
+                else if a1 > b2 { Some(Ordering::Greater) }
+                else            { None }
+            },
+
             _ => None,
         }
     }
@@ -100,12 +135,12 @@ impl PartialOrd<ArgCount> for Arity {
             Arity::Minimum(c) => Some(
                 // Once the argument count is above minimum,
                 // it is "equal" for all intents and purposes.
-                if *count >= c { Ordering::Equal } else { Ordering::Less }
+                if c <= *count { Ordering::Equal } else { Ordering::Greater }
             ),
             Arity::Range(a, b) => Some(
                 // The argument count is "equal" if it is within range.
-                if *count < a       { Ordering::Less }
-                else if *count > b  { Ordering::Greater }
+                if b < *count       { Ordering::Less }
+                else if a > *count  { Ordering::Greater }
                 else                { Ordering::Equal }
             ),
         }
