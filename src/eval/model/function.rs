@@ -31,6 +31,11 @@ pub enum Arity {
     /// Minimum arity.
     /// Function requires at least that many arguments.
     Minimum(ArgCount),
+
+    /// Arity range.
+    /// Function requires at least as many arguments as the lower bound,
+    /// but no more than the upper bound.
+    Range(ArgCount, ArgCount),
 }
 
 impl Arity {
@@ -46,6 +51,7 @@ impl Arity {
         match *self {
             Arity::Exact(c) => argcount == c,
             Arity::Minimum(c) => argcount >= c,
+            Arity::Range(a, b) => a <= argcount && argcount <= b,
         }
     }
 }
@@ -55,6 +61,7 @@ impl fmt::Display for Arity {
         match *self {
             Arity::Exact(c) => write!(fmt, "{}", c),
             Arity::Minimum(c) => write!(fmt, "{}+", c),
+            Arity::Range(a, b) => write!(fmt, "{}-{}", a, b),
         }
     }
 }
@@ -70,6 +77,7 @@ impl PartialOrd for Arity {
                 }
                 None
             },
+            // TODO(xion): ordering can be defined for any combination of Range & Exact
             _ => None,
         }
     }
@@ -81,7 +89,7 @@ impl PartialEq<ArgCount> for Arity {
         if let Arity::Exact(c) = *self {
             return c == *count;
         }
-        // Arity::Minimum always returns false to maintain transitivity
+        // other variants always returns false to maintain transitivity
         // with the derived PartialEq<Arity>.
         false
     }
@@ -100,6 +108,12 @@ impl PartialOrd<ArgCount> for Arity {
                 // it is "equal" for all intents and purposes.
                 if *count >= c { Ordering::Equal } else { Ordering::Less }
             ),
+            Arity::Range(a, b) => Some(
+                // The argument count is "equal" if it is within range.
+                if *count < a       { Ordering::Less }
+                else if *count > b  { Ordering::Greater }
+                else                { Ordering::Equal }
+            ),
         }
     }
 }
@@ -114,6 +128,7 @@ impl Add<ArgCount> for Arity {
         match self {
             Arity::Exact(c) => Arity::Exact(c + rhs),
             Arity::Minimum(c) => Arity::Minimum(c), // no change
+            Arity::Range(a, b) => Arity::Range(a, b + rhs), // inc. upper bound
         }
     }
 }
@@ -139,6 +154,16 @@ impl Sub<ArgCount> for Arity {
                 }
                 panic!("underflow when subtracting from minimum arity: {} - {} < 0",
                     c, rhs)
+            },
+            Arity::Range(a, b) => {
+                let span = b - a;
+                if rhs < span {
+                    return Arity::Range(a, b - rhs);
+                } else if rhs == span {
+                    return Arity::Exact(a);
+                }
+                panic!("underflow when subtracting from arity range: \
+                    ({} - {}) - {} < 0", b, a, rhs)
             },
         }
     }
