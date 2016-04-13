@@ -15,7 +15,7 @@ Succinct & readable processing language for a Unix shell. Written in Rust.
 
 ## Requirements
 
-WIP
+Any Unix-like system should do.
 
 ## Examples
 
