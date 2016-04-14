@@ -2,8 +2,11 @@
 
 use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::fmt;
-use std::ops::{Add, Sub};
+use std::ops::{Add, Range, Sub};
 use std::usize;
+
+use conv::TryInto;
+use conv::errors::Unrepresentable;
 
 use super::value::Value;
 
@@ -81,6 +84,55 @@ impl fmt::Display for Arity {
     }
 }
 
+
+// Conversions
+
+impl From<ArgCount> for Arity {
+    #[inline(always)]
+    fn from(input: ArgCount) -> Self {
+        Arity::Exact(input)
+    }
+}
+impl TryInto<ArgCount> for Arity {
+    type Err = Unrepresentable<Self>;
+
+    #[inline]
+    fn try_into(self) -> Result<ArgCount, Self::Err> {
+        match self {
+            Arity::Exact(c) => Ok(c),
+            Arity::Range(a, b) if a == b => Ok(a),
+            arity@_ => Err(Unrepresentable(arity)),
+        }
+    }
+}
+
+impl From<Range<ArgCount>> for Arity {
+    #[inline]
+    fn from(input: Range<ArgCount>) -> Self {
+        if input.len() > 0 {
+            // Range<T> is half-open, Arity::Range is inclusive on both ends
+            Arity::Range(input.start, input.end + 1)
+        } else {
+            Arity::Exact(input.start)
+        }
+    }
+}
+impl TryInto<Range<ArgCount>> for Arity {
+    type Err = Unrepresentable<Self>;
+
+    #[inline]
+    fn try_into(self) -> Result<Range<ArgCount>, Self::Err> {
+        match self {
+            Arity::Exact(c) => Ok(Range{start: c, end: c}),
+            Arity::Range(a, b) => Ok(Range{start: a, end: b + 1}),
+            arity@_ => Err(Unrepresentable(arity)),
+        }
+    }
+}
+
+
+// Ordering and equality
+
 impl PartialOrd for Arity {
     /// Compare arities with each other.
     ///
@@ -147,6 +199,9 @@ impl PartialOrd<ArgCount> for Arity {
     }
 }
 
+
+// Arithmetic
+
 impl Add<ArgCount> for Arity {
     type Output = Arity;
 
@@ -161,6 +216,7 @@ impl Add<ArgCount> for Arity {
         }
     }
 }
+
 impl Sub<ArgCount> for Arity {
     type Output = Arity;
 

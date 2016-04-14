@@ -5,7 +5,7 @@ use std::ffi::OsString;
 use std::iter::IntoIterator;
 
 use conv::TryFrom;
-use conv::errors::GeneralError;
+use conv::errors::Unrepresentable;
 
 use clap::{self, AppSettings, Arg, ArgSettings, ArgGroup, ArgMatches};
 
@@ -57,7 +57,7 @@ impl Default for InputMode {
 }
 
 impl<'s> TryFrom<&'s str> for InputMode {
-    type Err = GeneralError<String>;
+    type Err = Unrepresentable<String>;
 
     fn try_from(mode: &'s str) -> Result<Self, Self::Err> {
         match mode {
@@ -66,9 +66,7 @@ impl<'s> TryFrom<&'s str> for InputMode {
             "words" => Ok(InputMode::Words),
             "chars" => Ok(InputMode::Chars),
             "bytes" => Ok(InputMode::Bytes),
-            _ => Err(GeneralError::Unrepresentable(
-                    format!("'{}' is not a valid input mode", mode)
-            )),
+            _ => Err(Unrepresentable(mode.to_owned())),
         }
     }
 }
