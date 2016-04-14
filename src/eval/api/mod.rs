@@ -82,9 +82,6 @@ impl<'c> Context<'c> {
         self.set(   "NaN",      Value::Float(f64::NAN as FloatRepr)         );
         self.set(   "nil",      Value::Empty                                );
         self.set(   "pi",       Value::Float(f64::consts::PI as FloatRepr)  );
-        //
-        // Don't add "true" or "false", they're recognized at the parser level!
-        //
     }
 }
 
@@ -274,5 +271,20 @@ fn ensure_argcount<N: ?Sized>(name: &N, args: &Args, arity: Arity) -> Result<(),
             "invalid number of arguments to {}(): expected {}, got {}",
             name, arity, count
         )))
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use eval::Context;
+
+    #[test]
+    fn no_bool_constants() {
+        let ctx = Context::new();
+        for constant in &["true", "false"] {
+            assert!(!ctx.is_defined(*constant),
+                "`{}` is handled by parser and doesn't need to be in Context", constant);
+        }
     }
 }
