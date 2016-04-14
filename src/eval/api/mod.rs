@@ -46,6 +46,8 @@ impl<'c> Context<'c> {
         self.define_binary_ctx(     "filter",   base::filter        );
         self.define_unary(          "float",    conv::float         );
         self.define_unary(          "floor",    math::floor         );
+        self.define_ternary_ctx(    "fold",     base::reduce        );
+        self.define_ternary_ctx(    "foldl",    base::reduce        );
         self.define_binary(         "format",   strings::format_    );
         self.define_binary(         "index",    base::index         );
         self.define_unary(          "int",      conv::int           );
@@ -59,6 +61,7 @@ impl<'c> Context<'c> {
         self.define_unary(          "ord",      strings::ord        );
         self.define_nullary(        "rand",     math::rand          );
         self.define_unary(          "re",       conv::regex         );
+        self.define_ternary_ctx(    "reduce",   base::reduce        );
         self.define_unary(          "regex",    conv::regex         );
         self.define_unary(          "regexp",   conv::regex         );
         self.define_unary(          "rev",      strings::rev        );

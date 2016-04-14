@@ -35,6 +35,7 @@ pub fn join(delim: Value, array: Value) -> eval::Result {
 
 /// Split a string by given string delimiter.
 /// Returns an array of strings.
+// TODO(xion): introduce optional third parameter, maxsplit
 pub fn split(delim: Value, string: Value) -> eval::Result {
     eval2!((delim: &String, string: &String) -> Array {
         string.split(delim).map(StringRepr::from).map(Value::String).collect()

@@ -1,7 +1,7 @@
 //! Base API functions.
 
 use eval::{self, Context, Error, Function, Value};
-use eval::model::Invoke;
+use eval::model::{ArgCount, Invoke};
 use eval::value::IntegerRepr;
 use parse::ast::BinaryOpNode;
 use super::conv::bool;
@@ -170,7 +170,7 @@ pub fn map(func: Value, array: Value, context: &Context) -> eval::Result {
     let array_type = array.typename();
 
     eval2!((func: &Function, array: Array) -> Array {{
-        try!(ensure_unary(&func, "map"));
+        try!(ensure_argcount(&func, 1, "map"));
 
         let mut result = Vec::new();
         for item in array.into_iter() {
@@ -195,11 +195,11 @@ pub fn filter(func: Value, array: Value, context: &Context) -> eval::Result {
     let array_type = array.typename();
 
     eval2!((func: &Function, array: Array) -> Array {{
-        try!(ensure_unary(&func, "filter"));
+        try!(ensure_argcount(&func, 1, "filter"));
 
         let mut result = Vec::new();
         for item in array.into_iter() {
-            let context = Context::with_parent(&context);
+            let context = Context::with_parent(context);
             let keep = try!(
                 func.invoke(vec![item.clone()], &context).and_then(bool)
             ).unwrap_bool();
@@ -216,16 +216,39 @@ pub fn filter(func: Value, array: Value, context: &Context) -> eval::Result {
     )))
 }
 
+/// Apply a binary function cumulatively to array elements.
+/// Also known as the "fold" operation (left fold, to be precise).
+pub fn reduce(func: Value, array: Value, start: Value, context: &Context) -> eval::Result {
+    let func_type = func.typename();
+    let array_type = array.typename();
+
+    if let (Value::Function(func), Value::Array(array)) = (func, array) {
+        try!(ensure_argcount(&func, 2, "reduce"));
+
+        let mut result = start;
+        for item in array.into_iter() {
+            let context = Context::with_parent(context);
+            result = try!(func.invoke(vec![result, item], &context));
+        }
+        return Ok(result);
+    }
+
+    Err(Error::new(&format!(
+        "reduce() requires a function and an array, got {} and {}",
+        func_type, array_type
+    )))
+}
+
 
 // Utility functions
 
 #[inline(always)]
-fn ensure_unary(func: &Function, api_call: &str) -> Result<(), Error> {
+fn ensure_argcount(func: &Function, argcount: ArgCount, api_call: &str) -> Result<(), Error> {
     let arity = func.arity();
-    if !arity.accepts(1) {
+    if !arity.accepts(argcount) {
         return Err(Error::new(&format!(
-            "{}() requires a 1-argument function, got one with {} arguments",
-            api_call, arity
+            "{}() requires a {}-argument function, got one with {} arguments",
+            api_call, argcount, arity
         )));
     }
     Ok(())
