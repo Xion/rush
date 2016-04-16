@@ -8,7 +8,7 @@ use regex::Regex;
 use eval::{Eval, Value};
 use eval::value::{FloatRepr, IntegerRepr, RegexRepr, StringRepr};
 use parse::ast::{ArrayNode, ObjectNode, ScalarNode};
-use super::structure::expression;
+use super::structure::{block, expression};
 
 
 // TODO(xion): switch from parsers expecting &[u8] to accepting &str;
@@ -48,7 +48,8 @@ named!(pub atom( &[u8] ) -> Box<Eval>, alt!(
     object_value | array_value |
     bool_value | symbol_value | float_value | int_value |
     regex_value | string_value |
-    delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
+    delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")"))) |
+    delimited!(multispaced!(tag!("{")), block, multispaced!(tag!("}")))
 ));
 
 

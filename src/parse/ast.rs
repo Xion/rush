@@ -285,3 +285,28 @@ impl fmt::Debug for ConditionalNode {
                self.cond, self.then, self.else_)
     }
 }
+
+
+/// AST node representing a block of expressions.
+///
+/// All expressions in the block are evaluated in order,
+/// but it's only the last one whose result is taken as a result of the whole block.
+pub struct BlockNode {
+    pub expressions: Vec<Box<Eval>>,
+}
+
+impl BlockNode {
+    #[inline(always)]
+    pub fn new(exprs: Vec<Box<Eval>>) -> BlockNode {
+        BlockNode{expressions: exprs}
+    }
+}
+
+impl fmt::Debug for BlockNode {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        // {{ are escaped braces.
+        write!(fmt, "<Block: {{ {} }}>", self.expressions.iter()
+            .map(|ref e| format!("{:?}", e))
+            .collect::<Vec<String>>().join("; "))
+    }
+}

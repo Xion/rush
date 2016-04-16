@@ -7,7 +7,13 @@ use super::ops::*;
 
 
 /// Root symbol of the grammar.
-named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: functional, || { e }));
+named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: block, || { e }));
+
+/// block ::== (functional)+
+named!(pub block( &[u8] ) -> Box<Eval>, map!(
+    separated_nonempty_list!(multispaced!(tag!(";")), functional),
+    move |exprs| { Box::new(BlockNode::new(exprs)) as Box<Eval> }
+));
 
 
 /// Macros shortening the repetitive parts of defining syntactical constructs
