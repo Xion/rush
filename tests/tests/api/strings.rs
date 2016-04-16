@@ -71,6 +71,7 @@ fn join_() {
 }
 
 // TODO(xion): tests for sub() and sub1(), especially w/ regex and replacement function
+// TODO(xion): tests for rsub1()
 
 #[test]
 fn before_string() {

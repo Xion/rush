@@ -1,5 +1,7 @@
 //! String substitution functions.
 
+use std::str::from_utf8;
+
 use regex::{self, Captures, Regex};
 
 use eval::{self, Context, Error, Value};
@@ -48,9 +50,12 @@ pub fn sub1(needle: Value, replacement: Value, haystack: Value, ctx: &Context) -
     if let (&Value::String(ref n),
             &Value::String(ref r),
             &Value::String(ref h)) = (&needle, &replacement, &haystack) {
-        // TODO(xion): a String::find-based approach will likely be faster
-        let needle_re = Regex::new(&regex::quote(n)).unwrap();
-        return Ok(Value::String(needle_re.replace(h, &r as &str)));
+        return Ok(Value::String(match h.find(n as &str) {
+            Some(index) => splice_string(h, index, n.len(), r),
+            // TODO(xion): this .clone() could likely be omitted
+            // with some clever scoping/borrowing trick
+            _ => h.clone(),
+        }));
     }
 
     // replacing regex matches with string or function
@@ -66,8 +71,39 @@ pub fn sub1(needle: Value, replacement: Value, haystack: Value, ctx: &Context) -
     )))
 }
 
+/// Substitute the last occurrence of given string("needle")
+/// with another string ("replacement") within given text.
+///
+/// Returns the text after the substitution has been made.
+pub fn rsub1(needle: Value, replacement: Value, haystack: Value) -> eval::Result {
+    if let (&Value::String(ref n),
+            &Value::String(ref r),
+            &Value::String(ref h)) = (&needle, &replacement, &haystack) {
+        return Ok(Value::String(match h.rfind(n as &str) {
+            Some(index) => splice_string(h, index, n.len(), r),
+            // TODO(xion): this .clone() could likely be omitted
+            // with some clever scoping/borrowing trick
+            _ => h.clone(),
+        }));
+    }
+    Err(Error::new(&format!(
+        "rsub1() expects three strings, got: {}, {}, {}",
+        needle.typename(), replacement.typename(), haystack.typename()
+    )))
+}
+
 
 // Utility functions
+
+/// Modify the string by removing character at given index
+/// and inserting another string instead.
+fn splice_string(s: &str, start: usize, count: usize, insert: &str) -> String {
+    let b = s.as_bytes();
+    format!("{}{}{}",
+        from_utf8(&b[..start]).unwrap(),
+        insert,
+        from_utf8(&b[start + count..]).unwrap())
+}
 
 /// Enum definining the kind of substitution to perform.
 enum Sub {

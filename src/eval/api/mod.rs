@@ -49,6 +49,7 @@ impl<'c> Context<'c> {
         self.define_ternary_ctx(    "fold",     base::reduce        );
         self.define_ternary_ctx(    "foldl",    base::reduce        );
         self.define_binary(         "format",   strings::format_    );
+        self.define_ternary_ctx(    "gsub",     strings::sub        );
         self.define_binary(         "index",    base::index         );
         self.define_unary(          "int",      conv::int           );
         self.define_binary(         "join",     strings::join       );
@@ -66,6 +67,7 @@ impl<'c> Context<'c> {
         self.define_unary(          "regexp",   conv::regex         );
         self.define_unary(          "rev",      strings::rev        );
         self.define_unary(          "round",    math::round         );
+        self.define_ternary(        "rsub1",    strings::rsub1      );
         self.define_unary(          "sgn",      math::sgn           );
         self.define_binary(         "split",    strings::split      );
         self.define_unary(          "sqrt",     math::sqrt          );
