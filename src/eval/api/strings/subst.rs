@@ -2,7 +2,7 @@
 
 use std::str::from_utf8;
 
-use regex::{self, Captures, Regex};
+use regex::{Captures, Regex};
 
 use eval::{self, Context, Error, Value};
 use eval::api::conv::str_;
