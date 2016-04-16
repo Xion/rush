@@ -10,26 +10,36 @@ use super::ops::*;
 named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: functional, || { e }));
 
 
-/// Macro shorteing the repetitive parts of defining syntactical constructs
+/// Macros shortening the repetitive parts of defining syntactical constructs
 /// involving binary operators.
-macro_rules! left_assoc (
-    ($name:ident => $op:ident $arg:ident) => (
-        named!($name( &[u8] ) -> Box<Eval>, chain!(
-            first: $arg ~
-            rest: many0!(pair!($op, $arg)),
+macro_rules! binary (
+    ($rule:ident($assoc:ident) => $first:ident ($op:ident $rest:ident)*) => (
+        named!($rule( &[u8] ) -> Box<Eval>, chain!(
+            first: $first ~
+            rest: many0!(pair!($op, $rest)),
             move || {
                 if rest.is_empty() { first }
                 else { Box::new(
-                    BinaryOpNode::new(Associativity::Left, first, rest)
+                    BinaryOpNode::new(Associativity::$assoc, first, rest)
                 ) as Box<Eval> }
             }
         ));
     );
 );
+macro_rules! left_assoc (
+    ($rule:ident => $first:ident ($op:ident $rest:ident)*) => (
+        binary!($rule(Left) => $first ($op $rest)*);
+    );
+);
+macro_rules! right_assoc (
+    ($rule:ident => $first:ident ($op:ident $rest:ident)*) => (
+        binary!($rule(Right) => $first ($op $rest)*);
+    );
+);
 
 
 /// functional ::== joint (FUNCTIONAL_OP joint)*
-left_assoc!(functional => functional_op joint);
+left_assoc!(functional => joint (functional_op joint)*);
 
 /// joint ::== conditional | lambda | curried_op
 named!(joint( &[u8] ) -> Box<Eval>, alt!(conditional | lambda | curried_op));
@@ -84,7 +94,7 @@ named!(curried_op( &[u8] ) -> Box<Eval>, delimited!(
 ));
 
 /// logical ::== comparison (LOGICAL_OP comparison)*
-left_assoc!(logical => logical_op comparison);
+left_assoc!(logical => comparison (logical_op comparison)*);
 
 /// comparison ::== argument [COMPARISON_OP argument]
 named!(comparison( &[u8] ) -> Box<Eval>, chain!(
@@ -104,13 +114,13 @@ named!(comparison( &[u8] ) -> Box<Eval>, chain!(
 
 
 /// argument ::== term (ADDITIVE_BIN_OP term)*
-left_assoc!(argument => additive_op term);
+left_assoc!(argument => term (additive_op term)*);
 
 /// term ::== factor (MULTIPLICATIVE_BIN_OP factor)*
-left_assoc!(term => multiplicative_op factor);
+left_assoc!(term => factor (multiplicative_op factor)*);
 
 /// factor ::== power (POWER_OP power)*
-left_assoc!(factor => power_op power);
+left_assoc!(factor => power (power_op power)*);
 
 /// power ::== UNARY_OP* atom trailer*
 named!(power( &[u8] ) -> Box<Eval>, chain!(
