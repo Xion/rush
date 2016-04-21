@@ -93,7 +93,7 @@ pub fn parse() -> Options {
     parse_from_argv(env::args_os())
 }
 
-/// Parse application arguments given array of arguments
+/// Parse application options from given array of arguments
 /// (*all* arguments, including binary name).
 #[inline(always)]
 pub fn parse_from_argv<I, T>(argv: I) -> Options
