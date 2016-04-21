@@ -69,24 +69,10 @@ pub fn map_bytes<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
 /// whose result is then passed to the second one, etc.
 ///
 /// The final result is written to the given output stream.
+#[inline(always)]
 pub fn apply_string_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
-    let asts = try!(parse_exprs(exprs));
-    let expr_count = asts.len();
-
-    let mut reader = BufReader::new(input);
-    let mut input = String::new();
-    let byte_count = try!(reader.read_to_string(&mut input));
-    let char_count = input.chars().count();
-
     let mut context = Context::new();
-    context.set(CURRENT, Value::String(input));
-
-    let result = try!(process(&mut context, &asts));
-    try!(write_result_line(output, result));
-
-    info!("Processed {} character(s), or {} byte(s), through {} expression(s)",
-          char_count, byte_count, expr_count);
-    Ok(())
+    apply_string_multi_ctx(&mut context, exprs, input, output)
 }
 
 /// Apply a sequence of expressions to the input stream taken as an array of lines
@@ -96,6 +82,102 @@ pub fn apply_string_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &
 ///
 /// The final result is written to the given output stream.
 pub fn apply_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
+    let mut context = Context::new();
+    apply_lines_multi_ctx(&mut context, exprs, input, output)
+}
+
+/// Apply a sequence of expressions to the input stream, line by line.
+///
+/// Every line read from the stream is fed to the first expression
+/// (without the \n char) whose result is then passed to the second one, etc.
+///
+/// The final result is written then to the given output stream.
+/// This continues for each line of input.
+pub fn map_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
+    let mut context = Context::new();
+    map_lines_multi_ctx(&mut context, exprs, input, output)
+}
+
+/// Apply a sequence of expressions to the input stream, word by word.
+///
+/// Every word read from the stream is fed to the first expression,
+/// whose result is then passed to the second one, etc.
+///
+/// The final result is written then to the given output stream.
+/// This continues for each word of input.
+pub fn map_words_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
+    let mut context = Context::new();
+    map_words_multi_ctx(&mut context, exprs, input, output)
+}
+
+/// Apply a sequence of expressions to the input stream, character by character.
+///
+/// Every character read from the stream is fed to the first expression
+/// (as 1-character string), whose result is then passed to the second one, etc.
+///
+/// The final result is written then to the given output stream.
+/// This continues for each character of input.
+pub fn map_chars_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
+    let mut context = Context::new();
+    map_chars_multi_ctx(&mut context, exprs, input, output)
+}
+
+/// Apply a sequence of expressions to the input stream, byte by byte.
+///
+/// Every byte read from the stream is fed to the first expression
+/// (as an integer from 0-255 range), whose result is then passed to the second one, etc.
+///
+/// The final result -- which has to be a 0-255 integer -- is written then
+/// to the given output stream. This continues for each byte of input.
+pub fn map_bytes_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
+    let mut context = Context::new();
+    map_bytes_multi_ctx(&mut context, exprs, input, output)
+}
+
+// Multi-expression processing with shared context.
+
+/// Apply a sequence of expressions to the input stream taken as single string.
+///
+/// The stream is provided as a single string to the first expression,
+/// whose result is then passed to the second one, etc.
+/// Expression context is shared throughout.
+///
+/// The final result is written to the given output stream.
+pub fn apply_string_multi_ctx<R, W>(context: &mut Context,
+                                    exprs: &[&str],
+                                    input: R, output: &mut W) -> io::Result<()>
+    where R: Read, W: Write
+{
+    let asts = try!(parse_exprs(exprs));
+    let expr_count = asts.len();
+
+    let mut reader = BufReader::new(input);
+    let mut input = String::new();
+    let byte_count = try!(reader.read_to_string(&mut input));
+    let char_count = input.chars().count();
+
+    context.set(CURRENT, Value::String(input));
+
+    let result = try!(process(context, &asts));
+    try!(write_result_line(output, result));
+
+    info!("Processed {} character(s), or {} byte(s), through {} expression(s)",
+          char_count, byte_count, expr_count);
+    Ok(())
+}
+
+/// Apply a sequence of expressions to the input stream taken as an array of lines.
+///
+/// The stream is provided as an array of strings to the first expression,
+/// whose result is then passed to the second one, etc.
+/// Expression context is shared throughout.
+///
+/// The final result is written to the given output stream.
+pub fn apply_lines_multi_ctx<R, W>(context: &mut Context,
+                                   exprs: &[&str],
+                                   input: R, output: &mut W) -> io::Result<()>
+    where R: Read, W: Write
+{
     let asts = try!(parse_exprs(exprs));
     let expr_count = asts.len();
 
@@ -109,10 +191,9 @@ pub fn apply_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &m
         .collect();
     let line_count = lines.len();
 
-    let mut context = Context::new();
     context.set(CURRENT, Value::Array(lines));
 
-    let result = try!(process(&mut context, &asts));
+    let result = try!(process(context, &asts));
     try!(write_result_line(output, result));
 
     info!("Processed {} line(s) of input through {} expression(s)",
@@ -124,23 +205,27 @@ pub fn apply_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &m
 ///
 /// Every line read from the stream is fed to the first expression
 /// (without the \n char) whose result is then passed to the second one, etc.
+/// Expression context is shared throughout.
 ///
 /// The final result is written then to the given output stream.
 /// This continues for each line of input.
-pub fn map_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
+pub fn map_lines_multi_ctx<R, W>(context: &mut Context,
+                                 exprs: &[&str],
+                                 input: R, output: &mut W) -> io::Result<()>
+    where R: Read, W: Write
+{
     let asts = try!(parse_exprs(exprs));
     let expr_count = asts.len();
 
     let reader = BufReader::new(input);
     let mut writer = BufWriter::new(output);
-    let mut context = Context::new();
 
     let mut line_count = 0;
     for line in reader.lines() {
         let line = try!(line);
         context.set(CURRENT, to_value(line));
 
-        let result = try!(process(&mut context, &asts));
+        let result = try!(process(context, &asts));
         try!(write_result_line(&mut writer, result));
 
         line_count += 1;
@@ -155,16 +240,20 @@ pub fn map_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
 ///
 /// Every word read from the stream is fed to the first expression,
 /// whose result is then passed to the second one, etc.
+/// Expression context is shared throughout.
 ///
 /// The final result is written then to the given output stream.
 /// This continues for each word of input.
-pub fn map_words_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
+pub fn map_words_multi_ctx<R, W>(context: &mut Context,
+                                 exprs: &[&str],
+                                 input: R, output: &mut W) -> io::Result<()>
+    where R: Read, W: Write
+{
     let asts = try!(parse_exprs(exprs));
     let expr_count = asts.len();
 
     let reader = BufReader::new(input);
     let mut writer = BufWriter::new(output);
-    let mut context = Context::new();
 
     let mut word_count = 0;
     {
@@ -174,7 +263,7 @@ pub fn map_words_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
             }
 
             context.set(CURRENT, to_value(w.clone()));
-            let result = try!(process(&mut context, &asts));
+            let result = try!(process(context, &asts));
 
             // TODO(xion): preserve the exact sequences of whitespace between words
             let retval = try!(String::try_from(result)
@@ -209,16 +298,20 @@ pub fn map_words_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
 ///
 /// Every character read from the stream is fed to the first expression
 /// (as 1-character string), whose result is then passed to the second one, etc.
+/// Expression context is shared throughout.
 ///
 /// The final result is written then to the given output stream.
 /// This continues for each character of input.
-pub fn map_chars_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
+pub fn map_chars_multi_ctx<R, W>(context: &mut Context,
+                                 exprs: &[&str],
+                                 input: R, output: &mut W) -> io::Result<()>
+    where R: Read, W: Write
+{
     let asts = try!(parse_exprs(exprs));
     let expr_count = asts.len();
 
     let reader = BufReader::new(input);
     let mut writer = BufWriter::new(output);
-    let mut context = Context::new();
 
     let mut char_count = 0;
     {
@@ -227,7 +320,7 @@ pub fn map_chars_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
 
             // TODO(xion): consider enforcing for the final result to also be 1-char string
             // and writing those characters as a contiguous string
-            let result = try!(process(&mut context, &asts));
+            let result = try!(process(context, &asts));
             try!(write_result_line(&mut writer, &result));
 
             char_count += 1;
@@ -235,7 +328,7 @@ pub fn map_chars_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
         };
 
         // TODO(xion): rather than reading the input line by line,
-        // use Read::chars() when the feature is stable (same in map_words_multi)
+        // use Read::chars() when the feature is stable (same in map_words_multi_ctx)
         for line in reader.lines() {
             let line = try!(line);
             for ch in line.chars() {
@@ -255,10 +348,15 @@ pub fn map_chars_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
 ///
 /// Every byte read from the stream is fed to the first expression
 /// (as an integer from 0-255 range), whose result is then passed to the second one, etc.
+/// Expression context is shared throughout.
 ///
 /// The final result -- which has to be a 0-255 integer -- is written then
 /// to the given output stream. This continues for each byte of input.
-pub fn map_bytes_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
+pub fn map_bytes_multi_ctx<R, W>(context: &mut Context,
+                                 exprs: &[&str],
+                                 input: R, output: &mut W) -> io::Result<()>
+    where R: Read, W: Write
+{
     let asts = try!(parse_exprs(exprs));
     let expr_count = asts.len();
 
@@ -266,14 +364,13 @@ pub fn map_bytes_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
     // if the underlying reader/writer is something slow like a disk or network
     let reader = BufReader::new(input);
     let mut writer = BufWriter::new(output);
-    let mut context = Context::new();
 
     let mut byte_count = 0;
     for byte in reader.bytes() {
         let byte = try!(byte);
         context.set(CURRENT, Value::from(byte));
 
-        let result = try!(process(&mut context, &asts));
+        let result = try!(process(context, &asts));
         match *result {
             Value::Integer(i) if 0 <= i && i < u8::MAX as IntegerRepr => {
                 try!(writer.write_all(&[i as u8]))
