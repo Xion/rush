@@ -16,6 +16,8 @@ mod logging;
 use std::io;
 use std::process::exit;
 
+use rush::Context;
+
 use args::InputMode;
 
 
@@ -25,25 +27,34 @@ fn main() {
     let opts = args::parse();
     let exprs: Vec<&str> = opts.expressions.iter().map(|e| e as &str).collect();
 
-    if opts.input_mode.is_none() {
-        for expr in exprs {
-            print_ast(expr);
-        }
-        return;
+    match opts.input_mode {
+        Some(mode) => {
+            if let Err(error) = process_input(mode, &exprs) {
+                error!("{:?}", error);
+                exit(1);
+            }
+        },
+        None => {
+            for expr in exprs {
+                print_ast(expr);
+            }
+        },
     }
+}
 
-    // choose a function to process the input with, depending on flags
-    let apply_multi: fn(_, _, _) -> _ = match opts.input_mode.unwrap() {
-        InputMode::String => rush::apply_string_multi,
-        InputMode::Lines => rush::map_lines_multi,
-        InputMode::Words => rush::map_words_multi,
-        InputMode::Chars => rush::map_chars_multi,
-        InputMode::Bytes => rush::map_bytes_multi,
+
+/// Process standard input through given expressions, writing results to stdout.
+fn process_input(mode: InputMode, exprs: &[&str]) -> io::Result<()> {
+    let apply_multi_ctx: fn(&mut Context, _, _, _) -> _ = match mode {
+        InputMode::String => rush::apply_string_multi_ctx,
+        InputMode::Lines => rush::map_lines_multi_ctx,
+        InputMode::Words => rush::map_words_multi_ctx,
+        InputMode::Chars => rush::map_chars_multi_ctx,
+        InputMode::Bytes => rush::map_bytes_multi_ctx,
     };
-    if let Err(error) = apply_multi(&exprs, io::stdin(), &mut io::stdout()) {
-        error!("{:?}", error);
-        exit(1);
-    }
+
+    let mut context = Context::new();
+    apply_multi_ctx(&mut context, &exprs, io::stdin(), &mut io::stdout())
 }
 
 
