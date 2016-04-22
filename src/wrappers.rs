@@ -257,21 +257,24 @@ pub fn map_words_multi_ctx<R, W>(context: &mut Context,
 
     let mut word_count = 0;
     {
-        let mut maybe_process_word = |w: &mut String| -> io::Result<()> {
-            if w.is_empty() {
+        // Note that `writer` is taken as a parameter rather than just being
+        // captured by the closure, because we need to refer to it mutably
+        // in the main loop below.
+        let mut maybe_process_word = |word: &mut String,
+                                      writer: &mut Write| -> io::Result<()> {
+            if word.is_empty() {
                 return Ok(());
             }
 
-            context.set(CURRENT, to_value(w.clone()));
+            context.set(CURRENT, to_value(word.clone()));
             let result = try!(process(context, &asts));
 
-            // TODO(xion): preserve the exact sequences of whitespace between words
             let retval = try!(String::try_from(result)
                 .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e)));
-            try!(write!(writer, "{} ", retval));
+            try!(write!(writer, "{}", retval));
 
             word_count += 1;
-            w.clear();
+            word.clear();
             Ok(())
         };
 
@@ -279,13 +282,16 @@ pub fn map_words_multi_ctx<R, W>(context: &mut Context,
         for line in reader.lines() {
             let line = try!(line);
             for ch in line.chars() {
+                // Whitespace characters denote word's end, but they are to be
+                // preserved verbatim in the final output.
                 if ch.is_whitespace() {
-                    try!(maybe_process_word(&mut word));
+                    try!(maybe_process_word(&mut word, &mut writer));
+                    try!(write!(writer, "{}", ch));
                 } else {
                     word.push(ch);
                 }
             }
-            try!(maybe_process_word(&mut word));
+            try!(maybe_process_word(&mut word, &mut writer));
         }
     }
 
