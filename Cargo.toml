@@ -29,4 +29,5 @@ doctest = false
 
 [[bin]]
 name = "rh"
+path = "src/cli/main.rs"
 doc = false
