@@ -10,16 +10,30 @@ Succinct & readable processing language for a Unix shell. Written in Rust.
     $ echo "Hello " | rh '_ + world'
     Hello world
 
-    $ echo '1,2,3' | rh 'csv & map(int & (*2)) & csv'
-    2,4,6
-
 ## Requirements
 
 Any Unix-like system should do.
 
 ## Examples
 
-WIP
+### Strings
+
+    $ echo 'Alice has a cat' | rh 'before("cat")' '_ + "dog"'
+    Alice has a dog
+
+    # ROT13
+    $ echo -n 'flap' | rh -c 'ord' '(_ - ord(a) + 13) % 26' '_ + ord(a)' chr | rh -s 'sub(/\s+/, "")'
+    sync
+
+### CSV
+
+    $ echo '1,2,3' | rh 'csv & map(int & (*2)) & csv'
+    2,4,6
+
+    $ rh 'csv' '{number: _[0], symbol: _[1], name: _[2], mass: _[3]}'  <./elements.csv
+    {"mass":"1","name":"Hydrogen","number":"1","symbol":"H"}
+    {"mass":"4","name":"Helium","number":"2","symbol":"He"}
+    # etc.
 
 ## Usage
 
