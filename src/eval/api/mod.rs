@@ -66,6 +66,7 @@ impl<'c> Context<'c> {
         self.define_unary(          "regex",    conv::regex         );
         self.define_unary(          "regexp",   conv::regex         );
         self.define_unary(          "rev",      strings::rev        );
+        self.define_unary(          "rot13",    strings::rot13      );
         self.define_unary(          "round",    math::round         );
         self.define_ternary(        "rsub1",    strings::rsub1      );
         self.define_unary(          "sgn",      math::sgn           );

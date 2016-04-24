@@ -1,5 +1,6 @@
 //! String substitution functions.
 
+use std::char;
 use std::str::from_utf8;
 
 use regex::{Captures, Regex};
@@ -8,6 +9,27 @@ use eval::{self, Context, Error, Value};
 use eval::api::conv::str_;
 use eval::model::{Args, Invoke};
 use eval::value::StringRepr;
+
+
+/// Compute the ROT-13 "cipher" of a string.
+/// Characters outside of the a...z range (of either case) are left unchanged.
+pub fn rot13(value: Value) -> eval::Result {
+    let value_type = value.typename();
+
+    eval1!(value : String {
+        value.chars().map(|c| {
+            let base = match c {
+                'a'...'z' => 'a',
+                'A'...'Z' => 'A',
+                _ => return c,
+            } as u32;
+            let idx = (c as u32) - base;
+            char::from_u32(base + (idx + 13) % 26).unwrap()
+        }).collect()
+    });
+
+    Err(Error::new(&format!("rot13() expects a string, got {}", value_type)))
+}
 
 
 /// Substitute a given string or regex ("needle") with something else ("replacement")
