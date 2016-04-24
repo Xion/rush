@@ -162,7 +162,7 @@ fn create_parser<'p>() -> Parser<'p> {
         .arg(Arg::with_name("chars")
             .short("c").long("chars")
             .help("Apply the expression to each character of input \
-                   (which is treated as 1-character string)."))
+                   (treated as 1-character string)."))
         .arg(Arg::with_name("bytes")
             .short("b").long("bytes")
             .help("Apply the expression to input bytes. \

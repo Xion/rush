@@ -25,7 +25,7 @@ Any Unix-like system should do.
         -s, --string     Apply the expression once to the whole input as single string
         -l, --lines      Apply the expression to each line of input as string. This is the default
         -w, --words      Apply the expression to each word in the input as string.
-        -c, --chars      Apply the expression to each character of input (which is treated as 1-character string).
+        -c, --chars      Apply the expression to each character of input (treated as 1-character string).
         -b, --bytes      Apply the expression to input bytes.
                          The expression must take byte value as integer and return integer output.s
 
