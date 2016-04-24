@@ -13,7 +13,9 @@ mod args;
 mod logging;
 
 
-use std::io;
+use std::error::Error;  // for .cause() method
+use std::io::{self, Write};
+use std::iter::repeat;
 use std::process::exit;
 
 use rush::Context;
@@ -30,7 +32,7 @@ fn main() {
     match opts.input_mode {
         Some(mode) => {
             if let Err(error) = process_input(mode, &exprs) {
-                error!("{:?}", error);
+                handle_error(error);
                 exit(1);
             }
         },
@@ -56,6 +58,25 @@ fn process_input(mode: InputMode, exprs: &[&str]) -> io::Result<()> {
     let mut context = Context::new();
     apply_multi_ctx(&mut context, &exprs, io::stdin(), &mut io::stdout())
 }
+
+/// Handle an error that occurred while processing the input.
+fn handle_error(error: io::Error) {
+    writeln!(&mut io::stderr(), "error: {}", error).unwrap();
+
+    // Print the error causes as an indented "tree".
+    let mut cause = error.cause();
+    let mut indent = 0;
+    while let Some(error) = cause {
+        writeln!(&mut io::stderr(), "{}{}{}",
+            repeat(" ").take(CAUSE_PREFIX.len() * indent).collect::<String>(),
+            CAUSE_PREFIX,
+            error).unwrap();
+        indent += 1;
+        cause = error.cause();
+    }
+}
+
+const CAUSE_PREFIX: &'static str = "└ ";  // U+2514
 
 
 /// Print the AST for given expression to stdout.

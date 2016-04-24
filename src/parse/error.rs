@@ -34,18 +34,24 @@ impl Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{:?}", self)
+        match self {
+            &Error::Excess(ref s) =>
+                write!(f, "expected end of expression, but found `{}`", s),
+            &Error::Incomplete(_) =>
+                write!(f, "unexpected end of expression"),
+            _ => write!(f, "{}", self.description()),
+        }
     }
 }
 
 impl StdError for Error {
     fn description(&self) -> &str {
         match *self {
-            Error::Empty => "empty input",
-            Error::Corrupted => "non-UTF8 input",
+            Error::Empty => "empty expression",
+            Error::Corrupted => "non-UTF8 expression",
             Error::Invalid => "syntax error",
-            Error::Excess(_) => "unexpected input",
-            Error::Incomplete(_) => "unexpected end of input",
+            Error::Excess(_) => "unexpected expression",
+            Error::Incomplete(_) => "unexpected end of expression",
         }
     }
 
