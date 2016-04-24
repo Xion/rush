@@ -335,13 +335,17 @@ pub fn map_chars_multi_ctx<R, W>(context: &mut Context,
 
         // TODO(xion): rather than reading the input line by line,
         // use Read::chars() when the feature is stable (same in map_words_multi_ctx)
+        let mut first_line = true;
         for line in reader.lines() {
+            if !first_line {
+                // TODO(xion): cross-platfrorm line ending
+                try!(process_char('\n'));
+            }
             let line = try!(line);
             for ch in line.chars() {
                 try!(process_char(ch));
             }
-            // TODO(xion): cross-platfrorm line ending
-            try!(process_char('\n'));
+            first_line = false;
         }
     }
 
