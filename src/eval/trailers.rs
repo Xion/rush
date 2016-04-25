@@ -9,14 +9,14 @@ use parse::ast::{FunctionCallNode, Index, SubscriptNode};
 
 /// Evaluate the function call AST node.
 impl Eval for FunctionCallNode {
-    fn eval(&self, context: &Context) -> eval::Result {
-        let func = try!(self.func.eval(&context));
+    fn eval(&self, context: &mut Context) -> eval::Result {
+        let func = try!(self.func.eval(context));
         let func_type = func.typename();
 
         if let Value::Function(mut f) = func {
             // evaluate all the arguments first, bail if any of that fails
             let evals: Vec<_> = self.args.iter()
-                .map(|arg| arg.eval(&context))
+                .map(|arg| arg.eval(context))
                 .collect();
             if let Some(res) = evals.iter().find(|r| r.is_err()) {
                 return res.clone();
@@ -46,18 +46,18 @@ impl Eval for FunctionCallNode {
 /// Evaluate the subscript AST node.
 impl Eval for SubscriptNode {
     #[inline]
-    fn eval(&self, context: &Context) -> eval::Result {
+    fn eval(&self, context: &mut Context) -> eval::Result {
         match self.index {
-            Index::Point(ref p) => self.eval_point(p, &context),
-            Index::Range(ref l, ref r) => self.eval_range(l, r, &context),
+            Index::Point(ref p) => self.eval_point(p, context),
+            Index::Range(ref l, ref r) => self.eval_range(l, r, context),
         }
     }
 }
 
 impl SubscriptNode {
-    fn eval_point(&self, index: &Box<Eval>, context: &Context) -> eval::Result {
-        let object = try!(self.object.eval(&context));
-        let index = try!(index.eval(&context));
+    fn eval_point(&self, index: &Box<Eval>, context: &mut Context) -> eval::Result {
+        let object = try!(self.object.eval(context));
+        let index = try!(index.eval(context));
 
         // TODO(xion): roll this into eval_point_on_array(), which would require
         // copying parts of the filter() function implementation
@@ -78,11 +78,11 @@ impl SubscriptNode {
 
     fn eval_range(&self,
                   left: &Option<Box<Eval>>, right: &Option<Box<Eval>>,
-                  context: &Context) -> eval::Result {
-        let object = try!(self.object.eval(&context));
-        let left = if let Some(ref l) = *left { Some(try!(l.eval(&context))) }
+                  context: &mut Context) -> eval::Result {
+        let object = try!(self.object.eval(context));
+        let left = if let Some(ref l) = *left { Some(try!(l.eval(context))) }
                    else { None };
-        let right = if let Some(ref r) = *right { Some(try!(r.eval(&context))) }
+        let right = if let Some(ref r) = *right { Some(try!(r.eval(context))) }
                     else { None };
 
         match object {

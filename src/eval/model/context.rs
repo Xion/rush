@@ -97,16 +97,16 @@ impl<'c> Context<'c> {
     /// "Unset" the value of a variable, making the symbol undefined
     /// in this context.
     ///
-    /// Returns a boolean indicating whether the context changed
-    /// (i.e. the variable was actually defined before).
+    /// Returns the value that the variable was previously set to
+    /// (or None if it wasn't set before).
     ///
     /// Note how regardless of the return value, the variable won't be defined
     /// in this context after the call to this method. It may, however,
     /// still **be** defined in a parent Context, if any.
-    pub fn unset_here<N: ?Sized>(&mut self, name: &N) -> bool
+    pub fn unset_here<N: ?Sized>(&mut self, name: &N) -> Option<Value>
         where Name: Borrow<N>, N: Hash + Eq
     {
-        self.scope.remove(name).is_some()
+        self.scope.remove(name)
     }
 
     /// Reset the context, removing all variable bindings.

@@ -5,8 +5,8 @@ use parse::ast::UnaryOpNode;
 
 
 impl Eval for UnaryOpNode {
-    fn eval(&self, context: &Context) -> eval::Result {
-        let arg = try!(self.arg.eval(&context));
+    fn eval(&self, context: &mut Context) -> eval::Result {
+        let arg = try!(self.arg.eval(context));
         match &self.op[..] {
             "+" => UnaryOpNode::eval_plus(arg),
             "-" => UnaryOpNode::eval_minus(arg),

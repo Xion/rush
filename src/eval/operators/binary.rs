@@ -26,10 +26,10 @@ type ScEvalResult = Result<(Value, Shortcircuit), eval::Error>;
 
 impl Eval for BinaryOpNode {
     #[inline]
-    fn eval(&self, context: &Context) -> eval::Result {
+    fn eval(&self, context: &mut Context) -> eval::Result {
         match self.assoc {
-            Associativity::Left => self.eval_left_assoc(&context),
-            Associativity::Right => self.eval_right_assoc(&context),
+            Associativity::Left => self.eval_left_assoc(context),
+            Associativity::Right => self.eval_right_assoc(context),
         }
     }
 }
@@ -65,10 +65,10 @@ impl BinaryOpNode {
 }
 
 impl BinaryOpNode {
-    fn eval_left_assoc(&self, context: &Context) -> eval::Result {
-        let mut result = try!(self.first.eval(&context));
+    fn eval_left_assoc(&self, context: &mut Context) -> eval::Result {
+        let mut result = try!(self.first.eval(context));
         for &(ref op, ref arg) in &self.rest {
-            let arg = try!(arg.eval(&context));
+            let arg = try!(arg.eval(context));
 
             // allow for terminating evaluation of short-circuiting operators early
             if BinaryOpNode::is_shortcircuit_op(&op[..]) {
@@ -84,9 +84,9 @@ impl BinaryOpNode {
         Ok(result)
     }
 
-    fn eval_right_assoc(&self, context: &Context) -> eval::Result {
+    fn eval_right_assoc(&self, context: &mut Context) -> eval::Result {
         if self.rest.is_empty() {
-            self.first.eval(&context)
+            self.first.eval(context)
         } else {
             // evaluate the terms in reverse order; since the AST is tailored
             // towards left-associative operators, it is slightly awkward
@@ -96,12 +96,12 @@ impl BinaryOpNode {
             // initialize with the "last" term
             let &(ref op, ref arg) = rest.next().unwrap();
             let mut op = op;
-            let mut result = try!(arg.eval(&context));
+            let mut result = try!(arg.eval(context));
 
             // go through the remaining terms
             // (note how current `result` is always the second arg for an operator)
             for &(ref next_op, ref arg) in rest {
-                let arg = try!(arg.eval(&context));
+                let arg = try!(arg.eval(context));
 
                 // allow for terminating evaluation of short-circuiting operators early
                 if BinaryOpNode::is_shortcircuit_op(&op[..]) {
@@ -117,7 +117,7 @@ impl BinaryOpNode {
             }
 
             // finish by processing the "first" term
-            let last = try!(self.first.eval(&context));
+            let last = try!(self.first.eval(context));
             BinaryOpNode::eval_op(&op[..], last, result, &context)
         }
     }

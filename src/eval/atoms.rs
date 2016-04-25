@@ -9,7 +9,7 @@ use parse::ast::{ArrayNode, ObjectNode, ScalarNode};
 /// Evaluate the AST node representing a scalar value.
 impl Eval for ScalarNode {
     #[inline(always)]
-    fn eval(&self, context: &Context) -> eval::Result {
+    fn eval(&self, context: &mut Context) -> eval::Result {
         Ok(context.resolve(&self.value))
     }
 }
@@ -17,10 +17,10 @@ impl Eval for ScalarNode {
 
 /// Evaluate the AST node representing an array value.
 impl Eval for ArrayNode {
-    fn eval(&self, context: &Context) -> eval::Result {
+    fn eval(&self, context: &mut Context) -> eval::Result {
         let mut elems = ArrayRepr::new();
         for ref x in self.elements.iter() {
-            let elem = try!(x.eval(&context));
+            let elem = try!(x.eval(context));
             elems.push(elem);
         }
         Ok(Value::Array(elems))
@@ -30,11 +30,11 @@ impl Eval for ArrayNode {
 
 /// Evaluate the AST node representing an object value.
 impl Eval for ObjectNode {
-    fn eval(&self, context: &Context) -> eval::Result {
+    fn eval(&self, context: &mut Context) -> eval::Result {
         let mut attrs = ObjectRepr::new();
         for &(ref k, ref v) in self.attributes.iter() {
-            let key = try!(k.eval(&context));
-            let value = try!(v.eval(&context));
+            let key = try!(k.eval(context));
+            let value = try!(v.eval(context));
             if let Value::String(attr) = key {
                 attrs.insert(attr, value);
             } else {

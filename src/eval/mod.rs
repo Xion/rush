@@ -15,7 +15,7 @@ pub use self::model::{Context, Function, Invoke, Value};
 pub use self::model::value;  // for *Repr typedefs
 
 
-use std::error;
+use std::error::Error as StdError;
 use std::fmt;
 use std::result;
 
@@ -42,9 +42,9 @@ impl fmt::Display for Error {
     }
 }
 
-impl error::Error for Error {
+impl StdError for Error {
     #[inline(always)] fn description(&self) -> &str { &self.message }
-    #[inline(always)] fn cause(&self) -> Option<&error::Error> { None }
+    #[inline(always)] fn cause(&self) -> Option<&StdError> { None }
 }
 
 
@@ -54,6 +54,6 @@ pub type Result = result::Result<Value, Error>;
 
 /// Trait for objects that can be evaluated within given Context.
 pub trait Eval : fmt::Debug + mopa::Any {
-    fn eval(&self, context: &Context) -> Result;
+    fn eval(&self, context: &mut Context) -> Result;
 }
 mopafy!(Eval);

@@ -199,6 +199,6 @@ impl Invoke for CustomFunction {
         for (name, value) in self.argnames.iter().zip(args.into_iter()) {
             context.set(name, value);
         }
-        self.expr.eval(&context)
+        self.expr.eval(&mut context)
     }
 }

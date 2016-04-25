@@ -7,14 +7,14 @@ use parse::ast::ConditionalNode;
 /// Evaluate the ternary operator / conditional node.
 impl Eval for ConditionalNode {
     #[inline]
-    fn eval(&self, context: &Context) -> eval::Result {
+    fn eval(&self, context: &mut Context) -> eval::Result {
         let condition = try!(
-            self.cond.eval(&context).and_then(api::conv::bool)
+            self.cond.eval(context).and_then(api::conv::bool)
         ).unwrap_bool();
         if condition {
-            self.then.eval(&context)
+            self.then.eval(context)
         } else {
-            self.else_.eval(&context)
+            self.else_.eval(context)
         }
     }
 }

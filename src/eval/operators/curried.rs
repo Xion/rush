@@ -6,13 +6,13 @@ use parse::ast::{BinaryOpNode, CurriedBinaryOpNode};
 
 
 impl Eval for CurriedBinaryOpNode {
-    fn eval(&self, context: &Context) -> eval::Result {
+    fn eval(&self, context: &mut Context) -> eval::Result {
         if let Some(ref left) = self.left {
-            let arg = try!(left.eval(&context));
+            let arg = try!(left.eval(context));
             return self.eval_with_left(arg);
         }
         if let Some(ref right) = self.right {
-            let arg = try!(right.eval(&context));
+            let arg = try!(right.eval(context));
             return self.eval_with_right(arg);
         }
         self.eval_with_none()

@@ -416,22 +416,19 @@ fn to_value(input: String) -> Value {
 
 fn process<'c>(context: &'c mut Context, exprs: &[Box<Eval>]) -> io::Result<&'c Value> {
     for ast in exprs.iter() {
-        let result = {
-            let value = context.get(CURRENT).unwrap();
-            try!(evaluate(ast, value, context))
-        };
+        let result = try!(evaluate(ast, context));
         context.set(CURRENT, result);
     }
     Ok(context.get(CURRENT).unwrap())
 }
 
-fn evaluate<'c>(ast: &Box<Eval>, input: &'c Value, context: &'c Context) -> io::Result<Value> {
+fn evaluate<'c>(ast: &Box<Eval>, context: &'c mut Context) -> io::Result<Value> {
     ast.eval(context)
-        .and_then(|result| maybe_apply_result(result, input, &context))
+        .and_then(|result| maybe_apply_result(result, context))
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
 }
 
-fn maybe_apply_result<'c>(result: Value, input: &'c Value, context: &'c Context) -> eval::Result {
+fn maybe_apply_result<'c>(result: Value, context: &'c mut Context) -> eval::Result {
     // result might be a function, in which case we will try to apply to original input
     if let Value::Function(func) = result {
         if func.arity() != 1 {
@@ -440,7 +437,8 @@ fn maybe_apply_result<'c>(result: Value, input: &'c Value, context: &'c Context)
                 (got {}-argument one)", func.arity())));
         }
         debug!("Result found to be a function, applying it to input");
-        return func.invoke(vec![input.clone()], &context);
+        let input = context.unset_here(CURRENT).unwrap();
+        return func.invoke(vec![input], &context);
     }
     Ok(result)
 }
