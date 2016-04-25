@@ -40,9 +40,13 @@ Any Unix-like system should do.
 
     $ echo 'Alice has a cat' | rh 'before("cat")' '_ + "dog"'
     Alice has a dog
+    $ echo 'Alice has a cat' | rh 'after("Alice")' '"Bob" + _'
+    Bob has a cat
 
     # ROT13
     $ echo -n 'flap' | rh -c 'ord' '(_ - ord(a) + 13) % 26' '_ + ord(a)' chr | rh -s 'sub(/\s+/, "")'
+    sync
+    $ echo -n 'flap' | rh -s rot13
     sync
 
 ### CSV

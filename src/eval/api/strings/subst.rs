@@ -14,9 +14,7 @@ use eval::value::StringRepr;
 /// Compute the ROT-13 "cipher" of a string.
 /// Characters outside of the a...z range (of either case) are left unchanged.
 pub fn rot13(value: Value) -> eval::Result {
-    let value_type = value.typename();
-
-    eval1!(value : String {
+    eval1!(value : &String {
         value.chars().map(|c| {
             let base = match c {
                 'a'...'z' => 'a',
@@ -27,8 +25,9 @@ pub fn rot13(value: Value) -> eval::Result {
             char::from_u32(base + (idx + 13) % 26).unwrap()
         }).collect()
     });
-
-    Err(Error::new(&format!("rot13() expects a string, got {}", value_type)))
+    Err(Error::new(&format!(
+        "rot13() expects a string, got {}", value.typename()
+    )))
 }
 
 
