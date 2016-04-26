@@ -5,7 +5,7 @@ use std::iter;
 use eval::{self, api, Eval, Context, Value};
 use eval::model::Invoke;
 use eval::model::value::{ArrayRepr, FloatRepr, IntegerRepr, StringRepr};
-use parse::ast::{Associativity, BinaryOpNode};
+use parse::ast::{Associativity, BinaryOpNode, ScalarNode};
 
 
 /// State of a short-circuited operation.
@@ -39,7 +39,7 @@ impl BinaryOpNode {
     pub fn eval_op(op: &str, left: Value, right: Value, context: &Context) -> eval::Result {
         match op {
             // These short-circuited operators have to be considered here as well
-            // because eval_right_assoc() and CurriedBinaryOpNode::eval() rely on this.
+            // because eval_right_assoc() and CurriedBinaryOpNode::eval() relies on this.
             "&&" => BinaryOpNode::eval_and(left, right).map(|(v, _)| v),
             "||" => BinaryOpNode::eval_or(left, right).map(|(v, _)| v),
 
@@ -101,6 +101,12 @@ impl BinaryOpNode {
             // go through the remaining terms
             // (note how current `result` is always the second arg for an operator)
             for &(ref next_op, ref arg) in rest {
+                if BinaryOpNode::is_assignment_op(&op[..]) {
+                    let arg = try!(BinaryOpNode::resolve_assignment_lhs(arg, context));
+                    result = try!(BinaryOpNode::eval_assignment_op(&op[..], arg, result, context));
+                    continue;
+                }
+
                 let arg = try!(arg.eval(context));
 
                 // allow for terminating evaluation of short-circuiting operators early
@@ -117,8 +123,35 @@ impl BinaryOpNode {
             }
 
             // finish by processing the "first" term
-            let last = try!(self.first.eval(context));
-            BinaryOpNode::eval_op(&op[..], last, result, &context)
+            if BinaryOpNode::is_assignment_op(&op[..]) {
+                let last = try!(BinaryOpNode::resolve_assignment_lhs(&self.first, context));
+                BinaryOpNode::eval_assignment_op(&op[..], last, result, context)
+            } else {
+                let last = try!(self.first.eval(context));
+                BinaryOpNode::eval_op(&op[..], last, result, &context)
+            }
+        }
+    }
+
+    #[inline(always)]
+    fn is_assignment_op(op: &str) -> bool {
+        ["="].contains(&op)
+    }
+
+    /// Resolve the left-hand side of an assignment operator.
+    fn resolve_assignment_lhs(arg: &Box<Eval>, context: &mut Context) -> eval::Result {
+        // Hack: check if the argument is a scalar AST node.
+        // If so, extract the value from it directly, w/o going through
+        // Context::resolve so that Value::Symbol will be preserved.
+        arg.downcast_ref::<ScalarNode>()
+            .map_or_else(|| arg.eval(context), |s| Ok(s.value.clone()))
+    }
+
+    fn eval_assignment_op(op: &str, left: Value, right: Value, context: &mut Context) -> eval::Result {
+        match op {
+            // TODO(xion): compound assignments
+            "=" => BinaryOpNode::eval_let(left, right, context),
+            _ => panic!("not an assignment operator: {}", op),
         }
     }
 
@@ -133,6 +166,19 @@ impl BinaryOpNode {
             "||" => BinaryOpNode::eval_or(left, right),
             _ => panic!("non-shortcircuiting operator: {}", op),
         }
+    }
+}
+
+/// Assignment operators.
+impl BinaryOpNode {
+    /// Evaluate the "=" operator.
+    fn eval_let(left: Value, right: Value, context: &mut Context) -> eval::Result {
+        if let Value::Symbol(ref name) = left {
+            // TODO(xion): forbid assignments to `_` variable
+            context.set(name, right);
+            return Ok(Value::Empty);
+        }
+        BinaryOpNode::err("=", left, right)
     }
 }
 
@@ -416,7 +462,7 @@ impl BinaryOpNode {
     }
 }
 
-// Utility function.
+// Utility functions.
 impl BinaryOpNode {
     /// Produce an error about invalid arguments for an operator.
     #[inline(always)]
