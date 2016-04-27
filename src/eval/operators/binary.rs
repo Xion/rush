@@ -86,50 +86,50 @@ impl BinaryOpNode {
 
     fn eval_right_assoc(&self, context: &mut Context) -> eval::Result {
         if self.rest.is_empty() {
-            self.first.eval(context)
-        } else {
-            // evaluate the terms in reverse order; since the AST is tailored
-            // towards left-associative operators, it is slightly awkward
-            // as it always leaves an operation waiting for the next term
-            let mut rest = self.rest.iter().rev();
+            return self.first.eval(context);
+        }
 
-            // initialize with the "last" term
-            let &(ref op, ref arg) = rest.next().unwrap();
-            let mut op = op;
-            let mut result = try!(arg.eval(context));
+        // evaluate the terms in reverse order; since the AST is tailored
+        // towards left-associative operators, it is slightly awkward
+        // as it always leaves an operation waiting for the next term
+        let mut rest = self.rest.iter().rev();
 
-            // go through the remaining terms
-            // (note how current `result` is always the second arg for an operator)
-            for &(ref next_op, ref arg) in rest {
-                if BinaryOpNode::is_assignment_op(&op[..]) {
-                    let arg = try!(BinaryOpNode::resolve_assignment_lhs(arg, context));
-                    result = try!(BinaryOpNode::eval_assignment_op(&op[..], arg, result, context));
-                    continue;
-                }
+        // initialize with the "last" term
+        let &(ref op, ref arg) = rest.next().unwrap();
+        let mut op = op;
+        let mut result = try!(arg.eval(context));
 
-                let arg = try!(arg.eval(context));
-
-                // allow for terminating evaluation of short-circuiting operators early
-                if BinaryOpNode::is_shortcircuit_op(&op[..]) {
-                    let (res, sc) = try!(BinaryOpNode::eval_shortcircuit_op(&op[..], arg, result));
-                    result = res;
-                    if sc == Shortcircuit::Break {
-                        return Ok(result);
-                    }
-                } else {
-                    result = try!(BinaryOpNode::eval_op(&op[..], arg, result, &context));
-                }
-                op = next_op;
-            }
-
-            // finish by processing the "first" term
+        // go through the remaining terms
+        // (note how current `result` is always the second arg for an operator)
+        for &(ref next_op, ref arg) in rest {
             if BinaryOpNode::is_assignment_op(&op[..]) {
-                let last = try!(BinaryOpNode::resolve_assignment_lhs(&self.first, context));
-                BinaryOpNode::eval_assignment_op(&op[..], last, result, context)
-            } else {
-                let last = try!(self.first.eval(context));
-                BinaryOpNode::eval_op(&op[..], last, result, &context)
+                let arg = try!(BinaryOpNode::resolve_assignment_lhs(arg, context));
+                result = try!(BinaryOpNode::eval_assignment_op(&op[..], arg, result, context));
+                continue;
             }
+
+            let arg = try!(arg.eval(context));
+
+            // allow for terminating evaluation of short-circuiting operators early
+            if BinaryOpNode::is_shortcircuit_op(&op[..]) {
+                let (res, sc) = try!(BinaryOpNode::eval_shortcircuit_op(&op[..], arg, result));
+                result = res;
+                if sc == Shortcircuit::Break {
+                    return Ok(result);
+                }
+            } else {
+                result = try!(BinaryOpNode::eval_op(&op[..], arg, result, &context));
+            }
+            op = next_op;
+        }
+
+        // finish by processing the "first" term
+        if BinaryOpNode::is_assignment_op(&op[..]) {
+            let last = try!(BinaryOpNode::resolve_assignment_lhs(&self.first, context));
+            BinaryOpNode::eval_assignment_op(&op[..], last, result, context)
+        } else {
+            let last = try!(self.first.eval(context));
+            BinaryOpNode::eval_op(&op[..], last, result, &context)
         }
     }
 
@@ -147,10 +147,10 @@ impl BinaryOpNode {
             .map_or_else(|| arg.eval(context), |s| Ok(s.value.clone()))
     }
 
-    fn eval_assignment_op(op: &str, left: Value, right: Value, context: &mut Context) -> eval::Result {
+    fn eval_assignment_op(op: &str, lhs: Value, rhs: Value, context: &mut Context) -> eval::Result {
         match op {
-            // TODO(xion): compound assignments
-            "=" => BinaryOpNode::eval_let(left, right, context),
+            // TODO(xion): consider supporting compound assignments
+            "=" => BinaryOpNode::eval_let(lhs, rhs, context),
             _ => panic!("not an assignment operator: {}", op),
         }
     }
