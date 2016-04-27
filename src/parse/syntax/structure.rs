@@ -11,7 +11,7 @@ named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: block, || { e }));
 
 /// block ::== (functional)+
 named!(pub block( &[u8] ) -> Box<Eval>, map!(
-    separated_nonempty_list!(multispaced!(tag!(";")), functional),
+    separated_nonempty_list!(multispaced!(tag!(";")), assignment),
     move |exprs| { Box::new(BlockNode::new(exprs)) as Box<Eval> }
 ));
 
@@ -43,6 +43,12 @@ macro_rules! right_assoc (
     );
 );
 
+
+/// assignment ::== functional (ASSIGNMENT_OP functional)*
+right_assoc!(assignment => functional (assignment_op functional)*);
+// TODO(xion): placing assignment at the root of syntax tree makes it awkward
+// to define lambdas such as `|x| x = x + i` (they require parentheses/braces);
+// move this further down (somewhere around 'conditional' probably)
 
 /// functional ::== joint (FUNCTIONAL_OP joint)*
 left_assoc!(functional => joint (functional_op joint)*);

@@ -4,6 +4,7 @@ use util::*;
 
 
 // TODO(xion): tests for logical operators
+// TODO(xion): tests for assignment operators
 
 #[test]
 fn compare_less_constants() {

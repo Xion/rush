@@ -14,6 +14,9 @@ named!(pub unary_op( &[u8] ) -> String, string!(multispaced!(
 
 // Binary operators
 
+named!(pub assignment_op( &[u8] ) -> String, string!(multispaced!(
+    tag!("=")
+)));
 named!(pub functional_op( &[u8] ) -> String, string!(multispaced!(
     char_of!("&$")
 )));
