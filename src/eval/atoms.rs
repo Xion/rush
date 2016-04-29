@@ -18,8 +18,8 @@ impl Eval for ScalarNode {
 /// Evaluate the AST node representing an array value.
 impl Eval for ArrayNode {
     fn eval(&self, context: &mut Context) -> eval::Result {
-        let mut elems = ArrayRepr::new();
-        for ref x in self.elements.iter() {
+        let mut elems = ArrayRepr::with_capacity(self.elements.len());
+        for ref x in &self.elements {
             let elem = try!(x.eval(context));
             elems.push(elem);
         }
@@ -31,8 +31,8 @@ impl Eval for ArrayNode {
 /// Evaluate the AST node representing an object value.
 impl Eval for ObjectNode {
     fn eval(&self, context: &mut Context) -> eval::Result {
-        let mut attrs = ObjectRepr::new();
-        for &(ref k, ref v) in self.attributes.iter() {
+        let mut attrs = ObjectRepr::with_capacity(self.attributes.len());
+        for &(ref k, ref v) in &self.attributes {
             let key = try!(k.eval(context));
             let value = try!(v.eval(context));
             if let Value::String(attr) = key {

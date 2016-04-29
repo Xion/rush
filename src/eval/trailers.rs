@@ -15,17 +15,13 @@ impl Eval for FunctionCallNode {
 
         if let Value::Function(mut f) = func {
             // evaluate all the arguments first, bail if any of that fails
-            let evals: Vec<_> = self.args.iter()
-                .map(|arg| arg.eval(context))
-                .collect();
-            if let Some(res) = evals.iter().find(|r| r.is_err()) {
-                return res.clone();
+            let mut args = Vec::with_capacity(self.args.len());
+            for ref arg in &self.args {
+                let arg = try!(arg.eval(context));
+                args.push(arg);
             }
 
-            // extract the argument values and determine
-            // if it's a regular call or a curry (partial application)
-            let args: Vec<_> =
-                evals.into_iter().map(|r| r.ok().unwrap()).collect();
+            // determine if it's a regular call or curry (partial application)
             if f.arity() > args.len() {
                 for arg in args.into_iter() {
                     f = f.curry(arg).unwrap();
