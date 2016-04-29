@@ -37,6 +37,7 @@ impl<'c> Context<'c> {
         self.define_unary(          "all",      base::all           );
         self.define_unary(          "any",      base::any           );
         self.define_binary(         "before",   strings::before     );
+        self.define_unary(          "bin",      math::bin           );
         self.define_unary(          "bool",     conv::bool          );
         self.define_unary(          "ceil",     math::ceil          );
         self.define_unary(          "char",     strings::chr        );
@@ -50,6 +51,7 @@ impl<'c> Context<'c> {
         self.define_ternary_ctx(    "foldl",    base::reduce        );
         self.define_binary(         "format",   strings::format_    );
         self.define_ternary_ctx(    "gsub",     strings::sub        );
+        self.define_unary(          "hex",      math::hex           );
         self.define_binary(         "index",    base::index         );
         self.define_unary(          "int",      conv::int           );
         self.define_binary(         "join",     strings::join       );
@@ -59,6 +61,7 @@ impl<'c> Context<'c> {
         self.define_binary_ctx(     "map",      base::map           );
         self.define_unary_ctx(      "max",      base::max           );
         self.define_unary_ctx(      "min",      base::min           );
+        self.define_unary(          "oct",      math::oct           );
         self.define_unary(          "ord",      strings::ord        );
         self.define_nullary(        "rand",     math::rand          );
         self.define_unary(          "re",       conv::regex         );

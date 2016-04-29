@@ -116,3 +116,30 @@ pub fn trunc(value : Value) -> eval::Result {
         "trunc() requires a number, got {}", value.typename()
     )))
 }
+
+
+// Numeric bases
+
+/// Convert an integer to a binary string.
+pub fn bin(value: Value) -> eval::Result {
+    eval1!((value : Integer) -> String { format!("{:b}", value) });
+    Err(Error::new(&format!(
+        "bin() requires a number, got {}", value.typename()
+    )))
+}
+
+/// Convert an integer to an octal string.
+pub fn oct(value: Value) -> eval::Result {
+    eval1!((value : Integer) -> String { format!("{:o}", value) });
+    Err(Error::new(&format!(
+        "oct() requires a number, got {}", value.typename()
+    )))
+}
+
+/// Convert an integer to a hexidecimal string.
+pub fn hex(value: Value) -> eval::Result {
+    eval1!((value : Integer) -> String { format!("{:x}", value) });
+    Err(Error::new(&format!(
+        "hex() requires a number, got {}", value.typename()
+    )))
+}
