@@ -55,7 +55,6 @@ pub enum Value {
     Object(ObjectRepr),
     Function(FunctionRepr),
 }
-// TODO(xion): implement PartialEq like the == and != operators are now
 
 impl Value {
     /// Return the type of this value as string.
