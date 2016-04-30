@@ -209,6 +209,7 @@ impl BinaryOpNode {
 }
 
 // Comparison operators.
+// TODO(xion): implement them using Value's PartialOrd & PartialEq
 impl BinaryOpNode {
     /// Evaluate the "<" operator for two values.
     fn eval_lt(left: Value, right: Value) -> eval::Result {

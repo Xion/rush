@@ -6,6 +6,7 @@
 //! This module implements the Value type itself, as well as all the various
 //! conversions to and from Rust types, and serialization formats like JSON.
 
+use std::cmp::{Ordering, PartialOrd};
 use std::collections::HashMap;
 use std::convert::From;
 use std::fmt;
@@ -54,6 +55,7 @@ pub enum Value {
     Object(ObjectRepr),
     Function(FunctionRepr),
 }
+// TODO(xion): implement PartialEq like the == and != operators are now
 
 impl Value {
     /// Return the type of this value as string.
@@ -202,6 +204,23 @@ impl fmt::Debug for Value {
                     .collect::<Vec<String>>().join(","))
             },
             Value::Function(ref f) => write!(fmt, "{:?}", f),
+        }
+    }
+}
+
+
+impl PartialOrd for Value {
+    fn partial_cmp(&self, other: &Value) -> Option<Ordering> {
+        match (self, other) {
+            (&Value::Integer(a), &Value::Integer(b)) => a.partial_cmp(&b),
+            (&Value::Integer(a), &Value::Float(b)) => (a as FloatRepr).partial_cmp(&b),
+            (&Value::Float(a), &Value::Integer(b)) => a.partial_cmp(&(b as FloatRepr)),
+            (&Value::Float(a), &Value::Float(b)) => a.partial_cmp(&b),
+
+            (&Value::String(ref a), &Value::String(ref b)) => a.partial_cmp(b),
+            // TODO(xion): consider implementing ordering of arrays, too
+
+            _ => None,
         }
     }
 }

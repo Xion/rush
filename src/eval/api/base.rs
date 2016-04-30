@@ -1,5 +1,7 @@
 //! Base API functions.
 
+use std::cmp::{Ordering, PartialOrd};
+
 use eval::{self, Context, Error, Function, Value};
 use eval::model::{ArgCount, Invoke};
 use eval::value::IntegerRepr;
@@ -236,6 +238,31 @@ pub fn reduce(func: Value, array: Value, start: Value, context: &Context) -> eva
     Err(Error::new(&format!(
         "reduce() requires a function and an array, got {} and {}",
         func_type, array_type
+    )))
+}
+
+
+/// Sort the array.
+///
+/// The only kinds of sortable values are numbers (integers & floats (sans NaN))
+/// and strings (alphabetically). They do not compare to each other, though.
+///
+/// Returns the array after sorting.
+pub fn sort(array: Value) -> eval::Result {
+    if let Value::Array(mut array) = array {
+        let mut error: Option<Error> = None;
+        array.sort_by(|a, b| a.partial_cmp(b).unwrap_or_else(|| {
+            error = Some(Error::new(&format!(
+                "cannot compare {} with {}", a.typename(), b.typename())));
+            Ordering::Less  // arbitrary, won't matter anyway
+        }));
+        return match error {
+            Some(e) => Err(e),
+            _ => Ok(Value::Array(array)),
+        };
+    }
+    Err(Error::new(&format!(
+        "sort() expects an array, got {}", array.typename()
     )))
 }
 

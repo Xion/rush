@@ -73,6 +73,7 @@ impl<'c> Context<'c> {
         self.define_unary(          "round",    math::round         );
         self.define_ternary(        "rsub1",    strings::rsub1      );
         self.define_unary(          "sgn",      math::sgn           );
+        self.define_unary(          "sort",     base::sort          );
         self.define_binary(         "split",    strings::split      );
         self.define_unary(          "sqrt",     math::sqrt          );
         self.define_unary(          "str",      conv::str_          );
