@@ -1,5 +1,6 @@
 //! Module implementing evaluaton of binary operator AST nodes.
 
+use std::cmp::{Ordering, PartialOrd};
 use std::iter;
 
 use eval::{self, api, Eval, Context, Value};
@@ -213,37 +214,33 @@ impl BinaryOpNode {
 impl BinaryOpNode {
     /// Evaluate the "<" operator for two values.
     fn eval_lt(left: Value, right: Value) -> eval::Result {
-        eval2!((left: Integer, right: Integer) -> Boolean { left < right });
-        eval2!((left: Integer, right: Float) -> Boolean { (left as FloatRepr) < right });
-        eval2!((left: Float, right: Integer) -> Boolean { left < (right as FloatRepr) });
-        eval2!((left: Float, right: Float) -> Boolean { left < right });
+        if let Some(o) = left.partial_cmp(&right) {
+            return Ok(Value::Boolean(o == Ordering::Less));
+        }
         BinaryOpNode::err("<", left, right)
     }
 
     /// Evaluate the "<=" operator for two values.
     fn eval_le(left: Value, right: Value) -> eval::Result {
-        eval2!((left: Integer, right: Integer) -> Boolean { left <= right });
-        eval2!((left: Integer, right: Float) -> Boolean { (left as FloatRepr) <= right });
-        eval2!((left: Float, right: Integer) -> Boolean { left <= (right as FloatRepr) });
-        eval2!((left: Float, right: Float) -> Boolean { left <= right });
+        if let Some(o) = left.partial_cmp(&right) {
+            return Ok(Value::Boolean(o == Ordering::Less || o == Ordering::Equal));
+        }
         BinaryOpNode::err("<=", left, right)
     }
 
     /// Evaluate the ">" operator for two values.
     fn eval_gt(left: Value, right: Value) -> eval::Result {
-        eval2!((left: Integer, right: Integer) -> Boolean { left > right });
-        eval2!((left: Integer, right: Float) -> Boolean { (left as FloatRepr) > right });
-        eval2!((left: Float, right: Integer) -> Boolean { left > (right as FloatRepr) });
-        eval2!((left: Float, right: Float) -> Boolean { left > right });
+        if let Some(o) = left.partial_cmp(&right) {
+            return Ok(Value::Boolean(o == Ordering::Greater));
+        }
         BinaryOpNode::err(">", left, right)
     }
 
     /// Evaluate the ">=" operator for two values.
     fn eval_ge(left: Value, right: Value) -> eval::Result {
-        eval2!((left: Integer, right: Integer) -> Boolean { left >= right });
-        eval2!((left: Integer, right: Float) -> Boolean { (left as FloatRepr) >= right });
-        eval2!((left: Float, right: Integer) -> Boolean { left >= (right as FloatRepr) });
-        eval2!((left: Float, right: Float) -> Boolean { left >= right });
+        if let Some(o) = left.partial_cmp(&right) {
+            return Ok(Value::Boolean(o == Ordering::Greater || o == Ordering::Equal));
+        }
         BinaryOpNode::err(">=", left, right)
     }
 
