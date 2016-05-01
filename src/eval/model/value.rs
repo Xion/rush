@@ -6,7 +6,7 @@
 //! This module implements the Value type itself, as well as all the various
 //! conversions to and from Rust types, and serialization formats like JSON.
 
-use std::cmp::{Ordering, PartialEq, PartialOrd};
+use std::cmp::{Ordering, PartialOrd};
 use std::collections::HashMap;
 use std::convert::From;
 use std::fmt;
@@ -112,6 +112,10 @@ impl Value {
     #[inline(always)]
     pub fn is_scalar(&self) -> bool {
         self.is_bool() || self.is_int() || self.is_float() || self.is_string()
+    }
+    #[inline(always)]
+    pub fn is_number(&self) -> bool {
+        self.is_int() || self.is_float()
     }
 }
 
@@ -231,16 +235,7 @@ impl TryOrd for Value {
         )))
     }
 }
-impl PartialOrd for Value {
-    fn partial_cmp(&self, other: &Value) -> Option<Ordering> {
-        // Sadly, this implementation cannot be be generalized for any TryOrd type,
-        // because Rust only allows traits defined within current crate to be impl'd
-        // for template params, making this generic impl illegal:
-        //
-        //   impl<T, Rhs> PartialOrd<Rhs> for T where T: TryOrd<Rhs> { ... }
-        self.try_cmp(other).ok()
-    }
-}
+impl_partialord_for_tryord!(Value);
 
 impl TryEq for Value {
     type Err = eval::Error;
@@ -265,12 +260,7 @@ impl TryEq for Value {
         }
     }
 }
-impl PartialEq for Value {
-    fn eq(&self, other: &Value) -> bool {
-        // The same note about boilerplate PartialOrd implementation aplies here.
-        self.try_eq(other).unwrap_or(false)
-    }
-}
+impl_partialeq_for_tryeq!(Value);
 
 
 // Conversions from Rust types

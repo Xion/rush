@@ -41,3 +41,34 @@ pub trait TryEq<Rhs: ?Sized = Self> {
         self.try_eq(other).map(|b| !b)
     }
 }
+
+
+// Macros for implementing PartialX from TryX
+
+// These macros are necessary, because Rust only allows traits defined with current crate
+// to be impl'd for template params. This makes the following generic impl illegal:
+//
+//     impl<T, Rhs> PartialOrd<Rhs> for T where T: TryOrd<Rhs> { ... }
+//
+// The macros allow to at least reduce the boilerplate for creating those impls
+// for a particular type to minimum.
+
+macro_rules! impl_partialord_for_tryord (
+    ($t:ty) => {
+        impl ::std::cmp::PartialOrd for $t {
+            fn partial_cmp(&self, other: &$t) -> Option<::std::cmp::Ordering> {
+                self.try_cmp(other).ok()
+            }
+        }
+    };
+);
+
+macro_rules! impl_partialeq_for_tryeq (
+    ($t:ty) => {
+        impl ::std::cmp::PartialEq for $t {
+            fn eq(&self, other: &$t) -> bool {
+                self.try_eq(other).unwrap_or(false)
+            }
+        }
+    };
+);
