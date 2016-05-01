@@ -1,11 +1,11 @@
 //! Module implementing evaluaton of binary operator AST nodes.
 
-use std::cmp::Ordering;
 use std::iter;
 
 use eval::{self, api, Eval, Context, Value};
 use eval::model::Invoke;
-use eval::model::value::{ArrayRepr, FloatRepr, IntegerRepr, StringRepr, TryEq, TryOrd};
+use eval::model::value::{ArrayRepr, FloatRepr, IntegerRepr, StringRepr};
+use eval::util::cmp::{TryEq, TryOrd};
 use parse::ast::{Associativity, BinaryOpNode, ScalarNode};
 
 
@@ -213,26 +213,22 @@ impl BinaryOpNode {
 impl BinaryOpNode {
     /// Evaluate the "<" operator for two values.
     fn eval_lt(left: Value, right: Value) -> eval::Result {
-        left.try_cmp(&right)
-            .map(|o| Value::Boolean(o == Ordering::Less))
+        left.try_lt(&right).map(Value::Boolean)
     }
 
     /// Evaluate the "<=" operator for two values.
     fn eval_le(left: Value, right: Value) -> eval::Result {
-        left.try_cmp(&right)
-            .map(|o| Value::Boolean(o == Ordering::Less || o == Ordering::Equal))
+        left.try_le(&right).map(Value::Boolean)
     }
 
     /// Evaluate the ">" operator for two values.
     fn eval_gt(left: Value, right: Value) -> eval::Result {
-        left.try_cmp(&right)
-            .map(|o| Value::Boolean(o == Ordering::Greater))
+        left.try_gt(&right).map(Value::Boolean)
     }
 
     /// Evaluate the ">=" operator for two values.
     fn eval_ge(left: Value, right: Value) -> eval::Result {
-        left.try_cmp(&right)
-            .map(|o| Value::Boolean(o == Ordering::Greater || o == Ordering::Equal))
+        left.try_ge(&right).map(Value::Boolean)
     }
 
     /// Evaluate the "==" operator for two values.

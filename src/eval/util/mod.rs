@@ -3,4 +3,5 @@
 #[macro_use]
 mod macros;
 
+pub mod cmp;
 pub mod fmt;

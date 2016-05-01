@@ -19,6 +19,7 @@ use regex::Regex;
 use rustc_serialize::json::{Json, ToJson};
 
 use eval;
+use eval::util::cmp::{TryEq, TryOrd};
 use super::function::Function;
 
 
@@ -211,32 +212,6 @@ impl fmt::Debug for Value {
 
 // Comparisons
 
-/// Trait for values that can be optionally compared for a sort-order.
-///
-/// Unlike PartialOrd, this one treats the unspecified ordering of values
-/// as an errorneous condition. As such, it is more similar to Ord,
-/// and also analogous to how TryFrom and TryInto traits from the conv crate
-/// relate to the standard From and Into traits.
-pub trait TryOrd<Rhs: ?Sized = Self> {
-    type Err;
-    fn try_cmp(&self, other: &Rhs) -> Result<Ordering, Self::Err>;
-}
-
-/// Trait for equality comparisons that may fail.
-///
-/// Unlike Eq & PartialEq, this one treats the situation where two values cannot
-/// be compared as an error. As such, it is somewhat analogous to how
-/// TryFrom and TryInto traits from the conv crate relate to the standard
-/// From and Into traits.
-pub trait TryEq<Rhs: ?Sized = Self> {
-    type Err;
-    fn try_eq(&self, other: &Rhs) -> Result<bool, Self::Err>;
-
-    fn try_ne(&self, other: &Rhs) -> Result<bool, Self::Err> {
-        self.try_eq(other).map(|b| !b)
-    }
-}
-
 impl TryOrd for Value {
     type Err = eval::Error;
 
@@ -292,6 +267,7 @@ impl TryEq for Value {
 }
 impl PartialEq for Value {
     fn eq(&self, other: &Value) -> bool {
+        // The same note about boilerplate PartialOrd implementation aplies here.
         self.try_eq(other).unwrap_or(false)
     }
 }
