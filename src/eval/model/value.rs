@@ -18,6 +18,7 @@ use conv::misc::InvalidSentinel;
 use regex::Regex;
 use rustc_serialize::json::{Json, ToJson};
 
+use eval;
 use super::function::Function;
 
 
@@ -208,8 +209,23 @@ impl fmt::Debug for Value {
 }
 
 
-impl PartialOrd for Value {
-    fn partial_cmp(&self, other: &Value) -> Option<Ordering> {
+// Comparisons
+
+/// Trait for values that can be optionally compared for a sort-order.
+///
+/// Unlike PartialOrd, this one treats the unspecified ordering of values
+/// as an errorneous condition. As such, it is more similar to Ord,
+/// and also analogous to how TryFrom and TryInto traits from the conv crate
+/// relate to the standard From and Into traits.
+pub trait TryOrd<Rhs: ?Sized = Self> {
+    type Err;
+    fn try_cmp(&self, other: &Rhs) -> Result<Ordering, Self::Err>;
+}
+
+impl TryOrd for Value {
+    type Err = eval::Error;
+
+    fn try_cmp(&self, other: &Value) -> Result<Ordering, Self::Err> {
         match (self, other) {
             (&Value::Integer(a), &Value::Integer(b)) => a.partial_cmp(&b),
             (&Value::Integer(a), &Value::Float(b)) => (a as FloatRepr).partial_cmp(&b),
@@ -220,7 +236,19 @@ impl PartialOrd for Value {
             // TODO(xion): consider implementing ordering of arrays, too
 
             _ => None,
-        }
+        }.ok_or_else(|| eval::Error::new(&format!(
+            "cannot compare {} with {}", self.typename(), other.typename()
+        )))
+    }
+}
+impl PartialOrd for Value {
+    fn partial_cmp(&self, other: &Value) -> Option<Ordering> {
+        // Sadly, this implementation cannot be be generalized for any TryOrd type,
+        // because Rust only allows traits defined within current crate to be impl'd
+        // for template params, making this generic impl illegal:
+        //
+        //   impl<T, Rhs> PartialOrd<Rhs> for T where T: TryOrd<Rhs> { ... }
+        self.try_cmp(other).ok()
     }
 }
 

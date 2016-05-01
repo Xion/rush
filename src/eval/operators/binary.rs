@@ -1,11 +1,11 @@
 //! Module implementing evaluaton of binary operator AST nodes.
 
-use std::cmp::{Ordering, PartialOrd};
+use std::cmp::Ordering;
 use std::iter;
 
 use eval::{self, api, Eval, Context, Value};
 use eval::model::Invoke;
-use eval::model::value::{ArrayRepr, FloatRepr, IntegerRepr, StringRepr};
+use eval::model::value::{ArrayRepr, FloatRepr, IntegerRepr, StringRepr, TryOrd};
 use parse::ast::{Associativity, BinaryOpNode, ScalarNode};
 
 
@@ -214,34 +214,26 @@ impl BinaryOpNode {
 impl BinaryOpNode {
     /// Evaluate the "<" operator for two values.
     fn eval_lt(left: Value, right: Value) -> eval::Result {
-        if let Some(o) = left.partial_cmp(&right) {
-            return Ok(Value::Boolean(o == Ordering::Less));
-        }
-        BinaryOpNode::err("<", left, right)
+        left.try_cmp(&right)
+            .map(|o| Value::Boolean(o == Ordering::Less))
     }
 
     /// Evaluate the "<=" operator for two values.
     fn eval_le(left: Value, right: Value) -> eval::Result {
-        if let Some(o) = left.partial_cmp(&right) {
-            return Ok(Value::Boolean(o == Ordering::Less || o == Ordering::Equal));
-        }
-        BinaryOpNode::err("<=", left, right)
+        left.try_cmp(&right)
+            .map(|o| Value::Boolean(o == Ordering::Less || o == Ordering::Equal))
     }
 
     /// Evaluate the ">" operator for two values.
     fn eval_gt(left: Value, right: Value) -> eval::Result {
-        if let Some(o) = left.partial_cmp(&right) {
-            return Ok(Value::Boolean(o == Ordering::Greater));
-        }
-        BinaryOpNode::err(">", left, right)
+        left.try_cmp(&right)
+            .map(|o| Value::Boolean(o == Ordering::Greater))
     }
 
     /// Evaluate the ">=" operator for two values.
     fn eval_ge(left: Value, right: Value) -> eval::Result {
-        if let Some(o) = left.partial_cmp(&right) {
-            return Ok(Value::Boolean(o == Ordering::Greater || o == Ordering::Equal));
-        }
-        BinaryOpNode::err(">=", left, right)
+        left.try_cmp(&right)
+            .map(|o| Value::Boolean(o == Ordering::Greater || o == Ordering::Equal))
     }
 
     /// Evaluate the "==" operator for two values.
