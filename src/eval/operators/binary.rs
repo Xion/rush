@@ -5,7 +5,7 @@ use std::iter;
 
 use eval::{self, api, Eval, Context, Value};
 use eval::model::Invoke;
-use eval::model::value::{ArrayRepr, FloatRepr, IntegerRepr, StringRepr, TryOrd};
+use eval::model::value::{ArrayRepr, FloatRepr, IntegerRepr, StringRepr, TryEq, TryOrd};
 use parse::ast::{Associativity, BinaryOpNode, ScalarNode};
 
 
@@ -210,7 +210,6 @@ impl BinaryOpNode {
 }
 
 // Comparison operators.
-// TODO(xion): implement them using Value's PartialOrd & PartialEq
 impl BinaryOpNode {
     /// Evaluate the "<" operator for two values.
     fn eval_lt(left: Value, right: Value) -> eval::Result {
@@ -238,36 +237,12 @@ impl BinaryOpNode {
 
     /// Evaluate the "==" operator for two values.
     fn eval_eq(left: Value, right: Value) -> eval::Result {
-        // numeric types
-        eval2!((left: Integer, right: Integer) -> Boolean { left == right });
-        eval2!((left: Integer, right: Float) -> Boolean { (left as FloatRepr) == right });
-        eval2!((left: Float, right: Integer) -> Boolean { left == (right as FloatRepr) });
-        eval2!((left: Float, right: Float) -> Boolean { left == right });
-
-        // others
-        eval2!((left: Boolean, right: Boolean) -> Boolean { left == right });
-        eval2!((left: &String, right: &String) -> Boolean { left == right });
-        eval2!((left: &Array, right: &Array) -> Boolean { left == right });
-        eval2!((left: &Object, right: &Object) -> Boolean { left == right });
-
-        BinaryOpNode::err("==", left, right)
+        left.try_eq(&right).map(Value::Boolean)
     }
 
     /// Evaluate the "!=" operator for two values.
     fn eval_ne(left: Value, right: Value) -> eval::Result {
-        // numeric types
-        eval2!((left: Integer, right: Integer) -> Boolean { left != right });
-        eval2!((left: Integer, right: Float) -> Boolean { (left as FloatRepr) != right });
-        eval2!((left: Float, right: Integer) -> Boolean { left != (right as FloatRepr) });
-        eval2!((left: Float, right: Float) -> Boolean { left != right });
-
-        // others
-        eval2!((left: Boolean, right: Boolean) -> Boolean { left != right });
-        eval2!((left: &String, right: &String) -> Boolean { left != right });
-        eval2!((left: &Array, right: &Array) -> Boolean { left != right });
-        eval2!((left: &Object, right: &Object) -> Boolean { left != right });
-
-        BinaryOpNode::err("!=", left, right)
+        left.try_ne(&right).map(Value::Boolean)
     }
 
     /// Evaluate the "@" operator for two values.

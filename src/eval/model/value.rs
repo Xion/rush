@@ -6,7 +6,7 @@
 //! This module implements the Value type itself, as well as all the various
 //! conversions to and from Rust types, and serialization formats like JSON.
 
-use std::cmp::{Ordering, PartialOrd};
+use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::collections::HashMap;
 use std::convert::From;
 use std::fmt;
@@ -35,7 +35,7 @@ pub type FunctionRepr = Function;
 
 
 /// Typed value that's operated upon.
-#[derive(Clone,PartialEq)]
+#[derive(Clone)]
 pub enum Value {
     /// No value at all.
     Empty,
@@ -222,6 +222,21 @@ pub trait TryOrd<Rhs: ?Sized = Self> {
     fn try_cmp(&self, other: &Rhs) -> Result<Ordering, Self::Err>;
 }
 
+/// Trait for equality comparisons that may fail.
+///
+/// Unlike Eq & PartialEq, this one treats the situation where two values cannot
+/// be compared as an error. As such, it is somewhat analogous to how
+/// TryFrom and TryInto traits from the conv crate relate to the standard
+/// From and Into traits.
+pub trait TryEq<Rhs: ?Sized = Self> {
+    type Err;
+    fn try_eq(&self, other: &Rhs) -> Result<bool, Self::Err>;
+
+    fn try_ne(&self, other: &Rhs) -> Result<bool, Self::Err> {
+        self.try_eq(other).map(|b| !b)
+    }
+}
+
 impl TryOrd for Value {
     type Err = eval::Error;
 
@@ -249,6 +264,35 @@ impl PartialOrd for Value {
         //
         //   impl<T, Rhs> PartialOrd<Rhs> for T where T: TryOrd<Rhs> { ... }
         self.try_cmp(other).ok()
+    }
+}
+
+impl TryEq for Value {
+    type Err = eval::Error;
+
+    fn try_eq(&self, other: &Value) -> Result<bool, Self::Err> {
+        match (self, other) {
+            // numeric types
+            (&Value::Integer(a), &Value::Integer(b)) => Ok(a == b),
+            (&Value::Integer(a), &Value::Float(b)) => Ok((a as FloatRepr) == b),
+            (&Value::Float(a), &Value::Integer(b)) => Ok(a == (b as FloatRepr)),
+            (&Value::Float(a), &Value::Float(b)) => Ok(a == b),
+
+            // others
+            (&Value::Boolean(a), &Value::Boolean(b)) => Ok(a == b),
+            (&Value::String(ref a), &Value::String(ref b)) => Ok(a == b),
+            (&Value::Array(ref a), &Value::Array(ref b)) => Ok(a == b),
+            (&Value::Object(ref a), &Value::Object(ref b)) => Ok(a == b),
+
+            _ => Err(eval::Error::new(&format!(
+                "cannot compare {} with {}", self.typename(), other.typename()
+            ))),
+        }
+    }
+}
+impl PartialEq for Value {
+    fn eq(&self, other: &Value) -> bool {
+        self.try_eq(other).unwrap_or(false)
     }
 }
 
