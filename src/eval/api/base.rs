@@ -1,9 +1,10 @@
 //! Base API functions.
 
-use std::cmp::{Ordering, PartialOrd};
+use std::cmp::Ordering;
 
 use eval::{self, Context, Error, Function, Value};
 use eval::model::{ArgCount, Invoke};
+use eval::util::cmp::TryOrd;
 use eval::value::IntegerRepr;
 use parse::ast::BinaryOpNode;
 use super::conv::bool;
@@ -251,9 +252,8 @@ pub fn reduce(func: Value, array: Value, start: Value, context: &Context) -> eva
 pub fn sort(array: Value) -> eval::Result {
     if let Value::Array(mut array) = array {
         let mut error: Option<Error> = None;
-        array.sort_by(|a, b| a.partial_cmp(b).unwrap_or_else(|| {
-            error = Some(Error::new(&format!(
-                "cannot compare {} with {}", a.typename(), b.typename())));
+        array.sort_by(|a, b| a.try_cmp(b).unwrap_or_else(|e| {
+            error = Some(e);
             Ordering::Less  // arbitrary, won't matter anyway
         }));
         return match error {
