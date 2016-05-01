@@ -243,7 +243,7 @@ pub fn reduce(func: Value, array: Value, start: Value, context: &Context) -> eva
 }
 
 
-/// Sort the array.
+/// Sort the array using a default comparison method.
 ///
 /// The only kinds of sortable values are numbers (integers & floats (sans NaN))
 /// and strings (alphabetically). They do not compare to each other, though.
@@ -263,6 +263,45 @@ pub fn sort(array: Value) -> eval::Result {
     }
     Err(Error::new(&format!(
         "sort() expects an array, got {}", array.typename()
+    )))
+}
+
+/// Sort the array using a comparator.
+///
+/// The comparator should be a function that takes two values and returns:
+/// * a negative number - if the first value is lower than the second one
+/// * zero - if the both values are equal
+/// * a positive number - if the first value is greater than the second one
+///
+/// Returns the array after sorting.
+pub fn sort_by(array: Value, cmp: Value, context: &Context) -> eval::Result {
+    let array_type = array.typename();
+    let cmp_type = cmp.typename();
+
+    if let (Value::Array(mut array), Value::Function(cmp)) = (array, cmp) {
+        let zero = Value::Integer(0);
+        let mut error: Option<Error> = None;
+        array.sort_by(|a, b| match cmp.invoke(vec![a.clone(), b.clone()], context) {
+            Ok(ref x) if *x < zero => Ordering::Less,
+            Ok(ref x) if *x == zero => Ordering::Equal,
+            Ok(ref x) if *x > zero => Ordering::Greater,
+            Ok(ref x) => {
+                error = Some(Error::new(&format!(
+                    "comparator must return a number, got {}", x.typename()
+                )));
+                /* arbitrary */ Ordering::Less
+            },
+            Err(e) => { error = Some(e); /* arbitrary */ Ordering::Less },
+        });
+        return match error {
+            Some(e) => Err(e),
+            _ => Ok(Value::Array(array)),
+        };
+    }
+
+    Err(Error::new(&format!(
+        "sortby() expects an array and a function, got {} and {}",
+        array_type, cmp_type
     )))
 }
 
