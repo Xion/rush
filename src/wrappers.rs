@@ -5,7 +5,7 @@ use std::u8;
 
 use conv::TryFrom;
 
-use super::eval::{self, Eval, Context, Invoke, Value};
+use super::eval::{Error as EvalError, Eval, Context, Invoke, Result as EvalResult, Value};
 use super::eval::value::IntegerRepr;
 use super::parse::parse;
 
@@ -14,10 +14,17 @@ use super::parse::parse;
 const CURRENT: &'static str = "_";
 
 
-/// Execute the expression within given Context.
-pub fn exec(expr: &str, context: &mut Context) -> io::Result<()> {
+/// Evaluate the expression within given Context.
+/// Returns the resulting Value.
+pub fn eval(expr: &str, context: &mut Context) -> io::Result<Value> {
     let ast = try!(parse_exprs(&[expr])).remove(0);
-    try!(ast.eval(context).map_err(|e| io::Error::new(io::ErrorKind::Other, e)));
+    ast.eval(context).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+}
+
+/// Execute the expression within given Context.
+/// The result of the expression is discarded, but any side effects will persist in the Context.
+pub fn exec(expr: &str, context: &mut Context) -> io::Result<()> {
+    try!(eval(expr, context));
     Ok(())
 }
 
@@ -436,11 +443,11 @@ fn evaluate<'c>(ast: &Box<Eval>, context: &'c mut Context) -> io::Result<Value> 
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
 }
 
-fn maybe_apply_result<'c>(result: Value, context: &'c mut Context) -> eval::Result {
+fn maybe_apply_result<'c>(result: Value, context: &'c mut Context) -> EvalResult {
     // result might be a function, in which case we will try to apply to original input
     if let Value::Function(func) = result {
         if func.arity() != 1 {
-            return Err(eval::Error::new(&format!(
+            return Err(EvalError::new(&format!(
                 "output must be an immediate value or a 1-argument function \
                 (got {}-argument one)", func.arity())));
         }
