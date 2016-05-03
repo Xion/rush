@@ -60,8 +60,8 @@ fn process_input(mode: InputMode,
     };
 
     let mut context = Context::new();
-    if let Some(_) = before {
-        unimplemented!();
+    if let Some(before) = before {
+        try!(rush::exec(before, &mut context));
     }
     if let Some(_) = after {
         unimplemented!();

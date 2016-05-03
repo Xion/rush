@@ -14,6 +14,14 @@ use super::parse::parse;
 const CURRENT: &'static str = "_";
 
 
+/// Execute the expression within given Context.
+pub fn exec(expr: &str, context: &mut Context) -> io::Result<()> {
+    let ast = try!(parse_exprs(&[expr])).remove(0);
+    try!(ast.eval(context).map_err(|e| io::Error::new(io::ErrorKind::Other, e)));
+    Ok(())
+}
+
+
 // Single-expression processing.
 
 /// Apply the expresion to a complete input stream, processed as single string,
