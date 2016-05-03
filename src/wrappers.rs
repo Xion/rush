@@ -4,6 +4,7 @@ use std::io::{self, Read, Write, BufRead, BufReader, BufWriter};
 use std::u8;
 
 use conv::TryFrom;
+use conv::misc::InvalidSentinel;
 
 use super::eval::{Error as EvalError, Eval, Context, Invoke, Result as EvalResult, Value};
 use super::eval::value::IntegerRepr;
@@ -200,9 +201,9 @@ pub fn apply_lines_multi_ctx<R, W>(context: &mut Context,
     let lines: Vec<_> = BufReader::new(input).lines()
         .map(|r| {
             r.ok().expect("failed to read input line")
-                .parse::<Value>().unwrap_or(Value::Empty)
+                .parse::<Value>().unwrap_or(Value::invalid_sentinel())
         })
-        .filter(|v| *v != Value::Empty)
+        .filter(|v| *v != Value::invalid_sentinel())
         .collect();
     let line_count = lines.len();
 

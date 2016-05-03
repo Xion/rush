@@ -357,7 +357,7 @@ impl<'a> TryFrom<&'a Value> for String {
                 }
                 Ok(format!("{}", res))
             },
-            Value::String(ref s) => Ok(format!("{}", s)),
+            Value::String(ref s) => Ok(s.clone()),
             Value::Regex(..) => Err(GeneralError::Unrepresentable(
                 "cannot serialize a regex"
             )),
@@ -367,7 +367,7 @@ impl<'a> TryFrom<&'a Value> for String {
                     .map(|v| format!("{}", v)).collect::<Vec<String>>()
                     .join("\n")))
             },
-            Value::Object(..) => Ok(format!("{}", src.to_json().to_string())),
+            Value::Object(..) => Ok(src.to_json().to_string()),
             Value::Function(..) => Err(GeneralError::Unrepresentable(
                 "cannot serialize a function"
             )),

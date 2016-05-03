@@ -64,18 +64,35 @@ fn process_input(mode: InputMode,
     // If there is an "after" expression provided, it is that expression that should produced
     // the only output of the program. So we'll just consume whatever results would normally
     // be printed otherwise.
-    let mut stdout = io::stdout();      // Those intermediate bindings are necessary
-    let mut sink = io::sink();          // as Rust doesn't have named lifetime scopes yet.
-    let mut output: &mut Write = if after.is_some() { &mut sink } else { &mut stdout };
-    try!(apply_multi_ctx(mode, &mut context, exprs, &mut output));
+    if after.is_some() {
+        // HACK: Because the intermediate results have to be printed out -- even if only to /dev/null
+        // -- we have to ensure there is always a non-empty value to use as the intermediate result.
+        // This is necessary especially since with --after (and --before), intermediate expressions
+        // are likely to be just assignments (and the result of an assignment is empty).
+        //
+        // We can make sure there is always a value to print simply by adding one more expression
+        // at the end of the chain. It so happens that zero (or any number) is compatible with
+        // all the input modes, so let's use that.
+        let mut exprs = exprs.to_vec();
+        exprs.push("0");
+        try!(apply_multi_ctx(mode, &mut context, &exprs, &mut io::sink()));
+    } else {
+        try!(apply_multi_ctx(mode, &mut context, exprs, &mut io::stdout()));
+    }
 
     // Evaluate the "after" expression, if provided, and return it as the result.
     if let Some(after) = after {
         let result = try!(rush::eval(after, &mut context));
         let result_string = try!(String::try_from(result)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e)));
-        // TODO(xion): omit \n for multi-line results
-        return write!(&mut io::stdout(), "{}\n", result_string);
+
+        // Make it so that the output always ends with a newline,
+        // regardless whether it consists of a single value or multiple lines.
+        return if result_string.ends_with("\n") {
+            write!(&mut io::stdout(), "{}", result_string)
+        } else {
+            write!(&mut io::stdout(), "{}\n", result_string)
+        };
     }
 
     Ok(())
