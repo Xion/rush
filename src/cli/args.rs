@@ -13,16 +13,27 @@ use clap::{self, AppSettings, Arg, ArgSettings, ArgGroup, ArgMatches};
 /// Structure holding the options parsed from command line.
 #[derive(Clone)]
 pub struct Options {
-    pub expressions: Vec<String>,
+    /// How to interpret the input (if anyhow).
     pub input_mode: Option<InputMode>,
+    /// Optional expression to execute right before processing the input.
+    pub before: Option<String>,
+    /// Exoressions to process the input through, one after another.
+    /// The result of the final expression will be result of the whole computation
+    /// (unless `after` is define below).
+    pub expressions: Vec<String>,
+    /// Optional expression to execute right after processing the input.
+    /// If defined, only its result will be printed as output.
+    pub after: Option<String>,
 }
 
 impl<'a> From<ArgMatches<'a>> for Options {
     fn from(matches: ArgMatches<'a>) -> Self {
         Options{
+            before: matches.value_of(OPT_BEFORE).map(String::from),
             expressions: matches
                              .values_of(ARG_EXPRESSION).unwrap()
                              .map(String::from).collect(),
+            after: matches.value_of(OPT_AFTER).map(String::from),
             input_mode: if matches.is_present(OPT_PARSE) { None }
                         else { Some(InputMode::from(matches)) },
         }
@@ -30,7 +41,7 @@ impl<'a> From<ArgMatches<'a>> for Options {
 }
 
 /// Defines possible options as to how the program's input
-/// may be processed by the expression.
+/// may be processed by the expression(s).
 #[derive(Clone)]
 pub enum InputMode {
     String,
@@ -116,14 +127,19 @@ const APP_DESC: &'static str = "Succinct & readable processing language";
 
 const USAGE: &'static str = concat!("rush", " [",
     "--input <MODE>", " | ", "--string | --lines | --words | --chars | --bytes",
-    "] ", "<EXPRESSION> ", "[<EXPRESSION> ...]");
+    "] ",
+    "[--before <EXPRESSION>] ", "[--after <EXPRESSION>] ",
+    "<EXPRESSION> ", "[<EXPRESSION> ...]");
 
-const ARG_EXPRESSION: &'static str = "expr";
 const OPT_INPUT_MODE: &'static str = "mode";
 const INPUT_MODES: &'static [&'static str] = &[
     "string", "lines", "words", "chars", "bytes"
 ];
 const OPT_PARSE: &'static str = "parse";
+
+const OPT_BEFORE: &'static str = "before";
+const ARG_EXPRESSION: &'static str = "expr";
+const OPT_AFTER: &'static str = "after";
 
 
 /// Creates the argument parser.
@@ -174,6 +190,13 @@ fn create_parser<'p>() -> Parser<'p> {
             .short("p").long("parse")
             .help("Only parse the expression, printing its AST"))
 
+        .arg(Arg::with_name(OPT_BEFORE)
+            .short("B").long("before")
+            .takes_value(true)
+            .help("Optional expression to evaluate before processing the input. \
+                   The result of this expression is discarded but any side effects (assignments) \
+                   will persist.").next_line_help(true)
+            .value_name("EXPRESSION"))
         .arg(Arg::with_name(ARG_EXPRESSION)
             .required(true)
             .multiple(true)
@@ -181,6 +204,13 @@ fn create_parser<'p>() -> Parser<'p> {
             .help("Expression(s) to apply to input. \
                    When multiple expressions are given, the result of one is \
                    passed as input to the next one.").next_line_help(true)
+            .value_name("EXPRESSION"))
+        .arg(Arg::with_name(OPT_AFTER)
+            .short("A").long("after")
+            .takes_value(true)
+            .help("Optional expression to evaluate after processing the input. \
+                   If provided, only the result of this expression will be printed \
+                   to standard output.").next_line_help(true)
             .value_name("EXPRESSION"))
 
         .help_short("H")

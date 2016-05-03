@@ -27,11 +27,14 @@ fn main() {
     logging::init().unwrap();
 
     let opts = args::parse();
+
+    let before = opts.before.as_ref().map(|b| b as &str);
     let exprs: Vec<&str> = opts.expressions.iter().map(|e| e as &str).collect();
+    let after = opts.after.as_ref().map(|a| a as &str);
 
     match opts.input_mode {
         Some(mode) => {
-            if let Err(error) = process_input(mode, &exprs) {
+            if let Err(error) = process_input(mode, before, &exprs, after) {
                 handle_error(error);
                 exit(1);
             }
@@ -46,7 +49,8 @@ fn main() {
 
 
 /// Process standard input through given expressions, writing results to stdout.
-fn process_input(mode: InputMode, exprs: &[&str]) -> io::Result<()> {
+fn process_input(mode: InputMode,
+                 before: Option<&str>, exprs: &[&str], after: Option<&str>) -> io::Result<()> {
     let apply_multi_ctx: fn(&mut Context, _, _, _) -> _ = match mode {
         InputMode::String => rush::apply_string_multi_ctx,
         InputMode::Lines => rush::map_lines_multi_ctx,
@@ -56,6 +60,13 @@ fn process_input(mode: InputMode, exprs: &[&str]) -> io::Result<()> {
     };
 
     let mut context = Context::new();
+    if let Some(_) = before {
+        unimplemented!();
+    }
+    if let Some(_) = after {
+        unimplemented!();
+    }
+
     apply_multi_ctx(&mut context, &exprs, io::stdin(), &mut io::stdout())
 }
 

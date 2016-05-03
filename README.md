@@ -16,7 +16,9 @@ Any Unix-like system should do.
 
 ## Usage
 
-    rh [--input <MODE> | --string | --lines | --words | --chars | --bytes] <EXPRESSION> [<EXPRESSION> ...]
+    rh [--input <MODE> | --string | --lines | --words | --chars | --bytes]
+        [--before <EXPRESSION>] [--after <EXPRESSION>]
+        <EXPRESSION> [<EXPRESSION> ...]
 
     OPTIONS:
         -i, --input <MODE>
@@ -27,7 +29,13 @@ Any Unix-like system should do.
         -w, --words      Apply the expression to each word in the input as string.
         -c, --chars      Apply the expression to each character of input (treated as 1-character string).
         -b, --bytes      Apply the expression to input bytes.
-                         The expression must take byte value as integer and return integer output.s
+                         The expression must take byte value as integer and return integer output.
+        -B, --before <EXPRESSION>
+            Optional expression to evaluate before processing the input.
+            The result of this expression is discarded but any side effects (assignments) will persist.
+        -A, --after <EXPRESSION>
+            Optional expression to evaluate after processing the input.
+            If provided, only the result of this expression will be printed to standard output.
 
     ARGS:
         <EXPRESSION>...
