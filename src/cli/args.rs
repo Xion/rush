@@ -19,7 +19,7 @@ pub struct Options {
     pub before: Option<String>,
     /// Exoressions to process the input through, one after another.
     /// The result of the final expression will be result of the whole computation
-    /// (unless `after` is define below).
+    /// (unless `after` is defined below).
     pub expressions: Vec<String>,
     /// Optional expression to execute right after processing the input.
     /// If defined, only its result will be printed as output.

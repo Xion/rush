@@ -11,6 +11,7 @@ extern crate rush;
 
 mod args;
 mod logging;
+mod rcfile;
 
 
 use std::error::Error;  // for .cause() method
@@ -55,6 +56,7 @@ fn process_input(mode: InputMode,
     // Prepare a Context for the processing.
     // This includes evaluating any "before" expression within it.
     let mut context = Context::new();
+    try!(rcfile::load_into(&mut context));
     if let Some(before) = before {
         try!(rush::exec(before, &mut context));
     }
