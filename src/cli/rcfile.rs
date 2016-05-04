@@ -11,9 +11,8 @@
 
 use std::env;
 use std::convert::AsRef;
-use std::fmt::Debug;
 use std::fs::{self, File};
-use std::io::{self, Read};
+use std::io::{self, BufRead, BufReader, Read};
 use std::path::{Path, PathBuf};
 
 use rush::{self, Context};
@@ -23,21 +22,36 @@ use rush::{self, Context};
 /// Note they shouldn't have the leading dot nor the actual "rc" suffix.
 const STEMS: &'static [&'static str] = &["rush", "rh"];
 
+/// Prefix of comment lines.
+const COMMENT_PREFIX: &'static str = "//";
 
-/// Load the definitions from .Xrc files into given Context.
+
+/// Load the definitions from all available .Xrc files into given Context.
 pub fn load_into(context: &mut Context) -> io::Result<()> {
     for path in list_rcfiles() {
-        debug!("Loading symbols from {:?}", &path);
-        let mut file = try!(File::open(&path));
-
-        // TODO(xion): filter out comment lines (those starting with //)
-        let mut content = String::new();
-        try!(file.read_to_string(&mut content));
-
+        debug!("Loading symbols from {}", path.display());
+        let file = try!(File::open(&path));
+        let content = try!(read_rcfile(file));
         try!(rush::eval(&content, context));
-        info!("Successfully loaded symbols from {:?}", &path);
+        info!("Successfully loaded symbols from {}", path.display());
     }
     Ok(())
+}
+
+
+/// Read an .Xrc file, discarding all the comments & empty lines.
+fn read_rcfile<R: Read>(file: R) -> io::Result<String> {
+    let mut result = String::new();
+    let reader = BufReader::new(file);
+    for line in reader.lines() {
+        let line = try!(line);
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with(COMMENT_PREFIX) {
+            continue;
+        }
+        result.push_str(&line);
+    }
+    Ok(result)
 }
 
 
@@ -53,7 +67,7 @@ fn list_rcfiles() -> Vec<PathBuf> {
         dirs.push(homedir);
     }
     match env::current_dir() {
-        Ok(cwd) => dirs.push(cwd),
+        Ok(cwd) => dirs.push(cwd.to_owned()),
         Err(err) => warn!("Couldn't retrieve current directory: {}", err),
     }
 
@@ -70,7 +84,7 @@ fn list_rcfiles() -> Vec<PathBuf> {
     result
 }
 
-/// Get the possible names of .Xrc files.
+/// Get the possible names of .Xrc files within a directory.
 fn rc_filenames() -> Vec<PathBuf> {
     let mut result: Vec<PathBuf> = Vec::new();
     for stem in STEMS {
@@ -84,12 +98,12 @@ fn rc_filenames() -> Vec<PathBuf> {
 
 // Utility functions
 
-fn file_exists<P: AsRef<Path> + Debug>(path: P) -> bool {
+fn file_exists<P: AsRef<Path>>(path: P) -> bool {
     match fs::metadata(&path) {
         Ok(_) => true,
         Err(err) => {
             if err.kind() != io::ErrorKind::NotFound {
-                warn!("Couldn't determine if {:?} exists: {}", &path, err);
+                warn!("Couldn't determine if {} exists: {}", path.as_ref().display(), err);
             }
             false
         }
@@ -97,12 +111,12 @@ fn file_exists<P: AsRef<Path> + Debug>(path: P) -> bool {
 }
 
 #[allow(dead_code)]
-fn directory_exists<P: AsRef<Path> + Debug>(path: P) -> bool {
+fn directory_exists<P: AsRef<Path>>(path: P) -> bool {
     match fs::metadata(&path) {
         Ok(metadata) => metadata.is_dir(),
         Err(err) => {
             if err.kind() != io::ErrorKind::NotFound {
-                warn!("Couldn't determine if {:?} exists: {}", &path, err);
+                warn!("Couldn't determine if {} exists: {}", path.as_ref().display(), err);
             }
             false
         },
