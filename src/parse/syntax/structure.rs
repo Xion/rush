@@ -12,7 +12,10 @@ named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: block, || { e }));
 /// block ::== (functional)+
 named!(pub block( &[u8] ) -> Box<Eval>, map!(
     separated_nonempty_list!(multispaced!(tag!(";")), assignment),
-    move |exprs| { Box::new(BlockNode::new(exprs)) as Box<Eval> }
+    move |mut exprs: Vec<_>| {
+        if exprs.len() == 1 { exprs.remove(0) }
+        else { Box::new(BlockNode::new(exprs)) as Box<Eval> }
+    }
 ));
 
 
