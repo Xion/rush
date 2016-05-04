@@ -143,15 +143,10 @@ impl BinaryOpNode {
 
 impl fmt::Debug for BinaryOpNode {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let repr = match self.assoc {
-            Associativity::Left => format!(
-                "{:?} {}", self.first, self.rest.iter()
-                   .map(|&(ref op, ref arg)| format!("`{}` {:?}", op, arg))
-                   .collect::<Vec<String>>().join(" ")
-            ),
-            Associativity::Right => unimplemented!(),
-        };
-        write!(fmt, "<Op: {}>", repr)
+        let rest = self.rest.iter()
+           .map(|&(ref op, ref arg)| format!("`{}` {:?}", op, arg))
+           .collect::<Vec<String>>().join(" ");
+        write!(fmt, "<Op: {:?} {}>", self.first, rest)
     }
 }
 
