@@ -3,10 +3,12 @@
 
 mod arity;
 mod context;
+mod error;
 pub mod function;
 pub mod value;
 
 pub use self::arity::{Args, ArgCount, Arity};
 pub use self::context::{Context, Name};
+pub use self::error::Error;
 pub use self::function::{Function, Invoke};
 pub use self::value::Value;
