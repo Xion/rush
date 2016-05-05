@@ -32,7 +32,7 @@ pub fn load_into(context: &mut Context) -> io::Result<()> {
         debug!("Loading symbols from {}", path.display());
         let file = try!(File::open(&path));
         let content = try!(read_rcfile(file));
-        try!(rush::eval(&content, context));
+        try!(rush::exec(&content, context));
         info!("Successfully loaded symbols from {}", path.display());
     }
     Ok(())
@@ -45,8 +45,7 @@ fn read_rcfile<R: Read>(file: R) -> io::Result<String> {
     let reader = BufReader::new(file);
     for line in reader.lines() {
         let line = try!(line);
-        let trimmed = line.trim();
-        if trimmed.is_empty() || trimmed.starts_with(COMMENT_PREFIX) {
+        if line.trim().is_empty() || line.trim().starts_with(COMMENT_PREFIX) {
             continue;
         }
         result.push_str(&line);

@@ -218,29 +218,34 @@ fn create_parser<'p>() -> Parser<'p> {
 }
 
 
-// Tests verifying the soundness of the above definition
 
-#[test]
-fn input_modes_are_consistent() {
+/// Tests verifying the soundness of the above definition.
+#[cfg(test)]
+mod tests {
     use case::CaseExt;
+    use conv::TryFrom;
+    use super::{APP_NAME, INPUT_MODES, USAGE, InputMode};
 
-    for &mode in INPUT_MODES {
-        assert!(InputMode::try_from(mode).is_ok(),
-            "Undefined InputMode variant: {}", mode.to_capitalized());
+    #[test]
+    fn input_modes_are_consistent() {
+        for &mode in INPUT_MODES {
+            assert!(InputMode::try_from(mode).is_ok(),
+                "Undefined InputMode variant: {}", mode.to_capitalized());
+        }
     }
-}
 
-#[test]
-fn usage_starts_with_app_name() {
-    let prefix = APP_NAME.to_owned() + " ";
-    assert!(USAGE.starts_with(&prefix), "Usage string must start with APP_NAME");
-}
+    #[test]
+    fn usage_starts_with_app_name() {
+        let prefix = APP_NAME.to_owned() + " ";
+        assert!(USAGE.starts_with(&prefix), "Usage string must start with APP_NAME");
+    }
 
-#[test]
-fn usage_contains_all_input_modes() {
-    for mode in INPUT_MODES {
-        let flag = "--".to_owned() + mode;
-        assert!(USAGE.contains(&flag),
-            "Input mode '{}' is missing from usage string", mode);
+    #[test]
+    fn usage_contains_all_input_modes() {
+        for mode in INPUT_MODES {
+            let flag = "--".to_owned() + mode;
+            assert!(USAGE.contains(&flag),
+                "Input mode '{}' is missing from usage string", mode);
+        }
     }
 }
