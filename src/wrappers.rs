@@ -19,7 +19,11 @@ const CURRENT: &'static str = "_";
 /// Returns the resulting Value.
 pub fn eval(expr: &str, context: &mut Context) -> io::Result<Value> {
     let ast = try!(parse_exprs(&[expr])).remove(0);
-    ast.eval(context).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+    ast.eval(context)
+        // TODO(xion): change Value to use Arc<Invoke> so that the eval::Error can be
+        // Send + Sync, which is required for it to be the inner error of io::Error,
+        // and then go back to passing the whole error and not just its repr
+        .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("{}", e)))
 }
 
 /// Execute the expression within given Context.
@@ -441,7 +445,8 @@ fn process<'c>(context: &'c mut Context, exprs: &[Box<Eval>]) -> io::Result<&'c 
 fn evaluate<'c>(ast: &Box<Eval>, context: &'c mut Context) -> io::Result<Value> {
     ast.eval(context)
         .and_then(|result| maybe_apply_result(result, context))
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+        // TODO(xion): same note as in eval()
+        .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("{}", e)))
 }
 
 fn maybe_apply_result<'c>(result: Value, context: &'c mut Context) -> EvalResult {
