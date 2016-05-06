@@ -428,8 +428,6 @@ impl BinaryOpNode {
     /// Produce an error about invalid arguments for an operator.
     #[inline(always)]
     fn err(op: &str, left: Value, right: Value) -> eval::Result {
-        Err(eval::Error::new(&format!(
-            "invalid arguments for `{}` operator: `{:?}` and `{:?}`",
-            op, left, right)))
+        Err(eval::Error::invalid(op, vec![&left, &right]))
     }
 }
