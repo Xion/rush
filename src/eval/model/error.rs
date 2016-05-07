@@ -37,7 +37,7 @@ impl Error {
     /// Create an Error that indicates an operation has received invalid arguments.
     /// The list of expected argument signatures is also required.
     #[inline]
-    pub fn type_mismatch<T>(operation: &str, expected: Vec<Vec<T>>, actual: Vec<&Value>) -> Error
+    pub fn mismatch<T>(operation: &str, expected: Vec<Vec<T>>, actual: Vec<&Value>) -> Error
         where Type: From<T>
     {
         assert!(expected.len() > 0, "No expected argument signatures");
@@ -103,7 +103,7 @@ pub struct Mismatch {
     /// List of expected signatures for the operation.
     expected: Vec<Signature>,
     /// Actual arguments passed.
-    actual: Vec<ValueRepr>,
+    actual: Vec<(Type, ValueRepr)>,
 }
 impl Mismatch {
     #[inline(always)]
@@ -124,26 +124,40 @@ impl Mismatch {
         Mismatch{
             operation: operation.to_owned(),
             expected: expected,
-            actual: actual.into_iter().map(|v| format!("{:?}", v)).collect()
+            actual: actual.into_iter()
+                .map(|v| (Type::from(v.typename()), format!("{:?}", v))).collect(),
         }
     }
 }
 impl fmt::Display for Mismatch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // if present, format the expected type signatures as separate lines
-        let expected = if self.expected.len() > 0 {
-            format!("expected one of \n{}\n but ", self.expected.iter()
-                .map(|sig| format!("({})", sig.join(", ")))
-                .collect::<Vec<_>>().join("\n"))
+        // format the operation identifier as either a function or an operator
+        let mut operation = self.operation.clone();
+        if operation.chars().all(|c| c == '_' || c.is_alphanumeric()) {
+            if !operation.ends_with("()") {
+                operation.push_str("()");
+            }
         } else {
-            "".to_owned()
+            operation = format!("`{}`", operation);
+        }
+
+        // if present, format the expected type signatures as separate lines
+        let expected = match self.expected.len() {
+            0 => "".to_owned(),
+            1 => format!("expected ({}) but ", self.expected[0].join(", ")),
+            _ => format!(
+                "expected one of \n\t{}\nbut ", self.expected.iter()
+                    .map(|sig| format!("({})", sig.join(", ")))
+                    .collect::<Vec<_>>().join("\n")
+            ),
         };
 
         // represent the actual values passed
         let actual_sep = if self.actual.len() > 2 { ", " } else { " and "};
         let actual = self.actual.iter()
-            .map(|v| format!("`{}`", v)).collect::<Vec<_>>().join(actual_sep);
+            .map(|&(ref t, ref v)| format!("`{}` ({})", v, t))
+            .collect::<Vec<_>>().join(actual_sep);
 
-        write!(f, "`{}` {}got {}", self.operation, expected, actual)
+        write!(f, "{} {}got: {}", operation, expected, actual)
     }
 }
