@@ -25,9 +25,7 @@ pub fn rot13(value: Value) -> eval::Result {
             char::from_u32(base + (idx + 13) % 26).unwrap()
         }).collect()
     });
-    Err(Error::new(&format!(
-        "rot13() expects a string, got {}", value.typename()
-    )))
+    Err(Error::mismatch("rot13", vec![vec!["string"]], vec![&value]))
 }
 
 
@@ -52,11 +50,11 @@ pub fn sub(needle: Value, replacement: Value, haystack: Value, ctx: &Context) ->
         return do_regex_sub(Sub::All, n, &replacement, h, ctx);
     }
 
-    Err(Error::new(&format!(
-        "sub() expects three strings; or regex, string/function and string; \
-        got: {}, {}, {}",
-        needle.typename(), replacement.typename(), haystack.typename()
-    )))
+    Err(Error::mismatch("sub", vec![
+        vec!["string", "string", "string"],
+        vec!["regex", "string", "string"],
+        vec!["regex", "function", "string"],
+    ], vec![&needle, &replacement, &haystack]))
 }
 
 /// Substitute the first occurrence of given string or regex ("needle")
@@ -85,11 +83,11 @@ pub fn sub1(needle: Value, replacement: Value, haystack: Value, ctx: &Context) -
         return do_regex_sub(Sub::First, n, &replacement, h, ctx);
     }
 
-    Err(Error::new(&format!(
-        "sub1() expects three strings; or regex, string/function and string; \
-        got: {}, {}, {}",
-        needle.typename(), replacement.typename(), haystack.typename()
-    )))
+    Err(Error::mismatch("sub1", vec![
+        vec!["string", "string", "string"],
+        vec!["regex", "string", "string"],
+        vec!["regex", "function", "string"],
+    ], vec![&needle, &replacement, &haystack]))
 }
 
 /// Substitute the last occurrence of given string("needle")
@@ -107,10 +105,9 @@ pub fn rsub1(needle: Value, replacement: Value, haystack: Value) -> eval::Result
             _ => h.clone(),
         }));
     }
-    Err(Error::new(&format!(
-        "rsub1() expects three strings, got: {}, {}, {}",
-        needle.typename(), replacement.typename(), haystack.typename()
-    )))
+    Err(Error::mismatch("rsub1", vec![
+        vec!["string", "string", "string"]
+    ], vec![&needle, &replacement, &haystack]))
 }
 
 

@@ -49,6 +49,7 @@ impl Error {
             actual
         ))
     }
+    // TODO(xion): make a nice mismatch! macro for returning this error variant
 
     #[inline(always)]
     pub fn other(msg: &str) -> Error {
