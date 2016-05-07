@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Script for preparing the release bundles
+# Script for preparing release bundles with the rush binary
 #
 # This essentially a wrapper script around fpm (https://github.com/jordansissel/fpm).
 # Requires fpm to be installed first, which may in turn require Ruby with C headers.
@@ -18,7 +18,8 @@ MAINTAINER='Karol Kuczmarski'
 # TODO(xion): share these between this script, Cargo.toml, and the argument parser
 # (the last one probably requires custom build.rs)
 
-SOURCE_DIR="./target/release"
+CRATE_DIR='./crates/rush'
+SOURCE_DIR="$CRATE_DIR/target/release"
 BIN='rh'
 LICENSE_FILE='./LICENSE'
 OUTPUT_DIR="./release"
@@ -26,9 +27,8 @@ OUTPUT_DIR="./release"
 INSTALL_DIR='/usr/bin'
 
 
-
 main() {
-    [ -f "Cargo.toml" ] || fatal "Release script must be run from project's root!"
+    [ -f ".gitignore" ] || fatal "Release script must be run from project's root!"
 
     require cargo
     require fpm
@@ -53,7 +53,7 @@ ensure_output_dir() {
 }
 
 cargo_build() {
-    cargo build --release
+    cargo build --release --manifest-path "$CRATE_DIR/Cargo.toml"
     if [ ! -f "${SOURCE_DIR}/$BIN" ]; then
         fatal "Failed to build the release binary, aborting."
     fi
