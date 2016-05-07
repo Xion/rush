@@ -9,6 +9,23 @@ use std::fmt;
 use super::Value;
 
 
+/// Macro for use within operators and API functions' implementations.
+/// Creates an erroneous eval::Result indicating a mismatch between expected argument types
+/// and values actually received.
+///
+/// Example:
+///
+///     mismatch!("rot13"; ("string") => (value))
+///
+macro_rules! mismatch (
+    ($op:expr; $(($($ex:expr),*))|+ => ($($ac:ident),*)) => (
+        Err($crate::eval::Error::mismatch($op, vec![$(
+            vec![$( $ex ),*]
+        ),+], vec![$( &$ac ),*]))
+    );
+);
+
+
 /// Error that may have occurred during evaluation.
 #[derive(Clone,Debug,PartialEq)]
 pub enum Error {
@@ -154,7 +171,7 @@ impl fmt::Display for Mismatch {
         };
 
         // represent the actual values passed
-        let actual_sep = if self.actual.len() > 2 { ", " } else { " and "};
+        let actual_sep = if self.actual.len() > 2 { ", " } else { " and " };
         let actual = self.actual.iter()
             .map(|&(ref t, ref v)| format!("`{}` ({})", v, t))
             .collect::<Vec<_>>().join(actual_sep);

@@ -3,6 +3,7 @@
 
 mod arity;
 mod context;
+#[macro_use]
 mod error;
 pub mod function;
 pub mod value;
