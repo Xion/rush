@@ -1,3 +1,6 @@
 # Python packages used in development
 
 invoke
+
+mkdocs
+mkdocs-material
