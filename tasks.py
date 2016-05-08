@@ -37,7 +37,7 @@ def build(release=False):
 def test():
     """Run the tests for both binary & library crates."""
     for crate in (LIB, BIN):
-        cargo('test', crate=crate, pty=True)
+        cargo('test', '--no-fail-fast', crate=crate, pty=True)
 
 
 @task

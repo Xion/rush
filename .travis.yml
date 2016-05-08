@@ -13,7 +13,6 @@ matrix:
   allow_failures:
     - rust: nightly
 
+# Run the test for just the binary crate. as it will build  & test everything.
+script: cargo test --no-fail-fast --manifest-path ./crates/rush/Cargo.toml
 sudo: false
-script:
-  - cargo build
-  - cargo test --no-fail-fast
