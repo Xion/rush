@@ -27,9 +27,10 @@ def run_():
 
 
 @task
-def build():
+def build(release=False):
     """Build the binary crate."""
-    cargo('build', crate=BIN, pty=True)
+    args = ['--release'] if release else []
+    cargo('build', *args, crate=BIN, pty=True)
 
 
 @task(default=True)
@@ -37,6 +38,12 @@ def test():
     """Run the tests for both binary & library crates."""
     for crate in (LIB, BIN):
         cargo('test', crate=crate, pty=True)
+
+
+@task
+def release():
+    """Create the release packages for various operating systems."""
+    run('./tools/release', pty=True)
 
 
 # Utility functions
