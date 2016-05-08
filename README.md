@@ -70,7 +70,19 @@ Any Unix-like system should do.
 
 ## Contributing
 
-WIP
+You need a Rust toolchain (with Cargo) to build _rush_ itself.
+
+Additionally, the Python-based [Invoke](http://pyinvoke.org) task runner is used for automation.
+It is recommended you install it inside a Python virtualenv. e.g.:
+
+    $ virtualenv ~/venv/rush && source ~/venv/rush/bin/activate
+    $ pip install -r -requirements-dev.txt
+
+Then you can use:
+
+    $ inv
+
+to build the binary & the library crate, and run their tests.
 
 ## License
 
