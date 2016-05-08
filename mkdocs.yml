@@ -1,2 +1,7 @@
 site_name: rush
+site_description: "Succinct & readable processing language for the shell"
+site_author: "Karol Kuczmarski"
+
 theme: 'material'
+
+site_dir: release/docs

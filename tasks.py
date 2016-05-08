@@ -26,17 +26,27 @@ def run_():
     cargo('run', *sys.argv[2:], crate=BIN, wait=False)
 
 
-@task
-def build(release=False):
-    """Build the binary crate."""
-    args = ['--release'] if release else []
-    cargo('build', *args, crate=BIN, pty=True)
+@task(help={'what': "Comma-separated list of targets to build: bin,docs,lib",
+            'release': "Whether to build artifacts in release mode"})
+def build(what, release=False):
+    """Build the project."""
+    targets = resolve(what, all=('bin', 'docs', 'lib'))
+
+    if 'docs' in targets:
+        args = ['--clean'] if release else []
+        run('mkdocs build ' + ' '.join(map(quote, args)), pty=True)
+    targets.discard('docs')
+
+    for crate in map(crate_from_target, targets):
+        args = ['--release'] if release else []
+        cargo('build', *args, crate=crate, pty=True)
 
 
-@task(default=True)
-def test():
-    """Run the tests for both binary & library crates."""
-    for crate in (LIB, BIN):
+@task(help={'what': "Comma-separated list of targets to test: bin,lib"})
+def test(what):
+    """Run the project's tests."""
+    targets = resolve(what, all=('bin', 'lib'))
+    for crate in map(crate_from_target, targets):
         cargo('test', '--no-fail-fast', crate=crate, pty=True)
 
 
@@ -47,6 +57,38 @@ def release():
 
 
 # Utility functions
+
+# TODO(xion): consider using the Invoke's collection feature instead of this,
+# so that we can have a default task again, and docs can be handled with
+# something like `inv docs.build` (or `inv build.docs`)
+# (details: http://docs.pyinvoke.org/en/0.12.2/concepts/namespaces.html)
+def resolve(what, all=None):
+    """Resolve the target specification given as task argument
+    into a set of target names.
+
+    :param what: Comma-separated string, like "bin,lib"
+    :param all: What targets are considered 'all' (CSV or list)
+
+    :return: Set of resolved targets
+    """
+    all_ = all or ('bin', 'lib')
+
+    result = what.lower().strip()
+    if result == 'all':
+        result = all_
+
+    if isinstance(result, str):
+        result = result.split(',')
+    return set(t.lower().strip() for t in result)
+
+
+def crate_from_target(target):
+    """Translate a target name (like 'bin') into the appropriate crate name."""
+    try:
+        return {'bin': BIN, 'lib': LIB}[target]
+    except KeyError:
+        raise ValueError("unknown target: '%s'" % (target,))
+
 
 def cargo(cmd, *args, **kwargs):
     """Run Cargo as if inside the specified crate directory.

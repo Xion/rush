@@ -80,7 +80,7 @@ It is recommended you install it inside a Python virtualenv. e.g.:
 
 Then you can use:
 
-    $ inv
+    $ inv test all
 
 to build the binary & the library crate, and run their tests.
 
