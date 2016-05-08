@@ -11,7 +11,7 @@ except ImportError:
     from pipes import quote
 import sys
 
-from invoke import task, run
+from invoke import call, task, run
 
 
 BIN = 'rush'
@@ -26,7 +26,8 @@ def run_():
     cargo('run', *sys.argv[2:], crate=BIN, wait=False)
 
 
-@task(help={'what': "Comma-separated list of targets to build: bin,docs,lib",
+@task(auto_shortflags=False,
+      help={'what': "Comma-separated list of targets to build: bin,docs,lib",
             'release': "Whether to build artifacts in release mode"})
 def build(what, release=False):
     """Build the project."""
@@ -56,11 +57,17 @@ def release():
     run('./tools/release', pty=True)
 
 
+@task(default=True, autoprint=True,
+      pre=[call(test, 'all'), call(build, 'docs')])
+def default():
+    """Default task: run all the tests & build documentation."""
+    return "\nAll done."
+
+
 # Utility functions
 
 # TODO(xion): consider using the Invoke's collection feature instead of this,
-# so that we can have a default task again, and docs can be handled with
-# something like `inv docs.build` (or `inv build.docs`)
+# so that we docs can be handled wit something like `inv build.docs`
 # (details: http://docs.pyinvoke.org/en/0.12.2/concepts/namespaces.html)
 def resolve(what, all=None):
     """Resolve the target specification given as task argument
