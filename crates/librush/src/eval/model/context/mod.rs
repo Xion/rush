@@ -1,4 +1,13 @@
 //! Evaluation context.
+//!
+//! A context contains all the variable and function bindings that are used
+//! when evaluating an expression.
+//!
+//! This is roughly equivalent to a stack frame,
+//! or a block of code in languages with local scoping (like C++ or Rust).
+
+mod defines;
+
 
 use std::borrow::{Borrow, ToOwned};
 use std::collections::HashMap;
@@ -20,12 +29,6 @@ type Hasher = BuildHasherDefault<FnvHasher>;
 
 
 /// Evaluation context for an expression.
-///
-/// Contains all the variable and function bindings that are used
-/// when evaluating an expression.
-///
-/// This is roughly equivalent to a stack frame,
-/// or a block of code in languages with local scoping (like C++ or Rust).
 pub struct Context<'c> {
     /// Optional parent Context, i.e. a lower "frame" on the "stack".
     parent: Option<&'c Context<'c>>,
