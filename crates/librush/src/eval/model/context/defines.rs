@@ -104,7 +104,7 @@ impl<'c> Context<'c> {
 
 
 //
-// Methods for defining functions taking at least 1 argument.
+// Methods for defining functions taking mostly 1 argument.
 //
 impl<'c> Context<'c> {
     /// Define a regular function taking exactly one argument.
@@ -146,9 +146,33 @@ impl<'c> Context<'c> {
     }
 }
 
+impl<'c> Context<'c> {
+    /// Define a regular function taking at most one argument.
+    pub fn define_upto_unary<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Option<Value>) -> eval::Result + 'static
+    {
+        self.define(name, Arity::Range(0, 1), move |args: Args| {
+            let mut args = args.into_iter();
+            func(args.next())
+        })
+    }
+
+    /// Define a contextualized function taking at most one argument.
+    pub fn define_upto_unary_ctx<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Option<Value>, &Context) -> eval::Result + 'static
+    {
+        self.define_ctx(name, Arity::Range(0, 1), move |args: Args, context: &Context| {
+            let mut args = args.into_iter();
+            func(args.next(), &context)
+        })
+    }
+}
+
 
 //
-// Methods for defining functions taking at least 2 arguments.
+// Methods for defining functions taking mostly 2 arguments.
 //
 impl<'c> Context<'c> {
     /// Define a regular function taking exactly two arguments.
@@ -191,9 +215,34 @@ impl<'c> Context<'c> {
     }
 }
 
+impl<'c> Context<'c> {
+    /// Define a regular function taking at most two arguments.
+    pub fn define_upto_binary<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Option<Value>, Option<Value>) -> eval::Result + 'static
+    {
+        self.define(name, Arity::Range(0, 2), move |args: Args| {
+            let mut opt_args = expand_vec(args, 2).into_iter();
+            func(opt_args.next().unwrap(), opt_args.next().unwrap())
+        })
+    }
+
+    /// Define a contextualized function taking at most two arguments.
+    pub fn define_upto_binary_ctx<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Option<Value>, Option<Value>, &Context) -> eval::Result + 'static
+    {
+        self.define_ctx(name, Arity::Range(0, 2), move |args: Args, context: &Context| {
+            let mut opt_args = expand_vec(args, 2).into_iter();
+            func(opt_args.next().unwrap(), opt_args.next().unwrap(),
+                 &context)
+        })
+    }
+}
+
 
 //
-// Methods for defining functions taking at least 3 arguments.
+// Methods for defining functions taking mostly 3 arguments.
 //
 impl<'c> Context<'c> {
     /// Define a regular function taking exactly three arguments.
@@ -240,6 +289,35 @@ impl<'c> Context<'c> {
     }
 }
 
+impl<'c> Context<'c> {
+    /// Define a regular function taking at most three arguments.
+    pub fn define_upto_ternary<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Option<Value>, Option<Value>, Option<Value>) -> eval::Result + 'static
+    {
+        self.define(name, Arity::Range(0, 3), move |args: Args| {
+            let mut opt_args = expand_vec(args, 3).into_iter();
+            func(opt_args.next().unwrap(),
+                 opt_args.next().unwrap(),
+                 opt_args.next().unwrap())
+        })
+    }
+
+    /// Define a contextualized function taking at most three arguments.
+    pub fn define_upto_ternary_ctx<N: ?Sized, F>(&mut self, name: &'static N, func: F) -> &mut Self
+        where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
+              F: Fn(Option<Value>, Option<Value>, Option<Value>, &Context) -> eval::Result + 'static
+    {
+        self.define_ctx(name, Arity::Range(0, 3), move |args: Args, context: &Context| {
+            let mut opt_args = expand_vec(args, 3).into_iter();
+            func(opt_args.next().unwrap(),
+                 opt_args.next().unwrap(),
+                 opt_args.next().unwrap(),
+                 &context)
+        })
+    }
+}
+
 
 // Utility functions
 
@@ -259,4 +337,22 @@ fn ensure_argcount<N: ?Sized>(name: &N, args: &Args, arity: Arity) -> Result<(),
             name, arity, count
         )))
     }
+}
+
+/// Expand a vector to given size by turning it into a vector of Options.
+/// Additional items created by this expansion are set to None.
+fn expand_vec<T>(v: Vec<T>, size: usize) -> Vec<Option<T>> {
+    let len = v.len();
+    assert!(size >= len,
+        "Cannot expand a vector of len={} to a smaller size of {}", len, size);
+
+    // don't use Vec::resize because it requires T: Clone and we don't want to clone needlessly
+    let mut result: Vec<Option<T>> = Vec::with_capacity(size);
+    for x in v {
+        result.push(Some(x))
+    }
+    for _ in 0..size - len {
+        result.push(None)
+    }
+    result
 }
