@@ -6,14 +6,17 @@ either the library crate, binary crate, or both.
 """
 from __future__ import absolute_import
 
+import logging
 import os
 try:
     from shlex import quote
 except ImportError:
     from pipes import quote
+import shutil
 import sys
 
 from invoke import Collection, task, run
+import yaml
 
 
 BIN = 'rush'
@@ -91,6 +94,50 @@ def test_lib():
     cargo('test', '--no-fail-fast', crate=LIB, pty=True)
 
 
+# Clean tasks
+
+CLEAN_HELP = {'release': "Whether the to clean release artifacts."}
+
+
+@task(help=CLEAN_HELP)
+def clean_all(release=False):
+    """Clean all of the project's build artifacts."""
+    clean_lib(release)
+    clean_bin(release)
+    clean_docs()
+    print("\nAll cleaned.")
+
+
+@task(help=CLEAN_HELP)
+def clean_bin(release=False):
+    """Clean the binary crate's build artifacts."""
+    args = ['--release'] if release else []
+    cargo('clean', *args, crate=BIN, pty=True)
+
+
+@task
+def clean_docs():
+    """Clean the built documentation."""
+    # determine the docs' output directory
+    base_dir = os.path.dirname(__file__)
+    config_file = os.path.join(base_dir, 'mkdocs.yml')
+    with open(config_file) as f:
+        config = yaml.load(f)
+    output_dir = os.path.join(base_dir, config.get('site_dir', 'site'))
+
+    if os.path.isdir(output_dir):
+        try:
+            shutil.rmtree(output_dir)
+        except (OSError, shutil.Error) as e:
+            logging.warning("Error while cleaning docs' output dir: %s", e)
+
+
+@task(help=CLEAN_HELP)
+def clean_lib(release=False):
+    """Clean the library crate's build artifacts."""
+    args = ['--release'] if release else []
+    cargo('clean', *args, crate=LIB, pty=True)
+
 
 # Utility functions
 
@@ -132,3 +179,8 @@ test_tasks = Collection('test',
                         bin=test_bin, lib=test_lib)
 test_tasks.add_task(test_all, name='all', default=True)
 ns.add_collection(test_tasks)
+
+clean_tasks = Collection('clean',
+                         bin=clean_bin, docs=clean_docs, lib=clean_lib)
+clean_tasks.add_task(clean_all, name='all', default=True)
+ns.add_collection(clean_tasks)
