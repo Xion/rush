@@ -38,6 +38,33 @@ pub enum Arity {
 
 impl Arity {
     #[inline(always)]
+    pub fn with_exact(argcount: ArgCount) -> Arity {
+        Arity::Exact(argcount)
+    }
+
+    #[inline(always)]
+    pub fn with_minimum(argcount: ArgCount) -> Arity {
+        Arity::Minimum(argcount)
+    }
+
+    #[inline(always)]
+    pub fn with_maximum(argcount: ArgCount) -> Arity {
+        if argcount == 0 { Arity::Exact(0) }
+        else             { Arity::Range(0, argcount) }
+    }
+
+    #[inline]
+    pub fn with_range(min: ArgCount, max: ArgCount) -> Arity {
+        assert!(min <= max,
+            "Min. arity must not be greater than max. (got min={}, max={})",
+            min, max);
+        if min == max { Arity::Exact(min) }
+        else          { Arity::Range(min, max) }
+    }
+}
+
+impl Arity {
+    #[inline(always)]
     pub fn is_exact(&self) -> bool {
         match *self { Arity::Exact(..) => true, _ => false }
     }

@@ -72,7 +72,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn() -> eval::Result + 'static
     {
-        self.define(name, Arity::Exact(0), move |_| { func() })
+        self.define(name, Arity::with_exact(0), move |_| { func() })
     }
 
     /// Define a regular function taking zero or more arguments.
@@ -80,7 +80,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Args) -> eval::Result + 'static
     {
-        self.define(name, Arity::Minimum(0), func)
+        self.define(name, Arity::with_minimum(0), func)
     }
 
     /// Define a contextualized function taking no arguments.
@@ -88,7 +88,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(&Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, Arity::Exact(0), move |_, context: &Context| {
+        self.define_ctx(name, Arity::with_exact(0), move |_, context: &Context| {
             func(&context)
         })
     }
@@ -98,7 +98,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Args, &Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, Arity::Minimum(0), func)
+        self.define_ctx(name, Arity::with_minimum(0), func)
     }
 }
 
@@ -112,7 +112,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Value) -> eval::Result + 'static
     {
-        self.define(name, Arity::Exact(1), move |args: Args| {
+        self.define(name, Arity::with_exact(1), move |args: Args| {
             let mut args = args.into_iter();
             func(args.next().unwrap())
         })
@@ -123,7 +123,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Args) -> eval::Result + 'static
     {
-        self.define(name, Arity::Minimum(1), func)
+        self.define(name, Arity::with_minimum(1), func)
     }
 
     /// Define a contextualized function taking exactly one argument.
@@ -131,7 +131,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Value, &Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, Arity::Exact(1), move |args: Args, context: &Context| {
+        self.define_ctx(name, Arity::with_exact(1), move |args: Args, context: &Context| {
             let mut args = args.into_iter();
             func(args.next().unwrap(), &context)
         })
@@ -142,7 +142,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Args, &Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, Arity::Minimum(1), func)
+        self.define_ctx(name, Arity::with_minimum(1), func)
     }
 }
 
@@ -152,7 +152,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Option<Value>) -> eval::Result + 'static
     {
-        self.define(name, Arity::Range(0, 1), move |args: Args| {
+        self.define(name, Arity::with_maximum(1), move |args: Args| {
             let mut args = args.into_iter();
             func(args.next())
         })
@@ -163,7 +163,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Option<Value>, &Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, Arity::Range(0, 1), move |args: Args, context: &Context| {
+        self.define_ctx(name, Arity::with_maximum(1), move |args: Args, context: &Context| {
             let mut args = args.into_iter();
             func(args.next(), &context)
         })
@@ -180,7 +180,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Value, Value) -> eval::Result + 'static
     {
-        self.define(name, Arity::Exact(2), move |args: Args| {
+        self.define(name, Arity::with_exact(2), move |args: Args| {
             let mut args = args.into_iter();
             func(args.next().unwrap(), args.next().unwrap())
         })
@@ -191,7 +191,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Args) -> eval::Result + 'static
     {
-        self.define(name, Arity::Minimum(2), func)
+        self.define(name, Arity::with_minimum(2), func)
     }
 
     /// Define a contextualized function taking exactly two arguments.
@@ -199,7 +199,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Value, Value, &Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, Arity::Exact(2), move |args: Args, context: &Context| {
+        self.define_ctx(name, Arity::with_exact(2), move |args: Args, context: &Context| {
             let mut args = args.into_iter();
             func(args.next().unwrap(), args.next().unwrap(),
                 &context)
@@ -211,7 +211,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Args, &Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, Arity::Minimum(2), func)
+        self.define_ctx(name, Arity::with_minimum(2), func)
     }
 }
 
@@ -221,7 +221,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Option<Value>, Option<Value>) -> eval::Result + 'static
     {
-        self.define(name, Arity::Range(0, 2), move |args: Args| {
+        self.define(name, Arity::with_maximum(2), move |args: Args| {
             let mut opt_args = expand_vec(args, 2).into_iter();
             func(opt_args.next().unwrap(), opt_args.next().unwrap())
         })
@@ -232,7 +232,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Option<Value>, Option<Value>, &Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, Arity::Range(0, 2), move |args: Args, context: &Context| {
+        self.define_ctx(name, Arity::with_maximum(2), move |args: Args, context: &Context| {
             let mut opt_args = expand_vec(args, 2).into_iter();
             func(opt_args.next().unwrap(), opt_args.next().unwrap(),
                  &context)
@@ -250,7 +250,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Value, Value, Value) -> eval::Result + 'static
     {
-        self.define(name, Arity::Exact(3), move |args: Args| {
+        self.define(name, Arity::with_exact(3), move |args: Args| {
             let mut args = args.into_iter();
             func(args.next().unwrap(),
                  args.next().unwrap(),
@@ -263,7 +263,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Args) -> eval::Result + 'static
     {
-        self.define(name, Arity::Minimum(3), func)
+        self.define(name, Arity::with_minimum(3), func)
     }
 
     /// Define a contextualized function taking exactly three arguments.
@@ -271,7 +271,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Value, Value, Value, &Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, Arity::Exact(3), move |args: Args, context: &Context| {
+        self.define_ctx(name, Arity::with_exact(3), move |args: Args, context: &Context| {
             let mut args = args.into_iter();
             func(args.next().unwrap(),
                  args.next().unwrap(),
@@ -285,7 +285,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Args, &Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, Arity::Minimum(3), func)
+        self.define_ctx(name, Arity::with_minimum(3), func)
     }
 }
 
@@ -295,7 +295,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Option<Value>, Option<Value>, Option<Value>) -> eval::Result + 'static
     {
-        self.define(name, Arity::Range(0, 3), move |args: Args| {
+        self.define(name, Arity::with_maximum(3), move |args: Args| {
             let mut opt_args = expand_vec(args, 3).into_iter();
             func(opt_args.next().unwrap(),
                  opt_args.next().unwrap(),
@@ -308,7 +308,7 @@ impl<'c> Context<'c> {
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Option<Value>, Option<Value>, Option<Value>, &Context) -> eval::Result + 'static
     {
-        self.define_ctx(name, Arity::Range(0, 3), move |args: Args, context: &Context| {
+        self.define_ctx(name, Arity::with_maximum(3), move |args: Args, context: &Context| {
             let mut opt_args = expand_vec(args, 3).into_iter();
             func(opt_args.next().unwrap(),
                  opt_args.next().unwrap(),
