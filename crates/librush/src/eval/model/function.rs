@@ -28,6 +28,22 @@ pub trait Invoke {
     /// has been found. It is the object itself which can decide whether or not
     /// it wants to create its own Context ("stack frame") for the invocation.
     fn invoke(&self, args: Args, context: &Context) -> eval::Result;
+
+    //
+    // Convenience shortcuts for invocations with different number of arguments.
+    //
+    fn invoke0(&self, context: &Context) -> eval::Result {
+        self.invoke(vec![], context)
+    }
+    fn invoke1(&self, arg: Value, context: &Context) -> eval::Result {
+        self.invoke(vec![arg], context)
+    }
+    fn invoke2(&self, arg1: Value, arg2: Value, context: &Context) -> eval::Result {
+        self.invoke(vec![arg1, arg2], context)
+    }
+    fn invoke3(&self, arg1: Value, arg2: Value, arg3: Value, context: &Context) -> eval::Result {
+        self.invoke(vec![arg1, arg2, arg3], context)
+    }
 }
 
 
@@ -78,7 +94,7 @@ impl Function {
             let arity = other.arity();
             let result = move |args, context: &Context| {
                 let intermediate = try!(other.invoke(args, &context));
-                self.invoke(vec![intermediate], &context)
+                self.invoke1(intermediate, &context)
             };
             return Some(Function::from_native_ctx(arity, result));
         }

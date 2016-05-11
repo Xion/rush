@@ -278,7 +278,7 @@ impl BinaryOpNode {
         if left.is_function() {
             let left = left.unwrap_function();
             return if left.arity() == 1 {
-                left.invoke(vec![right], &context)
+                left.invoke1(right, &context)
             } else {
                 left.curry(right)
                     .map(Value::Function)

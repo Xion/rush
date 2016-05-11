@@ -178,7 +178,7 @@ pub fn map(func: Value, array: Value, context: &Context) -> eval::Result {
         let mut result = Vec::new();
         for item in array.into_iter() {
             let context = Context::with_parent(&context);
-            let mapped = try!(func.invoke(vec![item], &context));
+            let mapped = try!(func.invoke1(item, &context));
             result.push(mapped);
         }
         result
@@ -204,7 +204,7 @@ pub fn filter(func: Value, array: Value, context: &Context) -> eval::Result {
         for item in array.into_iter() {
             let context = Context::with_parent(context);
             let keep = try!(
-                func.invoke(vec![item.clone()], &context).and_then(bool)
+                func.invoke1(item.clone(), &context).and_then(bool)
             ).unwrap_bool();
             if keep {
                 result.push(item);
@@ -231,7 +231,7 @@ pub fn reduce(func: Value, array: Value, start: Value, context: &Context) -> eva
         let mut result = start;
         for item in array.into_iter() {
             let context = Context::with_parent(context);
-            result = try!(func.invoke(vec![result, item], &context));
+            result = try!(func.invoke2(result, item, &context));
         }
         return Ok(result);
     }
@@ -281,7 +281,7 @@ pub fn sort_by(array: Value, cmp: Value, context: &Context) -> eval::Result {
     if let (Value::Array(mut array), Value::Function(cmp)) = (array, cmp) {
         let zero = Value::Integer(0);
         let mut error: Option<Error> = None;
-        array.sort_by(|a, b| match cmp.invoke(vec![a.clone(), b.clone()], context) {
+        array.sort_by(|a, b| match cmp.invoke2(a.clone(), b.clone(), context) {
             Ok(ref x) if *x < zero => Ordering::Less,
             Ok(ref x) if *x == zero => Ordering::Equal,
             Ok(ref x) if *x > zero => Ordering::Greater,

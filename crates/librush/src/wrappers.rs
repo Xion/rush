@@ -454,7 +454,7 @@ fn maybe_apply_result<'c>(result: Value, context: &'c mut Context) -> EvalResult
         }
         debug!("Result found to be a function, applying it to input");
         let input = context.unset_here(CURRENT).unwrap();
-        return func.invoke(vec![input], &context);
+        return func.invoke1(input, &context);
     }
     Ok(result)
 }
