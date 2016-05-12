@@ -47,11 +47,7 @@ Anonymous functions are defined using `|` (pipe), an argument list, another pipe
     |x| x + 2
     |x,y| x + y
 
-`*` is the composition operator:
-
-    abs & |x| x + 2   ===  |x| abs(x + 2)
-
-However, the "reverse composition" (piping) operator is typically more useful:
+`&` is the "reverse function composition" (piping) operator:
 
     int & abs & |x| x / 2  ===  |x| abs(int(x)) / 2
 
@@ -64,8 +60,8 @@ These features can of course be combined:
     $ echo '1,2,3' | ap 'split(",") & map(int & |x| x * 2) & join(",")'
     2,4,6
 
-TODO(xion): Haskell-like syntax for (partial application of) operator functions:
-(+), (2+), (*5), etc.
+There is also a Haskell-like syntax for (partial application of) operator functions
+`(+)`, `(2+)`, `(*5)`, etc.
 
 ## Reserved syntactic elements
 
