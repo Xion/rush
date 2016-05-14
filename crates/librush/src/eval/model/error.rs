@@ -66,7 +66,6 @@ impl Error {
             actual
         ))
     }
-    // TODO(xion): make a nice mismatch! macro for returning this error variant
 
     #[inline(always)]
     pub fn other(msg: &str) -> Error {
@@ -137,8 +136,11 @@ impl Mismatch {
     #[inline(always)]
     pub fn against_many(operation: &str,
                         expected: Vec<Signature>, actual: Vec<&Value>) -> Mismatch {
+        // Note that we don't assert that `expected` is non empty because this error
+        // may be used also for indicating that arguments are invalid for non-type related reasons.
         assert!(operation.len() > 0, "Empty operation");
         assert!(actual.len() > 0, "No actual arguments");
+
         Mismatch{
             operation: operation.to_owned(),
             expected: expected,
