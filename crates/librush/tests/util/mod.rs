@@ -6,8 +6,10 @@ use std::hash::Hash;
 use std::io;
 use std::str::from_utf8;
 
+use conv::TryFrom;
+
 use rustc_serialize::json::Json;
-use rush;
+use rush::{self, Context};
 
 
 /// Construct a hashmap where key & value is turned into its Owned version
@@ -115,7 +117,9 @@ pub fn eval(expr: &str) -> String {
 }
 
 pub fn eval_ex(expr: &str) -> io::Result<String> {
-    apply_ex(expr, "unused")
+    let result = try!(rush::eval(expr, &mut Context::new()));
+    String::try_from(result)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
 }
 
 

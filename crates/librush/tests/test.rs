@@ -7,6 +7,7 @@
 //! of the `extern crate` declarations and dealing with unused code warnings
 //! within the `util` module.
 
+extern crate conv;
 #[macro_use]
 extern crate maplit;
 extern crate rustc_serialize;
