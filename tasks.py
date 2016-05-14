@@ -14,6 +14,7 @@ except ImportError:
     from pipes import quote
 import shutil
 import sys
+import webbrowser
 
 from invoke import Collection, task, run
 import yaml
@@ -21,14 +22,6 @@ import yaml
 
 BIN = 'rush'
 LIB = 'librush'
-
-
-@task(name="run")
-def run_():
-    """Run the binary crate."""
-    # Because we want to accept arbitrary arguments, we have to ferret them out
-    # of sys.argv manually.
-    cargo('run', *sys.argv[2:], crate=BIN, wait=False)
 
 
 @task
@@ -118,13 +111,7 @@ def clean_bin(release=False):
 @task
 def clean_docs():
     """Clean the built documentation."""
-    # determine the docs' output directory
-    base_dir = os.path.dirname(__file__)
-    config_file = os.path.join(base_dir, 'mkdocs.yml')
-    with open(config_file) as f:
-        config = yaml.load(f)
-    output_dir = os.path.join(base_dir, config.get('site_dir', 'site'))
-
+    output_dir = get_docs_output_dir()
     if os.path.isdir(output_dir):
         try:
             shutil.rmtree(output_dir)
@@ -137,6 +124,25 @@ def clean_lib(release=False):
     """Clean the library crate's build artifacts."""
     args = ['--release'] if release else []
     cargo('clean', *args, crate=LIB, pty=True)
+
+
+# Run tasks
+
+@task
+def run_bin():
+    """Run the binary crate."""
+    # Because we want to accept arbitrary arguments, we have to ferret them out
+    # of sys.argv manually.
+    cargo('run', *sys.argv[2:], crate=BIN, wait=False)
+
+
+@task(pre=[build_docs])
+def run_docs():
+    """"Run" the docs, i.e. preview them in the default web browser."""
+    path = os.path.join(get_docs_output_dir(), 'index.html')
+    if sys.platform == 'darwin':
+        path = 'file://%s' % os.path.abspath(path)
+    webbrowser.open_new_tab(path)
 
 
 # Utility functions
@@ -165,9 +171,18 @@ def cargo(cmd, *args, **kwargs):
         os.execvp('cargo', argv)
 
 
+def get_docs_output_dir():
+    """Retrieve the full path to the documentation's output directory."""
+    base_dir = os.path.dirname(__file__)
+    config_file = os.path.join(base_dir, 'mkdocs.yml')
+    with open(config_file) as f:
+        config = yaml.load(f)
+    return os.path.join(base_dir, config.get('site_dir', 'site'))
+
+
 # Setup
 
-ns = Collection(run_, release)
+ns = Collection(release)
 ns.add_task(test_all, name='default', default=True)
 
 build_tasks = Collection('build',
@@ -184,3 +199,7 @@ clean_tasks = Collection('clean',
                          bin=clean_bin, docs=clean_docs, lib=clean_lib)
 clean_tasks.add_task(clean_all, name='all', default=True)
 ns.add_collection(clean_tasks)
+
+run_tasks = Collection('run', docs=run_docs)
+run_tasks.add_task(run_bin, name='bin', default=True)
+ns.add_collection(run_tasks)
