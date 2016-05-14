@@ -2,13 +2,14 @@
 
 Expression syntax overview
 
-TODO(xion): either move this all into README or to dedicated documentation page
+TODO(xion): expand further, move to docs, and split
 
 ## Data types
 
 * string (default if no explicit annotation/function/coercion is used)
 * number: int or float
 * booleans (true or false)
+# regexes
 * arrays
 * objects (hashmaps string -> value)
 
@@ -17,21 +18,31 @@ TODO(xion): either move this all into README or to dedicated documentation page
 Identifier starts with a letter (NOT underscore, because see below)
 and can contain letters, numbers, and the underscore character.
 
-If an identifier doesn't refer to a known function, it is treated as literal string.
+If an identifier doesn't refer to a known function or variable, it is treated as literal string.
 
 Strings are surrounded with double quotes. \" to escape a quote, \\ to escape a backslash.
 
 Integers are `[+-]?[1-9][0-9]*`.
 Floats are additionally `[+-]?([0-9]\.)?[0-9]+(e$INTEGER)?` (i.e. regular & scientific notation).
 
+Arrays are enclosed in brackets: `[1, 2, 3]`.
+
+Objects use JS(ON) notation: `{foo: "bar", "baz": qux}`. Note that both key & value are expressions,
+so `foo` may be either a string `"foo"` or the value of `foo` variable.
+
+Regexes are enclosed in slashes: `/foo+/`. (Slashes are **not** used to perform regex operations, though,
+unlike sed or Perl).
+
 ## Special symbols
 
-* `_` (underscore) -- Current item.
+* `_` (underscore) -- Current item. Meaning depends on the flags, e.g. for `-l` (default) this will be the current line.
 
 ## Operators
 
-* arithmetic: `+`, `-`, `*`, `/`; operate on numbers
-* strings: `+` (concatentation), `*` (repeat), `%` (formatting), `/` (split)
+* logical: `&&`, `||`
+* comparison: `<`, `>`, `<=`, `>=`, `==`, `!=`, `@` (membership & regex matching)
+* arithmetic: `+`, `-`, `*`, `**`, `/`, `%`; operate on numbers
+* strings: `+` (concatentation), `*` (repeat), `%` (formatting), `/` (split), `*` (join (array * string))
 * ternary operator: `?:`
 
 ## Functions
@@ -57,7 +68,7 @@ Functions are automatically curried when given fewer than minimum number of argu
 
 These features can of course be combined:
 
-    $ echo '1,2,3' | ap 'split(",") & map(int & |x| x * 2) & join(",")'
+    $ echo '1,2,3' | rh 'split(",") & map(int & |x| x * 2) & join(",")'
     2,4,6
 
 There is also a Haskell-like syntax for (partial application of) operator functions
@@ -65,12 +76,12 @@ There is also a Haskell-like syntax for (partial application of) operator functi
 
 ## Reserved syntactic elements
 
-All "special" characters (incl. braces, brackets, all symbols on the numeric row, and semicolon)
-are reserved for possible future use. If string is to contain them, it must be surrounded by quotes.
+All "special" characters (symbols on the numeric row) are reserved for possible future use.
+If string is to contain them, it must be surrounded by quotes.
 
-Some possible future keywords are also reserved, e.g.: if else while for do.
+Some possible future keywords are also reserved, e.g.: `if else while for do`.
 
-## Execution
+## Result handling
 
 Depending on the type of the overall expression, the result of its execution is the following:
 
@@ -80,5 +91,4 @@ Depending on the type of the overall expression, the result of its execution is 
   and the result is the output for the item
 * otherwise (e.g. function with more than one argument) it is a fatal error
 
-Alternately, an expression such as `_ + 2` can be thought as a shorthand for `|x| x + 2`
-(as long as typed versions `_` haven't been used).
+Alternately, an expression such as `_ + 2` can be thought as a shorthand for `|x| x + 2`.
