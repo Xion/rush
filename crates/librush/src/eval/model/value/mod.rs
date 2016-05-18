@@ -1,13 +1,15 @@
 //! Value type.
 //!
 //! Everything that expressions can operate on is encapsulated into values,
-//! which are tagged unions (Rust enums), with the basic types as variants.
+//! which are tagged unions (Rust enums) with the basic types as variants.
 //!
 //! This module implements the Value type itself, as well as all the various
 //! conversions to and from Rust types, and serialization formats like JSON.
 
+mod types;
+
+
 use std::cmp::{Ordering, PartialOrd};
-use std::collections::HashMap;
 use std::convert::From;
 use std::fmt;
 use std::str::FromStr;
@@ -15,24 +17,11 @@ use std::str::FromStr;
 use conv::TryFrom;
 use conv::errors::{GeneralError, NoError};
 use conv::misc::InvalidSentinel;
-use regex::Regex;
 use rustc_serialize::json::{Json, ToJson};
 
 use eval;
 use eval::util::cmp::{TryEq, TryOrd};
-use super::function::Function;
-
-
-// Representations of various possible types of Value.
-pub type SymbolRepr = String;
-pub type BooleanRepr = bool;
-pub type IntegerRepr = i64;
-pub type FloatRepr = f64;
-pub type StringRepr = String;
-pub type RegexRepr = Regex;
-pub type ArrayRepr = Vec<Value>;
-pub type ObjectRepr = HashMap<String, Value>;
-pub type FunctionRepr = Function;
+pub use self::types::*;
 
 
 /// Typed value that's operated upon.
@@ -75,116 +64,12 @@ impl Value {
             Value::Function(..) => "function",
         }
     }
-
-    #[inline(always)]
-    pub fn is_bool(&self) -> bool {
-        match *self { Value::Boolean(..) => true, _ => false, }
-    }
-    #[inline(always)]
-    pub fn is_int(&self) -> bool {
-        match *self { Value::Integer(..) => true, _ => false, }
-    }
-    #[inline(always)]
-    pub fn is_float(&self) -> bool {
-        match *self { Value::Float(..) => true, _ => false, }
-    }
-    #[inline(always)]
-    pub fn is_string(&self) -> bool {
-        match *self { Value::String(..) => true, _ => false, }
-    }
-    #[inline(always)]
-    pub fn is_regex(&self) -> bool {
-        match *self { Value::Regex(..) => true, _ => false, }
-    }
-    #[inline(always)]
-    pub fn is_array(&self) -> bool {
-        match *self { Value::Array(..) => true, _ => false, }
-    }
-    #[inline(always)]
-    pub fn is_object(&self) -> bool {
-        match *self { Value::Object(..) => true, _ => false, }
-    }
-    #[inline(always)]
-    pub fn is_function(&self) -> bool {
-        match *self { Value::Function(..) => true, _ => false, }
-    }
-
-    #[inline(always)]
-    pub fn is_scalar(&self) -> bool {
-        self.is_bool() || self.is_int() || self.is_float() || self.is_string()
-    }
-    #[inline(always)]
-    pub fn is_number(&self) -> bool {
-        self.is_int() || self.is_float()
-    }
 }
-
-// Methods for consuming the Value and returning its Rust representation.
-impl Value {
-    #[inline]
-    pub fn unwrap_bool(self) -> BooleanRepr {
-        match self {
-            Value::Boolean(b) => b,
-            _ => { panic!("unwrap_bool() on {} value", self.typename()) },
-        }
-    }
-    #[inline]
-    pub fn unwrap_int(self) -> IntegerRepr {
-        match self {
-            Value::Integer(i) => i,
-            _ => { panic!("unwrap_int() on {} value", self.typename()) },
-        }
-    }
-    #[inline]
-    pub fn unwrap_float(self) -> FloatRepr {
-        match self {
-            Value::Float(f) => f,
-            _ => { panic!("unwrap_float() on {} value", self.typename()) },
-        }
-    }
-    #[inline]
-    pub fn unwrap_string(self) -> StringRepr {
-        match self {
-            Value::String(s) => s,
-            _ => { panic!("unwrap_string() on {} value", self.typename()) },
-        }
-    }
-    #[inline]
-    pub fn unwrap_regex(self) -> RegexRepr {
-        match self {
-            Value::Regex(r) => r,
-            _ => { panic!("unwrap_regex() on {} value", self.typename()) },
-        }
-    }
-    #[inline]
-    pub fn unwrap_array(self) -> ArrayRepr {
-        match self {
-            Value::Array(a) => a,
-            _ => { panic!("unwrap_array() on {} value", self.typename()) },
-        }
-    }
-    #[inline]
-    pub fn unwrap_object(self) -> ObjectRepr {
-        match self {
-            Value::Object(o) => o,
-            _ => { panic!("unwrap_object() on {} value", self.typename()) },
-        }
-    }
-    #[inline]
-    pub fn unwrap_function(self) -> FunctionRepr {
-        match self {
-            Value::Function(f) => f,
-            _ => { panic!("unwrap_function() on {} value", self.typename()) },
-        }
-    }
-}
-
 
 impl InvalidSentinel for Value {
     #[inline(always)]
     fn invalid_sentinel() -> Self { Value::Empty }
 }
-
 
 impl fmt::Debug for Value {
     /// Format a Value for debugging purposes.
@@ -213,6 +98,8 @@ impl fmt::Debug for Value {
     }
 }
 
+
+// TODO(xion): extract the impl's below to submodules
 
 // Comparisons
 
