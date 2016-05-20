@@ -33,7 +33,7 @@ pub fn load_into(context: &mut Context) -> io::Result<()> {
         let file = try!(File::open(&path));
         let content = try!(read_rcfile(file));
         try!(rush::exec(&content, context));
-        info!("Successfully loaded symbols from {}", path.display());
+        info!("Symbols loaded from {}", path.display());
     }
     Ok(())
 }
@@ -60,7 +60,7 @@ fn list_rcfiles() -> Vec<PathBuf> {
     // List directories eligible for having their .Xrc files read.
     // Note that the order matters: directories with higher priority should be
     // considered last, so that definitions inside their .Xrc files can override
-    // the ones that come before it.
+    // the ones that come before them.
     let mut dirs: Vec<PathBuf> = Vec::new();
     if let Some(homedir) = env::home_dir() {
         dirs.push(homedir);
@@ -83,7 +83,7 @@ fn list_rcfiles() -> Vec<PathBuf> {
     result
 }
 
-/// Get the possible names of .Xrc files within a directory.
+/// Get the possible names of .Xrc files within any directory.
 fn rc_filenames() -> Vec<PathBuf> {
     let mut result: Vec<PathBuf> = Vec::new();
     for stem in STEMS {
