@@ -2,35 +2,46 @@
 
 use std::convert::From;
 
+use conv::TryFrom;
+use conv::errors::GeneralError;
 use rustc_serialize::json::{Json, ToJson};
 
 use super::types::IntegerRepr;
 use super::Value;
 
 
-impl From<Json> for Value {
+impl TryFrom<Json> for Value {
+    type Err = GeneralError<String>;
+
     /// Parse a JSON object into a value.
-    fn from(input: Json) -> Self {
-        match input {
-            Json::Null => Value::Empty,
-            Json::Boolean(b) => Value::Boolean(b),
-            Json::I64(i) => Value::Integer(i),
+    fn try_from(src: Json) -> Result<Self, Self::Err> {
+        match src {
+            Json::Null => Ok(Value::Empty),
+            Json::Boolean(b) => Ok(Value::Boolean(b)),
+            Json::I64(i) => Ok(Value::Integer(i)),
             Json::U64(u) => {
-                // TODO(xion): implement optional parsing using TryFrom
                 if u > (IntegerRepr::max_value() as u64) {
-                    panic!("JSON integer too large: {}", u);
+                    return Err(GeneralError::PosOverflow(
+                        format!("JSON integer too large: {}", u)
+                    ));
                 }
-                Value::Integer(u as IntegerRepr)
+                Ok(Value::Integer(u as IntegerRepr))
             },
-            Json::F64(f) => Value::Float(f),
-            Json::String(s) => Value::String(s),
-            Json::Array(a) => Value::Array(
+            Json::F64(f) => Ok(Value::Float(f)),
+            Json::String(s) => Ok(Value::String(s)),
+            Json::Array(a) => Ok(Value::Array(
                 a.into_iter().map(Value::from).collect()
-            ),
-            Json::Object(o) => Value::Object(
+            )),
+            Json::Object(o) => Ok(Value::Object(
                 o.into_iter().map(|(k, v)| (k, Value::from(v))).collect()
-            ),
+            )),
         }
+    }
+}
+
+impl From<Json> for Value {
+    fn from(input: Json) -> Self {
+        Value::try_from(input).unwrap()
     }
 }
 
