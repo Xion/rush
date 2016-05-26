@@ -64,6 +64,7 @@ impl<'c> Context<'c> {
         self.define_ternary_ctx(    "reduce",   base::reduce        );
         self.define_unary(          "regex",    conv::regex         );
         self.define_unary(          "regexp",   conv::regex         );
+        self.define_binary_ctx(     "reject",   base::reject        );
         self.define_unary(          "rev",      strings::rev        );
         self.define_unary(          "rot13",    strings::rot13      );
         self.define_unary(          "round",    math::round         );

@@ -192,7 +192,7 @@ pub fn map(func: Value, array: Value, context: &Context) -> eval::Result {
 
 /// Filter an array through a predicate function.
 ///
-/// Returns the array created by apply the function to each element
+/// Returns the array created by applying the function to each element
 /// and preserving only those for it returned a truthy value.
 pub fn filter(func: Value, array: Value, context: &Context) -> eval::Result {
     let array_type = array.typename();
@@ -215,6 +215,36 @@ pub fn filter(func: Value, array: Value, context: &Context) -> eval::Result {
 
     Err(Error::new(&format!(
         "filter() requires a function and an array, got {} and {}",
+        func.typename(), array_type
+    )))
+}
+
+/// Reject array elements that do not satisfy a predicate.
+/// This the opposite of filter().
+///
+/// Returns the array created by applying the function to each element
+/// and preserving only those for it returned a falsy value.
+pub fn reject(func: Value, array: Value, context: &Context) -> eval::Result {
+    let array_type = array.typename();
+
+    eval2!((func: &Function, array: Array) -> Array {{
+        try!(ensure_argcount(&func, 1, "filter"));
+
+        let mut result = Vec::new();
+        for item in array.into_iter() {
+            let context = Context::with_parent(context);
+            let discard = try!(
+                func.invoke1(item.clone(), &context).and_then(bool)
+            ).unwrap_bool();
+            if !discard {
+                result.push(item);
+            }
+        }
+        result
+    }});
+
+    Err(Error::new(&format!(
+        "reject() requires a function and an array, got {} and {}",
         func.typename(), array_type
     )))
 }
