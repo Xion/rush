@@ -20,6 +20,28 @@ pub fn len(value: Value) -> eval::Result {
     )))
 }
 
+/// Return an array of object's keys.
+/// If a string or array is passed, an array of indices is returned.
+pub fn keys(value: Value) -> eval::Result {
+    // object is the main case; return the array of string keys
+    eval1!((value: &Object) -> Array {
+        value.keys().map(String::clone).map(Value::String).collect()
+    });
+
+    // for other indexable values, return an array of indices
+    eval1!((value: &Array) -> Array {
+        value.iter().enumerate().map(|(i, _)| i as IntegerRepr)
+            .map(Value::Integer).collect()
+    });
+    eval1!((value: &String) -> Array {
+        value.chars().enumerate().map(|(i, _)| i as IntegerRepr)
+            .map(Value::Integer).collect()
+    });
+
+    mismatch!("keys"; ("object") | ("array") | ("string") => (value))
+}
+// TODO: values() function
+
 
 /// Find an index of given element inside a sequence.
 /// Returns an empty value if the element couldn't be found.
@@ -228,7 +250,7 @@ pub fn reject(func: Value, array: Value, context: &Context) -> eval::Result {
     let array_type = array.typename();
 
     eval2!((func: &Function, array: Array) -> Array {{
-        try!(ensure_argcount(&func, 1, "filter"));
+        try!(ensure_argcount(&func, 1, "reject"));
 
         let mut result = Vec::new();
         for item in array.into_iter() {

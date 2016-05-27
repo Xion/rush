@@ -23,6 +23,7 @@ fn len() {
     assert_eval_error("len(|x| x)");
 }
 
+// TODO: tests for keys()
 // TODO(xion): tests for index()
 // TODO(xion): tests for all() and any()
 // TODO(xion): tests for min(), max() and sum()
