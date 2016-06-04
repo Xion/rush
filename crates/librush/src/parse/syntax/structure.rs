@@ -11,7 +11,7 @@ named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: block, || { e }));
 
 /// block ::== (functional)+
 named!(pub block( &[u8] ) -> Box<Eval>, map!(
-    separated_nonempty_list!(multispaced!(tag!(";")), assignment),
+    separated_nonempty_list!(multispaced!(tag!(";")), functional),
     move |mut exprs: Vec<_>| {
         if exprs.len() == 1 { exprs.remove(0) }
         else { Box::new(BlockNode::new(exprs)) as Box<Eval> }
@@ -47,36 +47,14 @@ macro_rules! right_assoc (
 );
 
 
-/// assignment ::== functional (ASSIGNMENT_OP functional)*
-right_assoc!(assignment => functional (assignment_op functional)*);
-// TODO(xion): placing assignment at the root of syntax tree makes it awkward
-// to define lambdas such as `|x| x = x + i` (they require parentheses/braces);
-// move this further down (somewhere around 'conditional' probably)
-
 /// functional ::== joint (FUNCTIONAL_OP joint)*
 left_assoc!(functional => joint (functional_op joint)*);
 
-/// joint ::== conditional | lambda | curried_op
-named!(joint( &[u8] ) -> Box<Eval>, alt!(conditional | lambda | curried_op));
+/// joint ::== assignment | lambda | curried_op
+named!(joint( &[u8] ) -> Box<Eval>, alt!(assignment | lambda | curried_op));
 
-/// conditional ::== logical ['?' logical ':' conditional]
-named!(conditional( &[u8] ) -> Box<Eval>, map!(
-    pair!(logical, maybe!(chain!(
-        multispaced!(tag!("?")) ~
-        then: logical ~
-        multispaced!(tag!(":")) ~
-        else_: conditional,
-        move || (then, else_)
-    ))),
-    |(cond, maybe_then_else)| {
-        match maybe_then_else {
-            None => cond,
-            Some((then, else_)) => Box::new(
-                ConditionalNode::new(cond, then, else_)
-            ) as Box<Eval>,
-        }
-    }
-));
+/// assignment ::== conditional (ASSIGNMENT_OP conditional)*
+right_assoc!(assignment => conditional (assignment_op conditional)*);
 
 /// lambda ::== '|' ARGS '|' joint
 named!(lambda( &[u8] ) -> Box<Eval>, chain!(
@@ -106,6 +84,25 @@ named!(curried_op( &[u8] ) -> Box<Eval>, delimited!(
             ) as Box<Eval> }
         ),
     multispaced!(tag!(")"))
+));
+
+/// conditional ::== logical ['?' logical ':' conditional]
+named!(conditional( &[u8] ) -> Box<Eval>, map!(
+    pair!(logical, maybe!(chain!(
+        multispaced!(tag!("?")) ~
+        then: logical ~
+        multispaced!(tag!(":")) ~
+        else_: conditional,
+        move || (then, else_)
+    ))),
+    |(cond, maybe_then_else)| {
+        match maybe_then_else {
+            None => cond,
+            Some((then, else_)) => Box::new(
+                ConditionalNode::new(cond, then, else_)
+            ) as Box<Eval>,
+        }
+    }
 ));
 
 /// logical ::== comparison (LOGICAL_OP comparison)*
