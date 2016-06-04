@@ -42,8 +42,18 @@ fn main() {
             }
         },
         None => {
+            if let Some(before) = before {
+                println!("--before expression:");
+                print_ast(before);
+                println!("");
+            }
             for expr in exprs {
                 print_ast(expr);
+            }
+            if let Some(after) = after {
+                println!("");
+                println!("--after expression:");
+                print_ast(after);
             }
         },
     }
