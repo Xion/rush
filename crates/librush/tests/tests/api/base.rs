@@ -17,9 +17,9 @@ fn len() {
     assert_eq!("3", eval("len(foo)"));
     assert_eq!(STRING.len().to_string(), apply("len(_)", STRING));
     assert_eq!(ARRAY.len().to_string(),
-               eval(&format!("len({})", to_array_literal(ARRAY))));
+               eval(&format!("len({})", ARRAY.to_literal())));
     assert_eq!(OBJECT.len().to_string(),
-               eval(&format!("len({})", to_object_literal(&OBJECT))));
+               eval(&format!("len({})", OBJECT.to_literal())));
     assert_eval_error("len(|x| x)");
 }
 

@@ -28,7 +28,7 @@ fn none_simple() {
 
 #[test]
 fn map_with_left() {
-    let input = to_array_literal(&[1, 2, 3]);
+    let input = [1, 2, 3].to_literal();
     assert_eq!(unlines![2, 3, 4], eval(&format!("map((1+), {})", input)));
     assert_eq!(unlines![2, 4, 6], eval(&format!("map((2*), {})", input)));
     assert_eq!(unlines![3, 9, 27], eval(&format!("map((3**), {})", input)));
@@ -37,7 +37,7 @@ fn map_with_left() {
 
 #[test]
 fn map_with_right() {
-    let input = to_array_literal(&[2, 4, 6]);
+    let input = [2, 4, 6].to_literal();
     assert_eval_error(&format!("map((+1), {})", input));  // unary expression!
     assert_eq!(unlines![4, 8, 12], eval(&format!("map((*2), {})", input)));
     assert_eq!(unlines![8, 64, 216], eval(&format!("map((**3), {})", input)));

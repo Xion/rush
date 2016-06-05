@@ -1,13 +1,15 @@
 //! Utility functions used by tests.
 
 mod asserts;
+pub mod literals;   // This has to be `pub` because of Rust bug (!)
+                    // making ToLiteral trait inaccessible otherwise.
+                    // Details: https://github.com/rust-lang/rust/issues/18241
 
 pub use self::asserts::*;
+pub use self::literals::*;
 
 
 use std::collections::HashMap;
-use std::fmt::Display;
-use std::hash::Hash;
 use std::io;
 use std::str::from_utf8;
 
@@ -48,23 +50,6 @@ pub fn parse_json_stringmap(json: &str) -> HashMap<String, String> {
         _ => { panic!("expected a JSON object literal") },
     }
 }
-
-/// Convert a hashmap to an object literal.
-pub fn to_object_literal<K, V>(items: &HashMap<K, V>) -> String
-    where K: Display + Eq + Hash, V: Display
-{
-    format!("{{{}}}", items.iter()
-        .map(|(ref k, ref v)| format!("{}:{}", k, v))
-        .collect::<Vec<_>>().join(","))
-}
-
-/// Convert a slice to an array literal.
-pub fn to_array_literal<T: ToString>(array: &[T]) -> String {
-    format!("[{}]", join(array, ","))
-}
-
-// TODO(xion): consider making a ToLiteral trait for converting Rust types into
-// "equivalent" value literals
 
 
 // Wrappers around tested code.

@@ -145,8 +145,7 @@ fn constant_object_1attribute() {
 #[test]
 fn constant_object() {
     let elems = hashmap_owned!{"a" => "foo", "b" => "bar"};
-    let expr = to_object_literal(&elems);
-    let actual = parse_json_stringmap(&eval(&expr));
+    let actual = parse_json_stringmap(&eval(&elems.to_literal()));
     assert_eq!(elems, actual);
 }
 
@@ -157,8 +156,7 @@ fn constant_object_duplicate_key() {
     let second_value = "bar";
     let elems = hashmap_owned!{key => first_value, key => second_value};
 
-    let expr = to_object_literal(&elems);
-    let actual = parse_json_stringmap(&eval(&expr));
+    let actual = parse_json_stringmap(&eval(&elems.to_literal()));
     assert!(actual.contains_key(key));
     assert_eq!(second_value, actual.get(key).unwrap());
 }
