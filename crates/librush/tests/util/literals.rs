@@ -5,6 +5,8 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::fmt::Display;
 
+use regex::Regex;
+
 
 /// Type to hold a literal rush representation of a Rust object.
 pub type Literal = String;
@@ -32,6 +34,25 @@ impl_toliteral_via_format!(i32);
 impl_toliteral_via_format!(i64);
 impl_toliteral_via_format!(f32);
 impl_toliteral_via_format!(f64);
+
+impl ToLiteral for bool {
+    fn to_literal(&self) -> Literal {
+        String::from(if *self { "true" } else { "false" })
+    }
+}
+
+impl ToLiteral for Regex {
+    fn to_literal(&self) -> Literal {
+        let regex = self.as_str();
+
+        // regexes that'd require rush-specific escaping are not supported
+        if regex.contains("/") || regex.contains("\\") {
+            panic!("ToLiteral for regexes containing (back)slashes is NYI");
+        }
+
+        String::from(regex)
+    }
+}
 
 impl<T: ToString> ToLiteral for [T] {
     fn to_literal(&self) -> Literal {

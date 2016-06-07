@@ -10,6 +10,7 @@
 extern crate conv;
 #[macro_use]
 extern crate maplit;
+extern crate regex;
 extern crate rustc_serialize;
 
 extern crate rush;
