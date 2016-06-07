@@ -3,7 +3,6 @@
 
 use std::collections::HashMap;
 use std::hash::Hash;
-use std::fmt::Display;
 
 use regex::Regex;
 
@@ -32,6 +31,8 @@ macro_rules! impl_toliteral_via_format {
 impl_toliteral_via_format!(String);
 impl_toliteral_via_format!(i32);
 impl_toliteral_via_format!(i64);
+impl_toliteral_via_format!(u32);
+impl_toliteral_via_format!(u64);
 impl_toliteral_via_format!(f32);
 impl_toliteral_via_format!(f64);
 
@@ -54,19 +55,19 @@ impl ToLiteral for Regex {
     }
 }
 
-impl<T: ToString> ToLiteral for [T] {
+impl<T: ToLiteral> ToLiteral for [T] {
     fn to_literal(&self) -> Literal {
         format!("[{}]", self.iter()
-            .map(T::to_string).collect::<Vec<_>>().join(","))
+            .map(T::to_literal).collect::<Vec<_>>().join(","))
     }
 }
 
 impl<K, V> ToLiteral for HashMap<K, V>
-    where K: Display + Eq + Hash, V: Display
+    where K: Hash + Eq + ToLiteral, V: ToLiteral
 {
     fn to_literal(&self) -> Literal {
         format!("{{{}}}", self.iter()
-            .map(|(ref k, ref v)| format!("{}:{}", k, v))
+            .map(|(ref k, ref v)| format!("{}:{}", k.to_literal(), v.to_literal()))
             .collect::<Vec<_>>().join(","))
     }
 }
