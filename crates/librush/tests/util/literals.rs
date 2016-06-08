@@ -36,13 +36,18 @@ impl_toliteral_via_format!(u64);
 impl_toliteral_via_format!(f32);
 impl_toliteral_via_format!(f64);
 
-impl ToLiteral for String {
+impl<'s> ToLiteral for &'s str {
     fn to_literal(&self) -> Literal {
-        format!("\"{}\"", self
+        format!("\"{}\"", self.to_owned()
             // TODO: handle the rest of escape symbols
             .replace("\\", "\\\\")
             .replace("\"", "\\\"")
         )
+    }
+}
+impl ToLiteral for String {
+    fn to_literal(&self) -> Literal {
+        (self as &str).to_literal()
     }
 }
 
