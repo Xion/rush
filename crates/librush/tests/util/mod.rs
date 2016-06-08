@@ -146,7 +146,7 @@ pub fn apply_lines_ex<T: ToString>(expr: &str, input: &[T]) -> io::Result<String
         from_utf8(&output)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
     ).to_owned();
-    if result.chars().filter(|c| *c == '\n').count() == 1 {
+    if result.ends_with("\n") && result.chars().filter(|c| *c == '\n').count() == 1 {
         result.pop();
     }
     Ok(result)

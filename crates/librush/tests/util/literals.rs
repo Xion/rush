@@ -28,7 +28,7 @@ macro_rules! impl_toliteral_via_format {
     }
 }
 
-impl_toliteral_via_format!(String);
+impl_toliteral_via_format!(bool);
 impl_toliteral_via_format!(i32);
 impl_toliteral_via_format!(i64);
 impl_toliteral_via_format!(u32);
@@ -36,9 +36,13 @@ impl_toliteral_via_format!(u64);
 impl_toliteral_via_format!(f32);
 impl_toliteral_via_format!(f64);
 
-impl ToLiteral for bool {
+impl ToLiteral for String {
     fn to_literal(&self) -> Literal {
-        String::from(if *self { "true" } else { "false" })
+        format!("\"{}\"", self
+            // TODO: handle the rest of escape symbols
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+        )
     }
 }
 
