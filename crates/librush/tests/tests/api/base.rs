@@ -12,6 +12,7 @@ fn len() {
     const ARRAY: &'static [u32] = &[1, 1, 2, 3, 5, 8, 13, 21];
     let OBJECT: HashMap<String, u32> = hashmap_owned!{"foo" => 1, "bar" => 2};
 
+    assert_eval_error("len(false)");
     assert_eval_error("len(42)");
     assert_eval_error("len(3.14)");
     assert_eq!("3", eval("len(foo)"));
@@ -30,6 +31,7 @@ fn keys() {
     const ARRAY: &'static [u32] = &[1, 1, 2, 3, 5, 8, 13, 21];
     let OBJECT: HashMap<String, u32> = hashmap_owned!{"foo" => 1, "bar" => 2};
 
+    assert_eval_error("keys(true)");
     assert_eval_error("keys(42)");
     assert_eval_error("keys(3.14)");
     assert_eval_error("keys(/foo/)");
@@ -49,7 +51,37 @@ fn keys() {
     assert_eval_error("keys(|x| x)")
 }
 
-// TODO(xion): tests for index()
+#[test]
+fn index_string() {
+    const STRING: &'static str = "Hello, world";
+
+    assert_eval_error(&format!("index(true, {})", STRING.to_literal()));
+    assert_eval_error(&format!("index(42, {})", STRING.to_literal()));
+    assert_eval_error(&format!("index(3.14, {})", STRING.to_literal()));
+
+    assert_eq!("0", eval(&format!("index(Hell, {})", STRING.to_literal())));
+    assert_eq!("6", eval(&format!("index(/ \\w+/, {})", STRING.to_literal())));
+
+    assert_eval_error(&format!("index([], {})", STRING.to_literal()));
+    assert_eval_error(&format!("index({{}}, {})", STRING.to_literal()));
+}
+
+#[test]
+fn index_array() {
+    const ARRAY: &'static [u32] = &[1, 1, 2, 3, 5, 8, 13, 21];
+
+    assert_eval_error(&format!("index(false, {})", ARRAY.to_literal()));
+
+    assert_eq!("4", eval(&format!("index(5, {})", ARRAY.to_literal())));
+
+    assert_eval_error(&format!("index(42, {})", ARRAY.to_literal()));
+    assert_eval_error(&format!("index(2.71, {})", ARRAY.to_literal()));
+    assert_eval_error(&format!("index(foo, {})", ARRAY.to_literal()));
+    assert_eval_error(&format!("index([], {})", ARRAY.to_literal()));
+    assert_eval_error(&format!("index({{}}, {})", ARRAY.to_literal()));
+}
+
+// TODO(xion): more tests for index()
 // TODO(xion): tests for all() and any()
 // TODO(xion): tests for min(), max() and sum()
 // TODO(xion): tests for map(), filter(), reject(), and reduce()
