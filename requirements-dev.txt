@@ -1,6 +1,8 @@
 # Python packages used in development
 
-invoke
+# TODO: consider upgrading to Invoke 0.13
+# (which would require changing all tasks to be accept Invoke's Context object)
+invoke<0.13
 
 mkdocs
 mkdocs-material
