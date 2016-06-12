@@ -1,8 +1,5 @@
 //! Tests for unary operators.
 
-use util::*;
-
-
 mod plus {
     use util::*;
 
