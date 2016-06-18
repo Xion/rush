@@ -39,7 +39,14 @@ pub fn keys(value: Value) -> eval::Result {
 
     mismatch!("keys"; ("object") | ("array") | ("string") => (value))
 }
-// TODO: values() function
+
+/// Return an array of object's values.
+pub fn values(value: Value) -> eval::Result {
+    eval1!((value: &Object) -> Array {
+        value.values().map(Value::clone).collect()
+    });
+    mismatch!("values"; ("object") => (value))
+}
 
 
 /// Find an index of given element inside a sequence.
@@ -305,7 +312,7 @@ pub fn sort(array: Value) -> eval::Result {
         let mut error: Option<Error> = None;
         array.sort_by(|a, b| a.try_cmp(b).unwrap_or_else(|e| {
             error = Some(e);
-            Ordering::Less  // arbitrary, won't matter anyway
+            UNUSED_ORDERING
         }));
         return match error {
             Some(e) => Err(e),
@@ -340,9 +347,9 @@ pub fn sort_by(array: Value, cmp: Value, context: &Context) -> eval::Result {
                 error = Some(Error::new(&format!(
                     "comparator must return a number, got {}", x.typename()
                 )));
-                /* arbitrary */ Ordering::Less
+                UNUSED_ORDERING
             },
-            Err(e) => { error = Some(e); /* arbitrary */ Ordering::Less },
+            Err(e) => { error = Some(e); UNUSED_ORDERING },
         });
         return match error {
             Some(e) => Err(e),
@@ -370,3 +377,7 @@ fn ensure_argcount(func: &Function, argcount: ArgCount, api_call: &str) -> Resul
     }
     Ok(())
 }
+
+/// Dummy unused Ordering value that's used when a sorting predicate
+/// fails to evaluate without an error, or returns an invalid value.
+const UNUSED_ORDERING: Ordering = Ordering::Less;
