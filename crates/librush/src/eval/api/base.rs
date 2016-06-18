@@ -23,28 +23,40 @@ pub fn len(value: Value) -> eval::Result {
 /// If a string or array is passed, an array of indices is returned.
 pub fn keys(value: Value) -> eval::Result {
     // object is the main case; return the array of string keys
-    eval1!((value: &Object) -> Array {
-        value.keys().map(String::clone).map(Value::String).collect()
-    });
+    if value.is_object() {
+        return Ok(Value::Array(
+            value.unwrap_object().into_iter()
+                .map(|(k, _)| k).map(Value::String)
+                .collect()
+        ));
+    }
 
     // for other indexable values, return an array of indices
-    eval1!((value: &Array) -> Array {
-        value.iter().enumerate().map(|(i, _)| i as IntegerRepr)
-            .map(Value::Integer).collect()
-    });
-    eval1!((value: &String) -> Array {
-        value.chars().enumerate().map(|(i, _)| i as IntegerRepr)
-            .map(Value::Integer).collect()
-    });
+    if value.is_array() {
+        return Ok(Value::Array(
+            (0..value.unwrap_array().len())
+                .map(|i| i as IntegerRepr).map(Value::Integer)
+                .collect()
+        ));
+    }
+    if value.is_string() {
+        return Ok(Value::Array(
+            (0..value.unwrap_string().len())
+                .map(|i| i as IntegerRepr).map(Value::Integer)
+                .collect()
+        ));
+    }
 
     mismatch!("keys"; ("object") | ("array") | ("string") => (value))
 }
 
 /// Return an array of object's values.
 pub fn values(value: Value) -> eval::Result {
-    eval1!((value: &Object) -> Array {
-        value.values().map(Value::clone).collect()
-    });
+    if value.is_object() {
+        return Ok(Value::Array(
+            value.unwrap_object().into_iter().map(|(_, v)| v).collect()
+        ));
+    }
     mismatch!("values"; ("object") => (value))
 }
 
