@@ -1,13 +1,16 @@
 //! Base API functions.
 
+use std::collections::HashMap;
 use std::cmp::Ordering;
+
+use unicode_segmentation::UnicodeSegmentation;
 
 use eval::{self, Context, Error, Function, Value};
 use eval::model::{ArgCount, Invoke};
 use eval::util::cmp::TryOrd;
 use eval::value::IntegerRepr;
 use parse::ast::BinaryOpNode;
-use super::conv::bool;
+use super::conv::{bool, str_};
 
 
 /// Identity function.
@@ -24,6 +27,42 @@ pub fn len(value: Value) -> eval::Result {
 
     mismatch!("len"; ("string") | ("array") | ("object") => (value))
 }
+
+/// Reverse the value.
+///
+/// For strings. this reverses the order of characters (Unicode grapheme clusters, to be precise).
+/// For arrays, the result is an array with reversed elements.
+///
+/// For objects, the result is an inverted object, i.e. one where values from input
+/// map back to keys. If there is more than one value for any given key,
+/// it is undefined which one will be present in the result.
+pub fn rev(value: Value) -> eval::Result {
+    eval1!(value : &String {
+        value.graphemes(/* extended grapheme clusters */ true)
+            .rev()
+            .collect::<Vec<_>>().join("")
+    });
+
+    if value.is_array() {
+        return Ok(Value::Array(
+            value.unwrap_array().into_iter().rev().collect()
+        ));
+    }
+
+    // when reversing an object, the values need to be string-convertible
+    if value.is_object() {
+        let mut result = HashMap::new();
+        for (k, v) in value.unwrap_object() {
+            let new_k = try!(str_(v)).unwrap_string();
+            let new_v = Value::String(k);
+            result.insert(new_k, new_v);
+        }
+        return Ok(Value::Object(result));
+    }
+
+    mismatch!("rev"; ("string") | ("array") | ("object") => (value))
+}
+
 
 /// Return an array of object's keys.
 /// If a string or array is passed, an array of indices is returned.

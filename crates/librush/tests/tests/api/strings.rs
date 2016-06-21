@@ -27,17 +27,6 @@ fn ord() {
     assert_eval_error("ord({})");
 }
 
-#[test]
-fn rev() {
-    assert_eq!("oof", apply("rev(_)", "foo"));
-    assert_noop_apply("rev(_)", "racecar");
-    assert_apply_error("rev(_)", "42");
-    assert_apply_error("rev(_)", "13.42");
-    assert_apply_error("rev(_)", "false");
-    assert_eval_error(&format!("rev({})", "[]"));
-    assert_eval_error(&format!("rev({})", "{}"));
-}
-
 mod split {
     use util::*;
 

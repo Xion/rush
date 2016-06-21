@@ -25,6 +25,31 @@ fn len() {
     assert_eval_error("len(|x| x)");
 }
 
+mod rev {
+    use util::*;
+
+    #[test]
+    fn strings() {
+        assert_eq!("oof", apply("rev(_)", "foo"));
+        assert_noop_apply("rev(_)", "racecar");
+        assert_apply_error("rev(_)", "42");
+        assert_apply_error("rev(_)", "13.42");
+        assert_apply_error("rev(_)", "false");
+    }
+
+    #[test]
+    fn arrays() {
+        assert_eq!("", eval(&format!("rev({})", "[]")));
+    }
+
+    #[test]
+    fn objects() {
+        assert_eq!("{}", eval(&format!("rev({})", "{}")));
+    }
+
+    // TODO: more tests for arrays & objects
+}
+
 #[test]
 fn keys() {
     const STRING: &'static str = "Hello, world";
@@ -50,6 +75,7 @@ fn keys() {
 
     assert_eval_error("keys(|x| x)")
 }
+// TODO: tests for values()
 
 mod index {
     use util::*;

@@ -12,8 +12,6 @@ use std::error::Error as StdError;  // just for its description() method
 use std::fmt::Display;
 use std::str::from_utf8;
 
-use unicode_segmentation::UnicodeSegmentation;
-
 use eval::{self, Error, Value};
 use eval::value::{IntegerRepr, StringRepr};
 use eval::util::fmt::format;
@@ -48,19 +46,6 @@ pub fn ord(value: Value) -> eval::Result {
     });
     Err(Error::new(&format!(
         "ord() expects a string, got {}", value.typename()
-    )))
-}
-
-
-/// Reverse the characters in a string.
-pub fn rev(string: Value) -> eval::Result {
-    eval1!(string : &String {
-        string.graphemes(/* extended grapheme clusters */ true)
-            .rev()
-            .collect::<Vec<_>>().join("")
-    });
-    Err(Error::new(&format!(
-        "rev() requires a string, got {}", string.typename()
     )))
 }
 
