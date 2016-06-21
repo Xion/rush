@@ -48,6 +48,7 @@ impl<'c> Context<'c> {
         self.define_binary(         "format",   strings::format_    );
         self.define_ternary_ctx(    "gsub",     strings::sub        );
         self.define_unary(          "hex",      math::hex           );
+        self.define_unary(          "id",       base::identity      );
         self.define_binary(         "index",    base::index         );
         self.define_unary(          "int",      conv::int           );
         self.define_binary(         "join",     strings::join       );

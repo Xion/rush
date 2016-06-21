@@ -10,6 +10,12 @@ use parse::ast::BinaryOpNode;
 use super::conv::bool;
 
 
+/// Identity function.
+pub fn identity(value: Value) -> eval::Result {
+    Ok(value)
+}
+
+
 /// Compute the length of given value (an array or a string).
 pub fn len(value: Value) -> eval::Result {
     eval1!((value: &String) -> Integer { value.len() as IntegerRepr });
