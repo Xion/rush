@@ -32,8 +32,10 @@ pub fn load_into(context: &mut Context) -> io::Result<()> {
         debug!("Loading symbols from {}", path.display());
         let file = try!(File::open(&path));
         let content = try!(read_rcfile(file));
-        try!(rush::exec(&content, context));
-        info!("Symbols loaded from {}", path.display());
+        if !content.is_empty() {
+            try!(rush::exec(&content, context));
+            info!("Symbols loaded from {}", path.display());
+        }
     }
     Ok(())
 }
@@ -50,7 +52,7 @@ fn read_rcfile<R: Read>(file: R) -> io::Result<String> {
         }
         result.push_str(&line);
     }
-    Ok(result)
+    Ok(result.trim().to_owned())
 }
 
 
