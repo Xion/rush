@@ -3,6 +3,7 @@
 use std::collections::HashMap;
 use std::cmp::Ordering;
 
+use rand::{self, Rng};
 use unicode_segmentation::UnicodeSegmentation;
 
 use eval::{self, Context, Error, Function, Value};
@@ -418,6 +419,29 @@ pub fn sort_by(array: Value, cmp: Value, context: &Context) -> eval::Result {
         "sortby() expects an array and a function, got {} and {}",
         array_type, cmp_type
     )))
+}
+
+
+/// Shuffle the elements of an array or characters in a string.
+pub fn shuffle(value: Value) -> eval::Result {
+    if value.is_array() {
+        let mut array = value.unwrap_array();
+        rand::thread_rng().shuffle(&mut array);
+        return Ok(Value::Array(array));
+    }
+
+    if value.is_string() {
+        let mut chars: Vec<_> = value.unwrap_string().chars().collect();
+        rand::thread_rng().shuffle(&mut chars);
+
+        let mut result = String::with_capacity(chars.len());
+        for c in chars.into_iter() {
+            result.push(c);
+        }
+        return Ok(Value::String(result));
+    }
+
+    mismatch!("shuffle"; ("array") | ("string") => (value))
 }
 
 
