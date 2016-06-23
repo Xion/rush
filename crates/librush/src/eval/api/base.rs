@@ -444,7 +444,7 @@ pub fn shuffle(value: Value) -> eval::Result {
     mismatch!("shuffle"; ("array") | ("string") => (value))
 }
 
-/// Pick a sample of given size among the elements from an array.
+/// Pick a sample of given size among the values from a collection.
 /// Returns the array of picked elements.
 pub fn sample(size: Value, source: Value) -> eval::Result {
     if size.is_integer() {
@@ -464,10 +464,18 @@ pub fn sample(size: Value, source: Value) -> eval::Result {
             }
             return Ok(Value::String(result));
         }
+        if source.is_object() {
+            let size = size.unwrap_integer() as usize;
+            return Ok(Value::Array(
+                rand::sample(&mut rng,
+                    source.unwrap_object().into_iter().map(|(_, v)| v),
+                    size)
+            ));
+        }
     }
     mismatch!("sample";
-        ("integer", "array") |
-        ("integer", "string") => (size, source))
+        ("integer", "array") | ("integer", "string") | ("integer", "object")
+        => (size, source))
 }
 
 
