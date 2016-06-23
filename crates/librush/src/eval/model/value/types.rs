@@ -52,9 +52,11 @@ macro_rules! impl_value_type {
 }
 
 impl_value_type!(Boolean(BooleanRepr)   => (is_bool,     unwrap_bool));
-impl_value_type!(Integer(IntegerRepr)   => (is_int,      unwrap_int));
+impl_value_type!(Integer(IntegerRepr)   => (is_integer,  unwrap_integer));
+impl_value_type!(Integer(IntegerRepr)   => (is_int,      unwrap_int));  // alias
 impl_value_type!(Float(FloatRepr)       => (is_float,    unwrap_float));
 impl_value_type!(String(StringRepr)     => (is_string,   unwrap_string));
+impl_value_type!(String(StringRepr)     => (is_str,      unwrap_str));  // alias
 impl_value_type!(Regex(RegexRepr)       => (is_regex,    unwrap_regex));
 impl_value_type!(Array(ArrayRepr)       => (is_array,    unwrap_array));
 impl_value_type!(Object(ObjectRepr)     => (is_object,   unwrap_object));

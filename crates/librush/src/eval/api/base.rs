@@ -444,6 +444,32 @@ pub fn shuffle(value: Value) -> eval::Result {
     mismatch!("shuffle"; ("array") | ("string") => (value))
 }
 
+/// Pick a sample of given size among the elements from an array.
+/// Returns the array of picked elements.
+pub fn sample(size: Value, source: Value) -> eval::Result {
+    if size.is_integer() {
+        let mut rng = rand::thread_rng();
+
+        if source.is_array() {
+            let size = size.unwrap_integer() as usize;
+            return Ok(Value::Array(
+                rand::sample(&mut rng, source.unwrap_array().into_iter(), size)
+            ));
+        }
+        if source.is_string() {
+            let size = size.unwrap_integer() as usize;
+            let mut result = String::with_capacity(size);
+            for c in rand::sample(&mut rng, source.unwrap_string().chars(), size) {
+                result.push(c);
+            }
+            return Ok(Value::String(result));
+        }
+    }
+    mismatch!("sample";
+        ("integer", "array") |
+        ("integer", "string") => (size, source))
+}
+
 
 // Utility functions
 
