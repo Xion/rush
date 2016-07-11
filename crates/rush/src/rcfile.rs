@@ -47,12 +47,23 @@ fn read_rcfile<R: Read>(file: R) -> io::Result<String> {
     let reader = BufReader::new(file);
     for line in reader.lines() {
         let line = try!(line);
-        if line.trim().is_empty() || line.trim().starts_with(COMMENT_PREFIX) {
+
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with(COMMENT_PREFIX) {
             continue;
         }
-        result.push_str(&line);
+        result.push_str(&trimmed);
+
+        // .Xrc files are documented as consisting of separate lines,
+        // but for the purposes of evaluating their expressions we'll join them
+        // into a single block
+        if !trimmed.ends_with(";") {
+            result.push(';');
+        }
     }
-    Ok(result.trim().to_owned())
+
+    // wrap the result in a block
+    Ok(format!("{{{}}}", result))
 }
 
 
