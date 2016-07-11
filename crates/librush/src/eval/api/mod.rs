@@ -6,6 +6,7 @@
 pub mod base;
 pub mod conv;
 pub mod math;
+pub mod random;
 pub mod strings;
 
 
@@ -61,7 +62,7 @@ impl<'c> Context<'c> {
         self.define_unary_ctx(      "min",      base::min           );
         self.define_unary(          "oct",      math::oct           );
         self.define_unary(          "ord",      strings::ord        );
-        self.define_nullary(        "rand",     math::rand          );
+        self.define_nullary(        "rand",     random::rand_       );
         self.define_unary(          "re",       conv::regex         );
         self.define_ternary_ctx(    "reduce",   base::reduce        );
         self.define_unary(          "regex",    conv::regex         );
@@ -71,9 +72,9 @@ impl<'c> Context<'c> {
         self.define_unary(          "rot13",    strings::rot13      );
         self.define_unary(          "round",    math::round         );
         self.define_ternary(        "rsub1",    strings::rsub1      );
-        self.define_binary(         "sample",   base::sample        );
+        self.define_binary(         "sample",   random::sample      );
         self.define_unary(          "sgn",      math::sgn           );
-        self.define_unary(          "shuffle",  base::shuffle       );
+        self.define_unary(          "shuffle",  random::shuffle     );
         self.define_unary(          "sort",     base::sort          );
         self.define_binary_ctx(     "sortby",   base::sort_by       );
         self.define_binary(         "split",    strings::split      );

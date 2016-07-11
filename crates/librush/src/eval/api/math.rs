@@ -2,8 +2,6 @@
 
 use std::fmt::Display;
 
-use rand::random;
-
 use eval::{self, Error, Value};
 use eval::value::FloatRepr;
 
@@ -52,12 +50,6 @@ pub fn sqrt(value : Value) -> eval::Result {
     Err(Error::new(&format!(
         "sqrt() requires a number, got {}", value.typename()
     )))
-}
-
-/// Generate a random floating point number from the 0..1 range.
-#[inline(always)]
-pub fn rand() -> eval::Result {
-    Ok(Value::Float(random()))
 }
 
 /// The exponential function.
