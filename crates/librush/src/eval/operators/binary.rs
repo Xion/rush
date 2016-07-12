@@ -397,16 +397,21 @@ impl BinaryOpNode {
 
     /// Evaluate the "**" operator for two values.
     fn eval_power(left: Value, right: Value) -> eval::Result {
-        eval2!(left, right : Integer {{
-            // TODO(xion): make x**(-y) (negative exponent) return 1/x**y as Float
-            if !(0 <= right && right <= (u32::max_value() as IntegerRepr)) {
-                return Err(eval::Error::new(&format!(
-                    "exponent out of range: {}", right
-                )));
+        if let (&Value::Integer(l), &Value::Integer(r)) = (&left, &right) {
+            if r < 0 {
+                // x**(-y) is equivalent to 1/x**y
+                let base = l as FloatRepr;
+                let exp = -r as FloatRepr;
+                return Ok(Value::Float(1.0 / base.powf(exp)));
             }
-            left.pow(right as u32)
-        }});
+            if r < (u32::max_value() as IntegerRepr) {
+                return Ok(Value::Integer(l.pow(r as u32)));
+            }
+            return Err(eval::Error::new(&format!("exponent out of range: {}", r)));
+        }
+
         eval2!(left, right : Float { left.powf(right) });
+
         eval2!((left: Integer, right: Float) -> Float {
             (left as FloatRepr).powf(right)
         });
