@@ -11,7 +11,7 @@ named!(pub expression( &[u8] ) -> Box<Eval>, chain!(e: block, || { e }));
 
 /// block ::== (functional)+
 named!(pub block( &[u8] ) -> Box<Eval>, map!(
-    separated_nonempty_list!(multispaced!(tag!(";")), functional),
+    separated_nonempty_list!(multispaced!(tag!(";")), assignment),
     move |mut exprs: Vec<_>| {
         if exprs.len() == 1 { exprs.remove(0) }
         else { Box::new(BlockNode::new(exprs)) as Box<Eval> }
@@ -47,14 +47,14 @@ macro_rules! right_assoc (
 );
 
 
+/// assignment ::== functional (ASSIGNMENT_OP functional)*
+right_assoc!(assignment => functional (assignment_op functional)*);
+
 /// functional ::== joint (FUNCTIONAL_OP joint)*
 left_assoc!(functional => joint (functional_op joint)*);
 
-/// joint ::== assignment | lambda | curried_op
-named!(joint( &[u8] ) -> Box<Eval>, alt!(assignment | lambda | curried_op));
-
-/// assignment ::== conditional (ASSIGNMENT_OP conditional)*
-right_assoc!(assignment => conditional (assignment_op conditional)*);
+/// joint ::== conditional | lambda | curried_op
+named!(joint( &[u8] ) -> Box<Eval>, alt!(conditional | lambda | curried_op));
 
 /// lambda ::== '|' ARGS '|' joint
 named!(lambda( &[u8] ) -> Box<Eval>, chain!(
