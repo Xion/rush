@@ -1,5 +1,6 @@
 //! Convenience wrappers around parsing and evaluation.
 
+use std::fs::File;
 use std::io::{self, Read, Write, BufRead, BufReader, BufWriter};
 use std::u8;
 
@@ -17,6 +18,7 @@ const CURRENT: &'static str = "_";
 
 /// Evaluate the expression within given Context.
 /// Returns the resulting Value.
+#[inline]
 pub fn eval(expr: &str, context: &mut Context) -> io::Result<Value> {
     let ast = try!(parse_exprs(&[expr])).remove(0);
     ast.eval(context).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
@@ -24,6 +26,7 @@ pub fn eval(expr: &str, context: &mut Context) -> io::Result<Value> {
 
 /// Execute the expression within given Context.
 /// The result of the expression is discarded, but any side effects will persist in the Context.
+#[inline(always)]
 pub fn exec(expr: &str, context: &mut Context) -> io::Result<()> {
     try!(eval(expr, context));
     Ok(())
@@ -64,6 +67,7 @@ pub fn map_words<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
 /// Apply the expression to given input stream, character by character
 /// (treated as 1-character string in the expression itself),
 /// and writing to the given output stream.
+#[inline(always)]
 pub fn map_chars<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
     map_chars_multi(&[expr], input, output)
 }
@@ -72,8 +76,17 @@ pub fn map_chars<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
 /// writing the transformed bytes into given output stream.
 ///
 /// Note that the expression must always produce a byte (i.e. an integer from the 0-255 range).
+#[inline(always)]
 pub fn map_bytes<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
     map_bytes_multi(&[expr], input, output)
+}
+
+/// Apply the expression to the content of each file (as string)
+/// whose path is given as a line of the input stream.
+/// Write the results as lines to the output stream.
+#[inline(always)]
+pub fn map_files<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
+    map_files_multi(&[expr], input, output)
 }
 
 
@@ -97,6 +110,7 @@ pub fn apply_string_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &
 /// whose result is then passed to the second one, etc.
 ///
 /// The final result is written to the given output stream.
+#[inline(always)]
 pub fn apply_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
     let mut context = Context::new();
     apply_lines_multi_ctx(&mut context, exprs, input, output)
@@ -109,6 +123,7 @@ pub fn apply_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &m
 ///
 /// The final result is written then to the given output stream.
 /// This continues for each line of input.
+#[inline(always)]
 pub fn map_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
     let mut context = Context::new();
     map_lines_multi_ctx(&mut context, exprs, input, output)
@@ -121,6 +136,7 @@ pub fn map_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
 ///
 /// The final result is written then to the given output stream.
 /// This continues for each word of input.
+#[inline(always)]
 pub fn map_words_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
     let mut context = Context::new();
     map_words_multi_ctx(&mut context, exprs, input, output)
@@ -133,6 +149,7 @@ pub fn map_words_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
 ///
 /// The final result is written then to the given output stream.
 /// This continues for each character of input.
+#[inline(always)]
 pub fn map_chars_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
     let mut context = Context::new();
     map_chars_multi_ctx(&mut context, exprs, input, output)
@@ -145,9 +162,25 @@ pub fn map_chars_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
 ///
 /// The final result -- which has to be a 0-255 integer -- is written then
 /// to the given output stream. This continues for each byte of input.
+#[inline(always)]
 pub fn map_bytes_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
     let mut context = Context::new();
     map_bytes_multi_ctx(&mut context, exprs, input, output)
+}
+
+/// Apply the expressions to the content of each file (as string)
+/// whose path is given as a line of the input stream.
+///
+/// Every line read from the stream is interpreted as file path.
+/// The corresponding file is read, and its content is fed to the first expression,
+/// whose result is then passed to the second one, etc.
+//
+/// The final result is written then to the given output stream.
+/// This continues for each line (file path) of input.
+#[inline(always)]
+pub fn map_files_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
+    let mut context = Context::new();
+    map_files_multi_ctx(&mut context, exprs, input, output)
 }
 
 // Multi-expression processing with shared context.
@@ -410,6 +443,54 @@ pub fn map_bytes_multi_ctx<R, W>(context: &mut Context,
 
     info!("Processed {} byte(s) of input through {} expression(s)",
           byte_count, expr_count);
+    Ok(())
+}
+
+/// Apply the expressions to the content of each file (as string)
+/// whose path is given as a line of the input stream.
+///
+/// Every line read from the stream is interpreted as file path.
+/// The corresponding file is read, and its content is fed to the first expression,
+/// whose result is then passed to the second one, etc.
+/// Expression context is shared throughout.
+//
+/// The final result is written then to the given output stream.
+/// This continues for each line (file path) of input.
+pub fn map_files_multi_ctx<R, W>(context: &mut Context,
+                                exprs: &[&str],
+                                input: R, output: &mut W) -> io::Result<()>
+    where R: Read, W: Write
+{
+    let asts = try!(parse_exprs(exprs));
+    let expr_count = asts.len();
+
+    let reader = BufReader::new(input);
+    let mut writer = BufWriter::new(output);
+
+    let mut file_count = 0;
+    let mut total_byte_count = 0;
+    for line in reader.lines() {
+        let path = try!(line).trim().to_owned();
+
+        // we try to use the file size to preallocate the string
+        // which we'll read the content of the file to
+        let mut file = try!(File::open(path));
+        let mut content = match file.metadata() {
+            Ok(metadata) => String::with_capacity(metadata.len() as usize),
+            _ => String::new(),
+        };
+        let byte_count = try!(file.read_to_string(&mut content));
+
+        context.set(CURRENT, Value::String(content));
+        let result = try!(process(context, &asts));
+        try!(write_result_line(&mut writer, result));
+
+        file_count += 1;
+        total_byte_count += byte_count;
+    }
+
+    info!("Processed {} file(s) with the total of {} byte(s) through {} expression(s)",
+          file_count, total_byte_count, expr_count);
     Ok(())
 }
 

@@ -121,6 +121,7 @@ fn apply_multi_ctx(mode: InputMode,
         InputMode::Words => rush::map_words_multi_ctx,
         InputMode::Chars => rush::map_chars_multi_ctx,
         InputMode::Bytes => rush::map_bytes_multi_ctx,
+        InputMode::Files => rush::map_files_multi_ctx,
     };
     func(context, exprs, io::stdin(), &mut output)
 }

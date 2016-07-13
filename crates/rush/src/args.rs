@@ -49,6 +49,7 @@ pub enum InputMode {
     Words,
     Chars,
     Bytes,
+    Files,
 }
 
 impl InputMode {
@@ -59,6 +60,7 @@ impl InputMode {
             InputMode::Words => "word by word",
             InputMode::Chars => "character by character",
             InputMode::Bytes => "byte by byte",
+            InputMode::Files => "file by file",
         }
     }
 }
@@ -77,6 +79,7 @@ impl<'s> TryFrom<&'s str> for InputMode {
             "words" => Ok(InputMode::Words),
             "chars" => Ok(InputMode::Chars),
             "bytes" => Ok(InputMode::Bytes),
+            "files" => Ok(InputMode::Files),
             _ => Err(Unrepresentable(mode.to_owned())),
         }
     }
@@ -126,14 +129,15 @@ const APP_NAME: &'static str = "rush";
 const APP_DESC: &'static str = "Succinct & readable processing language";
 
 const USAGE: &'static str = concat!("rush", " [",
-    "--input <MODE>", " | ", "--string | --lines | --words | --chars | --bytes",
+    "--input <MODE>", " | ",
+    "--string | --lines | --words | --chars | --bytes | --files",
     "] ",
     "[--before <EXPRESSION>] ", "[--after <EXPRESSION>] ",
     "<EXPRESSION> ", "[<EXPRESSION> ...]");
 
 const OPT_INPUT_MODE: &'static str = "mode";
 const INPUT_MODES: &'static [&'static str] = &[
-    "string", "lines", "words", "chars", "bytes"
+    "string", "lines", "words", "chars", "bytes", "files",
 ];
 const OPT_PARSE: &'static str = "parse";
 
@@ -183,6 +187,13 @@ fn create_parser<'p>() -> Parser<'p> {
             .short("b").long("bytes")
             .help("Apply the expression to input bytes. \
                    The expression must take byte value as integer and return integer output."))
+        .arg(Arg::with_name("files")
+            .short("f").long("files")
+            .help("Apply the expression to the content of each file (as string) \
+                   whose path is given as a line of input"))
+
+        // TODO: add a -0 (zero) option that changes the separator byte from \n to \0;
+        // this shall apply to --lines and --files input modes (as well as their output)
 
         .arg(Arg::with_name(OPT_PARSE)
             .set(ArgSettings::Hidden)
