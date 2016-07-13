@@ -175,10 +175,13 @@ impl BinaryOpNode {
     /// Evaluate the "=" operator.
     fn eval_let(left: Value, right: Value, context: &mut Context) -> eval::Result {
         if let Value::Symbol(ref name) = left {
-            // TODO(xion): forbid assignments to `_` variable
+            // TODO(xion): forbid assignments to "constants" like `_` or `NaN`
             context.set(name, right);
             return Ok(Value::Empty);
         }
+        // TODO: allow assignment to array elements and object values;
+        // this would require introduction of a "reference value" that's a generalization of Symbol
+        // and can point to variables (like Symbol), array/object elements, and array slices
         BinaryOpNode::err("=", left, right)
     }
 }
@@ -249,8 +252,6 @@ impl BinaryOpNode {
         }
 
         // string @ regex is a match attempt
-        // TODO(xion): introduce dedicated regex operators:
-        // ~= (^match$), ^= (^match), $= (match$)
         eval2!((left: &String, right: &Regex) -> Boolean { right.is_match(left) });
 
         BinaryOpNode::err("@", left, right)
