@@ -175,7 +175,6 @@ impl BinaryOpNode {
     /// Evaluate the "=" operator.
     fn eval_let(left: Value, right: Value, context: &mut Context) -> eval::Result {
         if let Value::Symbol(ref name) = left {
-            // TODO(xion): forbid assignments to "constants" like `_` or `NaN`
             context.set(name, right);
             return Ok(Value::Empty);
         }

@@ -337,6 +337,28 @@ pub fn reject(func: Value, array: Value, context: &Context) -> eval::Result {
     )))
 }
 
+/// Returns the array with all falsy values removed.
+/// This is determined via the bool() conversion.
+pub fn compact(array: Value) -> eval::Result {
+    let array_type = array.typename();
+
+    eval1!(array : Array {{
+        let mut result = Vec::new();
+        for item in array.into_iter() {
+            let keep = try!(bool(item.clone())).unwrap_bool();
+            if keep {
+                result.push(item);
+            }
+        }
+        result
+    }});
+
+    Err(Error::new(&format!(
+        "compact() requires an array, got {}", array_type
+    )))
+}
+
+
 /// Apply a binary function cumulatively to array elements.
 /// Also known as the "fold" operation (left fold, to be precise).
 pub fn reduce(func: Value, array: Value, start: Value, context: &Context) -> eval::Result {
