@@ -63,6 +63,7 @@ impl<'c> Context<'c> {
         self.define_unary_ctx(      "min",      base::min           );
         self.define_unary(          "oct",      math::oct           );
         self.define_unary(          "ord",      strings::ord        );
+        self.define_binary(         "pick",     base::pick          );
         self.define_nullary(        "rand",     random::rand_       );
         self.define_unary(          "re",       conv::regex         );
         self.define_ternary_ctx(    "reduce",   base::reduce        );

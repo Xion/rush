@@ -11,9 +11,9 @@ use unicode_segmentation::UnicodeSegmentation;
 use eval::{self, Context, Error, Function, Value};
 use eval::model::{ArgCount, Invoke};
 use eval::util::cmp::TryOrd;
-use eval::value::IntegerRepr;
+use eval::value::{ArrayRepr, IntegerRepr, ObjectRepr, StringRepr};
 use parse::ast::BinaryOpNode;
-use super::conv::{bool, str_};
+use super::conv::{bool, int, str_};
 
 
 /// Identity function.
@@ -106,6 +106,80 @@ pub fn values(value: Value) -> eval::Result {
         ));
     }
     mismatch!("values"; ("object") => (value))
+}
+
+
+/// Pick only the values from given collection that match the keys.
+/// Keys should be given as an array.
+/// Source collection can be:
+/// * an array (with element indices as keys)
+/// * an object
+/// * a string (with character indices as keys)
+pub fn pick(keys: Value, from: Value) -> eval::Result {
+    if keys.is_array() {
+        // TODO: get rid of the .clone() calls for elements that we pull out of source collections;
+        // requires rewriting the function to not use mismatch! for error handling
+        match &from {
+            &Value::String(ref s) => {
+                let keys = keys.unwrap_array();
+                let mut result = StringRepr::with_capacity(keys.len());
+                if keys.len() > 0 {
+                    let chars: Vec<char> = s.chars().collect();
+                    for idx in keys {
+                        let idx = try!(int(idx)).unwrap_int();
+                        if !(0 <= idx && idx < s.len() as IntegerRepr) {
+                            return Err(Error::new(&format!(
+                                "string index out of range: {} > {}", idx, s.len()
+                            )));
+                        }
+                        result.push(chars[idx as usize].clone());
+                    }
+                }
+                return Ok(Value::String(result));
+            },
+            &Value::Array(ref a) => {
+                let keys = keys.unwrap_array();
+                let mut result = ArrayRepr::with_capacity(keys.len());
+                for idx in keys {
+                    let idx = try!(int(idx)).unwrap_int();
+                    if !(0 <= idx && idx < a.len() as IntegerRepr) {
+                        return Err(Error::new(&format!(
+                            "string index out of range: {} > {}", idx, a.len()
+                        )));
+                    }
+                    result.push(a[idx as usize].clone());
+                }
+                return Ok(Value::Array(result));
+            },
+            &Value::Object(ref o) => {
+                let keys = keys.unwrap_array();
+                let mut result = ObjectRepr::with_capacity(keys.len());
+                for key in keys {
+                    let key = try!(str_(key)).unwrap_string();
+                    if result.get(&key).is_some() {
+                        return Err(Error::new(&format!(
+                            "duplicate object key: {}", key)));
+                    }
+                    let value = match o.get(&key) {
+                        Some(v) => v,
+                        None => return Err(Error::new(&format!(
+                            "key doesn't exist in source object: {}", key
+                        ))),
+                    };
+                    result.insert(key, value.clone());
+                }
+                return Ok(Value::Object(result));
+            },
+            _ => {},
+        }
+    }
+    mismatch!("pick"; ("array", "string") |
+                      ("array", "array") |
+                      ("array", "object") => (keys, from))
+}
+
+pub fn omit(keys: Value, from: Value) -> eval::Result {
+    unimplemented!()
 }
 
 
