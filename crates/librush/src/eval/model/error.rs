@@ -24,6 +24,8 @@ macro_rules! mismatch (
         ),+], vec![$( &$ac ),*]))
     );
 );
+// TODO: rewrite this macro so it can be used at the very beginning of the API functions,
+// to assert types of arguments before they are moved/consumed and thus become unusable
 
 
 /// Error that may have occurred during evaluation.
@@ -164,9 +166,9 @@ impl fmt::Display for Mismatch {
         // if present, format the expected type signatures as separate lines
         let expected = match self.expected.len() {
             0 => "".to_owned(),
-            1 => format!("expected ({}) but ", self.expected[0].join(", ")),
+            1 => format!("({})", self.expected[0].join(", ")),
             _ => format!(
-                "expected one of \n\t{}\nbut ", self.expected.iter()
+                "one of \n\t{}\n", self.expected.iter()
                     .map(|sig| format!("({})", sig.join(", ")))
                     .collect::<Vec<_>>().join("\n")
             ),
@@ -178,6 +180,10 @@ impl fmt::Display for Mismatch {
             .map(|&(ref t, ref v)| format!("`{}` ({})", v, t))
             .collect::<Vec<_>>().join(actual_sep);
 
-        write!(f, "{} {}got: {}", operation, expected, actual)
+        if expected != "" {
+            write!(f, "{} expected {} but got: {}", operation, expected, actual)
+        } else {
+            write!(f, "{} got invalid arguments: {}", operation, actual)
+        }
     }
 }
