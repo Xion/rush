@@ -42,7 +42,7 @@ impl<'a> From<ArgMatches<'a>> for Options {
 
 /// Defines possible options as to how the program's input
 /// may be processed by the expression(s).
-#[derive(Clone)]
+#[derive(Clone,Debug,Eq,PartialEq)]
 pub enum InputMode {
     String,
     Lines,
@@ -195,12 +195,6 @@ fn create_parser<'p>() -> Parser<'p> {
         // TODO: add a -0 (zero) option that changes the separator byte from \n to \0;
         // this shall apply to --lines and --files input modes (as well as their output)
 
-        .arg(Arg::with_name(OPT_PARSE)
-            .set(ArgSettings::Hidden)
-            .conflicts_with("input_group")
-            .short("p").long("parse")
-            .help("Only parse the expression, printing its AST"))
-
         .arg(Arg::with_name(OPT_BEFORE)
             .short("B").long("before")
             .takes_value(true)
@@ -223,6 +217,12 @@ fn create_parser<'p>() -> Parser<'p> {
                    If provided, only the result of this expression will be printed \
                    to standard output.").next_line_help(true)
             .value_name("EXPRESSION"))
+
+        .arg(Arg::with_name(OPT_PARSE)
+            .set(ArgSettings::Hidden)
+            .conflicts_with("input_group")
+            .short("p").long("parse")
+            .help("Only parse the expressions, printing their ASTs"))
 
         .help_short("H")
         .version_short("V")

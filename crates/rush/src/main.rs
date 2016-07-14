@@ -73,7 +73,7 @@ fn process_input(mode: InputMode,
 
     // Do the processing.
     //
-    // If there is an "after" expression provided, it is that expression that should produced
+    // If there is an "after" expression provided, it is that expression that should produce
     // the only output of the program. So we'll just consume whatever results would normally
     // be printed otherwise.
     if after.is_some() {

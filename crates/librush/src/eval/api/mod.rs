@@ -96,6 +96,7 @@ impl<'c> Context<'c> {
         self.set(   "NaN",      Value::Float(f64::NAN as FloatRepr)         );
         self.set(   "nil",      Value::Empty                                );
         self.set(   "pi",       Value::Float(f64::consts::PI as FloatRepr)  );
+        // TODO: Inf, NaN, and nil should be parser-level identifiers
     }
 }
 
