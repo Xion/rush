@@ -14,6 +14,7 @@ mod types;
 
 
 use std::fmt;
+use std::num::FpCategory;
 
 use conv::misc::InvalidSentinel;
 
@@ -72,11 +73,17 @@ impl fmt::Debug for Value {
     /// This representation is not meant for consumption by end users.
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Value::Empty => write!(fmt, "{}", "<empty>"),
+            Value::Empty => write!(fmt, "{}", "nil"),
             Value::Symbol(ref t) => write!(fmt, "'{}", t),
             Value::Boolean(ref b) => write!(fmt, "{}", b.to_string()),
             Value::Integer(ref i) => write!(fmt, "{}i", i),
-            Value::Float(ref f) => write!(fmt, "{}f", f),
+            Value::Float(ref f) => {
+                match f.classify() {
+                    FpCategory::Nan => write!(fmt, "NaN"),
+                    FpCategory::Infinite => write!(fmt, "Inf"),
+                    _ => write!(fmt, "{}f", f),
+                }
+            },
             Value::String(ref s) => write!(fmt, "\"{}\"", s),
             Value::Regex(ref r) => write!(fmt, "/{}/", r.as_str()),
             Value::Array(ref a) => {
