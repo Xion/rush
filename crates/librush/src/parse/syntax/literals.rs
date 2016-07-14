@@ -44,15 +44,25 @@ named!(pub identifier( &[u8] ) -> String, alt!(
     })
 ));
 
-/// atom ::== OBJECT | ARRAY | BOOLEAN | SYMBOL | FLOAT | INTEGER | REGEX | STRING | '(' expression ')'
+/// atom ::== PRIMITIVE | '(' expression ')' | '{' block '}'
+/// PRIMITIVE ::== NIL | OBJECT | ARRAY | BOOLEAN | FLOAT | INTEGER | SYMBOL | REGEX | STRING
 named!(pub atom( &[u8] ) -> Box<Eval>, alt!(
+    //
+    // Note that order of those branches matters.
+    // Literals that have special case'd identifiers as valid values
+    // -- like floats with their NaN -- have to be before symbols!
+    //
+    nil_value |
     object_value | array_value |
-    bool_value | symbol_value | float_value | int_value |
+    bool_value | float_value | int_value | symbol_value |
     regex_value | string_value |
     delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")"))) |
     delimited!(multispaced!(tag!("{")), block, multispaced!(tag!("}")))
 ));
 
+named!(nil_value( &[u8] ) -> Box<Eval>, map!(tag!("nil"), |_| {
+    Box::new(ScalarNode::from(Value::Empty))
+}));
 
 /// OBJECT ::== '{' [expression ':' expression] (',' expression ':' expression)* '}'
 named!(object_value( &[u8] ) -> Box<Eval>, map!(
@@ -123,7 +133,7 @@ fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
     }
 }
 
-named!(regex_value( &[u8] ) -> Box<Eval>,map!(regex_literal, |value: RegexRepr| {
+named!(regex_value( &[u8] ) -> Box<Eval>, map!(regex_literal, |value: RegexRepr| {
     Box::new(ScalarNode::from(value))
 }));
 fn regex_literal(input: &[u8]) -> IResult<&[u8], Regex> {

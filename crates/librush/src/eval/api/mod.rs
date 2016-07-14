@@ -92,9 +92,7 @@ impl<'c> Context<'c> {
         //
         // Keep the list sorted alphabetically by constant names (ignore case).
         //
-        self.set(   "nil",      Value::Empty                                );
         self.set(   "pi",       Value::Float(f64::consts::PI as FloatRepr)  );
-        // TODO: nil should be parser-level keyword
     }
 }
 
