@@ -1,5 +1,6 @@
 //! Parser for the literal ("atomic") values, like numbers and strings.
 
+use std::f64;
 use std::str::from_utf8;
 
 use nom::{self, alpha, alphanumeric, IResult};
@@ -92,9 +93,13 @@ named!(int_literal( &[u8] ) -> String, string!(alt!(
     seq!(char_of!(&DIGITS[1..]), many0!(char_of!(DIGITS))) | tag!("0")
 )));
 
-named!(float_value( &[u8] ) -> Box<Eval>, map_res!(float_literal, |value: String| {
-    value.parse::<FloatRepr>().map(ScalarNode::from).map(Box::new)
-}));
+named!(float_value( &[u8] ) -> Box<Eval>, alt!(
+    tag!("Inf") => { |_| Box::new(ScalarNode::from(f64::INFINITY as FloatRepr)) } |
+    tag!("NaN") => { |_| Box::new(ScalarNode::from(f64::NAN as FloatRepr)) } |
+    map_res!(float_literal, |value: String| {
+        value.parse::<FloatRepr>().map(ScalarNode::from).map(Box::new)
+    })
+));
 fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
     let (_, input) = try_parse!(input, expr_res!(from_utf8(input)));
 

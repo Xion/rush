@@ -92,11 +92,9 @@ impl<'c> Context<'c> {
         //
         // Keep the list sorted alphabetically by constant names (ignore case).
         //
-        self.set(   "Inf",      Value::Float(f64::INFINITY as FloatRepr)    );
-        self.set(   "NaN",      Value::Float(f64::NAN as FloatRepr)         );
         self.set(   "nil",      Value::Empty                                );
         self.set(   "pi",       Value::Float(f64::consts::PI as FloatRepr)  );
-        // TODO: Inf, NaN, and nil should be parser-level identifiers
+        // TODO: nil should be parser-level keyword
     }
 }
 
