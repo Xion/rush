@@ -105,8 +105,26 @@ mod tests {
     fn no_bool_constants() {
         let ctx = Context::new();
         for constant in &["true", "false"] {
-            assert!(!ctx.is_defined(*constant),
-                "`{}` is handled by parser and doesn't need to be in Context", constant);
+            check_constant(&ctx, *constant);
         }
+    }
+
+    #[test]
+    fn no_float_constants() {
+        let ctx = Context::new();
+        for constant in &["NaN", "Inf"] {
+            check_constant(&ctx, *constant)
+        }
+    }
+
+    #[test]
+    fn no_nil() {
+        let ctx = Context::new();
+        check_constant(&ctx, "nil");
+    }
+
+    fn check_constant(ctx: &Context, name: &'static str) {
+        assert!(!ctx.is_defined(name),
+                "`{}` is handled by parser and doesn't need to be in Context", name);
     }
 }
