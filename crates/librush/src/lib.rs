@@ -11,6 +11,8 @@ extern crate conv;
 extern crate csv;
 extern crate fnv;
 #[macro_use]
+extern crate lazy_static;
+#[macro_use]
 extern crate mopa;
 extern crate rand;
 extern crate regex;

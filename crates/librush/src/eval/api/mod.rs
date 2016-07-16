@@ -89,6 +89,7 @@ impl<'c> Context<'c> {
         self.define_unary(          "trim",     strings::trim       );
         self.define_unary(          "trunc",    math::trunc         );
         self.define_unary(          "values",   base::values        );
+        self.define_unary(          "words",    strings::words      );
     }
 
     fn init_constants(&mut self) {

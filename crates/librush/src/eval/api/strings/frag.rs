@@ -1,8 +1,15 @@
 //! API for blowing strings into fragments and putting them back together.
 
+use regex::Regex;
+
 use eval::{self, Error, Value};
 use eval::api::conv::str_;
 use eval::value::StringRepr;
+
+
+lazy_static!{
+    static ref WORD_SEP: Regex = Regex::new(r"\s+").unwrap();
+}
 
 
 /// Join an array of values into a single delimited string.
@@ -48,4 +55,12 @@ pub fn split(delim: Value, string: Value) -> eval::Result {
         "split() expects string/regex delimiter and string to split, got: {}, {}",
         string.typename(), delim.typename()
     )))
+}
+
+/// Split a string into array of words.
+pub fn words(string: Value) -> eval::Result {
+    eval1!((string: &String) -> Array {
+        WORD_SEP.split(string).map(StringRepr::from).map(Value::String).collect()
+    });
+    mismatch!("words"; ("string") => (string))
 }
