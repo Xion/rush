@@ -87,6 +87,11 @@ impl_value_type!(String(StringRepr)     => (is_str, unwrap_str, as_str, as_mut_s
 /// Additional methods that deal with more than one type at once.
 impl Value {
     #[inline(always)]
+    pub fn is_collection(&self) -> bool {
+        self.is_array() || self.is_object()
+    }
+
+    #[inline(always)]
     pub fn is_scalar(&self) -> bool {
         self.is_bool() || self.is_int() || self.is_float() || self.is_string()
     }
