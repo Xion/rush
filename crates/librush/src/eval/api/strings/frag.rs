@@ -4,11 +4,12 @@ use regex::Regex;
 
 use eval::{self, Error, Value};
 use eval::api::conv::str_;
-use eval::value::StringRepr;
+use eval::value::{ArrayRepr, StringRepr};
 
 
 lazy_static!{
     static ref WORD_SEP: Regex = Regex::new(r"\s+").unwrap();
+    static ref LINE_SEP: Regex = Regex::new("\r?\n").unwrap();
 }
 
 
@@ -48,7 +49,7 @@ pub fn split(delim: Value, string: Value) -> eval::Result {
         string.split(delim).map(StringRepr::from).map(Value::String).collect()
     });
     eval2!((delim: &Regex, string: &String) -> Array {
-        delim.split(&string).map(StringRepr::from).map(Value::String).collect()
+        do_regex_split(delim, string)
     });
 
     Err(Error::new(&format!(
@@ -59,8 +60,20 @@ pub fn split(delim: Value, string: Value) -> eval::Result {
 
 /// Split a string into array of words.
 pub fn words(string: Value) -> eval::Result {
-    eval1!((string: &String) -> Array {
-        WORD_SEP.split(string).map(StringRepr::from).map(Value::String).collect()
-    });
+    eval1!((string: &String) -> Array { do_regex_split(&WORD_SEP, string) });
     mismatch!("words"; ("string") => (string))
+}
+
+/// Split a string into array of lines.
+pub fn lines(string: Value) -> eval::Result {
+    eval1!((string: &String) -> Array { do_regex_split(&LINE_SEP, string) });
+    mismatch!("lines"; ("string") => (string))
+}
+
+
+// Utility functions
+
+#[inline(always)]
+fn do_regex_split(delim: &Regex, string: &str) -> ArrayRepr {
+    delim.split(string).map(StringRepr::from).map(Value::String).collect()
 }
