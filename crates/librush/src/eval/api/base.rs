@@ -251,7 +251,7 @@ pub fn omit(keys: Value, from: Value) -> eval::Result {
                 }
                 return Ok(Value::Object(result));
             },
-            _ => (),
+            _ => {},
         }
     }
     mismatch!("omit"; ("array", "string") |
