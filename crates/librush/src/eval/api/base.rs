@@ -3,7 +3,7 @@
 //! This is mostly a grab bag of functions that don't really fit anywhere else,
 //! or are singularly "fundamental" to the expression language.
 
-use std::collections::HashMap;
+use std::collections::HashSet;
 use std::cmp::Ordering;
 
 use unicode_segmentation::UnicodeSegmentation;
@@ -54,7 +54,7 @@ pub fn rev(value: Value) -> eval::Result {
 
     // when reversing an object, the values need to be string-convertible
     if value.is_object() {
-        let mut result = HashMap::new();
+        let mut result = ObjectRepr::new();
         for (k, v) in value.unwrap_object() {
             let new_k = try!(str_(v)).unwrap_string();
             let new_v = Value::String(k);
@@ -178,8 +178,85 @@ pub fn pick(keys: Value, from: Value) -> eval::Result {
                       ("array", "object") => (keys, from))
 }
 
+/// Opposite of pick(). Preserves only the values from given collections
+/// whose keys/indices *don't* match the keys/indices from given array.
+/// Source collection can be:
+/// * an array (with element indices as keys)
+/// * an object
+/// * a string (with character indices as keys)
 pub fn omit(keys: Value, from: Value) -> eval::Result {
-    unimplemented!()
+    if keys.is_array() {
+        if keys.as_array().len() == 0 {
+            return Ok(from);
+        }
+
+        // TODO: get rid of the .clone() calls for elements that we pull out of source collections;
+        // requires rewriting the function to not use mismatch! for error handling
+        match &from {
+            &Value::String(ref s) => {
+                let keys = try!(sort(keys)).unwrap_array();
+                let mut result = StringRepr::with_capacity(s.len() - keys.len());
+                {
+                    // Simultaneously go over the string and the array of keys (indices, really).
+                    // Since the latter is sorted, we can just move through it linearly
+                    // and skip the string char whose index matches the current key.
+                    let mut k = 0; // index in `keys`
+                    for (i, ch) in s.chars().enumerate() {
+                        if k < keys.len() {
+                            let key = try!(int(keys[k].clone())).unwrap_int();
+                            if i == key as usize {
+                                k += 1;
+                                continue;
+                            }
+                        }
+                        result.push(ch);
+                    }
+                }
+                return Ok(Value::String(result));
+            },
+            &Value::Array(ref a) => {
+                let keys = try!(sort(keys)).unwrap_array();
+                let mut result = ArrayRepr::with_capacity(a.len() - keys.len());
+                {
+                    // (See the algorithm description in Value::String brach above).
+                    let mut k = 0;
+                    for (i, elem) in a.iter().enumerate() {
+                        if k < keys.len() {
+                            let key = try!(int(keys[k].clone())).unwrap_int();
+                            if i == key as usize {
+                                k += 1;
+                                continue;
+                            }
+                        }
+                        result.push(elem.clone());
+                    }
+                }
+                return Ok(Value::Array(result));
+            },
+            &Value::Object(ref o) => {
+                // form the set of keys to omit, making they are all string(ish)
+                let keys = keys.unwrap_array();
+                let mut keyset = HashSet::with_capacity(keys.len());
+                for key in &keys {
+                    let key = try!(str_(key.clone())).unwrap_string();
+                    keyset.insert(key);
+                }
+
+                // build the resulting object by excluding those keys
+                let mut result = ObjectRepr::with_capacity(o.len() - keys.len());
+                for (key, value) in o {
+                    if !keyset.contains(key) {
+                        result.insert(key.clone(), value.clone());
+                    }
+                }
+                return Ok(Value::Object(result));
+            },
+            _ => (),
+        }
+    }
+    mismatch!("omit"; ("array", "string") |
+                      ("array", "array") |
+                      ("array", "object") => (keys, from))
 }
 
 
@@ -206,11 +283,9 @@ pub fn index(elem: Value, seq: Value) -> eval::Result {
                 .unwrap_or(Value::Empty)
         ),
 
-        (elem, seq) => Err(
-            Error::new(&format!(
-                "invalid arguments to index() function: {} and {}",
-                elem.typename(), seq.typename()))
-        ),
+        (elem, seq) => mismatch!("index"; ("string", "string") |
+                                          ("regex", "string") |
+                                          ("any value", "array") => (elem, seq)),
     }
 }
 

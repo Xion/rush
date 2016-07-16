@@ -62,6 +62,7 @@ impl<'c> Context<'c> {
         self.define_unary_ctx(      "max",      base::max           );
         self.define_unary_ctx(      "min",      base::min           );
         self.define_unary(          "oct",      math::oct           );
+        self.define_binary(         "omit",     base::omit          );
         self.define_unary(          "ord",      strings::ord        );
         self.define_binary(         "pick",     base::pick          );
         self.define_nullary(        "rand",     random::rand_       );

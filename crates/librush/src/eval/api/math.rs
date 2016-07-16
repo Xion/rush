@@ -73,7 +73,7 @@ pub fn ln(value : Value) -> eval::Result {
 
 // Rounding
 
-/// Round a number down.
+/// Round a number down (towards negative infinity).
 pub fn floor(value: Value) -> eval::Result {
     eval1!(value : Integer { value });
     eval1!(value : Float { value.floor() });
@@ -82,7 +82,7 @@ pub fn floor(value: Value) -> eval::Result {
     )))
 }
 
-/// Round a number up.
+/// Round a number up (towards positive infinity).
 pub fn ceil(value: Value) -> eval::Result {
     eval1!(value : Integer { value });
     eval1!(value : Float { value.ceil() });
@@ -100,7 +100,7 @@ pub fn round(value : Value) -> eval::Result {
     )))
 }
 
-/// Return the integer part of the number.
+/// Return the integer part of the number (round towards zero).
 pub fn trunc(value : Value) -> eval::Result {
     eval1!(value : Integer { value });
     eval1!(value : Float { value.trunc() });
