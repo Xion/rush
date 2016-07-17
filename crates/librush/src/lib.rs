@@ -17,6 +17,8 @@ extern crate mopa;
 extern crate rand;
 extern crate regex;
 extern crate rustc_serialize;
+extern crate unicode_categories;
+extern crate unicode_normalization;
 extern crate unicode_segmentation;
 extern crate unidecode;
 

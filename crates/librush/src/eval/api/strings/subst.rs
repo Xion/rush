@@ -3,6 +3,8 @@
 use std::char;
 use std::str::from_utf8;
 
+use unicode_categories::UnicodeCategories;
+use unicode_normalization::UnicodeNormalization;
 use unidecode::unidecode;
 use regex::{Captures, Regex};
 
@@ -29,6 +31,18 @@ pub fn rot13(value: Value) -> eval::Result {
     mismatch!("rot13"; ("string") => (value))
 }
 
+
+/// Deburrs the strings, removing diacratic marks and accents from letters.
+///
+/// Technically, this is done by converting the string to its Unicode Normalized Form KD
+/// and removing all the "Mark, Nonspacing" (Mn) and "Mark, Spacing Combining" (Mc) characters.
+pub fn deburr(value: Value) -> eval::Result {
+    eval1!(value : &String {{
+        let is_accent = |c: char| c.is_mark_nonspacing() || c.is_mark_spacing_combining();
+        value.nfkd().filter(|c| !is_accent(*c)).collect()
+    }});
+    mismatch!("deburr"; ("string") => (value))
+}
 
 /// "Latinize" the string by translating it to a closest approximation of Latin letters.
 ///

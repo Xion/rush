@@ -41,6 +41,7 @@ impl<'c> Context<'c> {
         self.define_unary(          "chr",      strings::chr        );
         self.define_unary(          "compact",  base::compact       );
         self.define_unary(          "csv",      conv::csv           );
+        self.define_unary(          "deburr",   strings::deburr     );
         self.define_unary(          "exp",      math::exp           );
         self.define_binary_ctx(     "filter",   base::filter        );
         self.define_unary(          "float",    conv::float         );

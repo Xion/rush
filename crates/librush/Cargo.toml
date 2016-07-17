@@ -16,6 +16,8 @@ nom = { version = "1.1.0", features = ["regexp"] }
 rand = "0.3"
 regex = "0.1"
 rustc-serialize = "0.3"
+unicode_categories = "0.1.0"
+unicode-normalization = "0.1.2"
 unicode-segmentation = "0.1.0"
 unidecode = "0.2.0"
 
