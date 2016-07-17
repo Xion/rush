@@ -184,78 +184,84 @@ pub fn pick(keys: Value, from: Value) -> eval::Result {
 /// * an object
 /// * a string (with character indices as keys)
 pub fn omit(keys: Value, from: Value) -> eval::Result {
-    if keys.is_array() {
-        if keys.as_array().len() == 0 {
-            return Ok(from);
-        }
-
-        // TODO: get rid of the .clone() calls for elements that we pull out of source collections;
-        // requires rewriting the function to not use mismatch! for error handling
-        match &from {
-            &Value::String(ref s) => {
-                let keys = try!(sort(keys)).unwrap_array();
-                let mut result = StringRepr::with_capacity(s.len() - keys.len());
-                {
-                    // Simultaneously go over the string and the array of keys (indices, really).
-                    // Since the latter is sorted, we can just move through it linearly
-                    // and skip the string char whose index matches the current key.
-                    let mut k = 0; // index in `keys`
-                    for (i, ch) in s.chars().enumerate() {
-                        if k < keys.len() {
-                            let key = try!(int(keys[k].clone())).unwrap_int();
-                            if i == key as usize {
-                                k += 1;
-                                continue;
-                            }
-                        }
-                        result.push(ch);
-                    }
-                }
-                return Ok(Value::String(result));
-            },
-            &Value::Array(ref a) => {
-                let keys = try!(sort(keys)).unwrap_array();
-                let mut result = ArrayRepr::with_capacity(a.len() - keys.len());
-                {
-                    // (See the algorithm description in Value::String brach above).
-                    let mut k = 0;
-                    for (i, elem) in a.iter().enumerate() {
-                        if k < keys.len() {
-                            let key = try!(int(keys[k].clone())).unwrap_int();
-                            if i == key as usize {
-                                k += 1;
-                                continue;
-                            }
-                        }
-                        result.push(elem.clone());
-                    }
-                }
-                return Ok(Value::Array(result));
-            },
-            &Value::Object(ref o) => {
-                // form the set of keys to omit, making they are all string(ish)
-                let keys = keys.unwrap_array();
-                let mut keyset = HashSet::with_capacity(keys.len());
-                for key in &keys {
-                    let key = try!(str_(key.clone())).unwrap_string();
-                    keyset.insert(key);
-                }
-
-                // build the resulting object by excluding those keys
-                let mut result = ObjectRepr::with_capacity(o.len() - keys.len());
-                for (key, value) in o {
-                    if !keyset.contains(key) {
-                        result.insert(key.clone(), value.clone());
-                    }
-                }
-                return Ok(Value::Object(result));
-            },
-            _ => {},
-        }
-    }
-    mismatch!("omit"; ("array", "string") |
+    argcheck!("omit"; ("array", "string") |
                       ("array", "array") |
-                      ("array", "object") => (keys, from))
+                      ("array", "object") => (keys, from));
+
+    if keys.as_array().len() == 0 {
+        return Ok(from);
+    }
+
+    // deal with objects first, as their keys are strings and not numeric indices
+    if from.is_object() {
+        let keys = keys.unwrap_array();
+        let from = from.unwrap_object();
+
+        // form the set of keys to omit, making they are all string(ish)
+        let mut keyset = HashSet::with_capacity(keys.len());
+        for key in keys {
+            let key = try!(str_(key)).unwrap_string();
+            keyset.insert(key);
+        }
+
+        // build the resulting object by excluding those keys
+        // TODO: if the number of keys to exclude is small, we'd be better off
+        // just removing them from original object
+        let mut result = ObjectRepr::with_capacity(from.len() - keyset.len());
+        for (key, value) in from {
+            if !keyset.contains(&key) {
+                result.insert(key, value);
+            }
+        }
+        return Ok(Value::Object(result));
+    }
+
+    // for arrays and strings, sort the keys array and try to convert them to numeric indices
+    let keys = try!(sort(keys)).unwrap_array();
+    let keys = {
+        let mut indices = Vec::with_capacity(keys.len());
+        for key in keys {
+            let index = try!(int(key)).unwrap_int();
+            indices.push(index as usize);
+        }
+        indices
+    };
+
+    match from {
+        Value::String(s) => {
+            let mut result = StringRepr::with_capacity(s.len() - keys.len());
+            {
+                // Simultaneously go over the string and the array of keys (indices, really).
+                // Since the latter is sorted, we can just move through it linearly
+                // and skip the string char whose index matches the current key.
+                let mut k = 0;  // index in `keys`
+                for (i, ch) in s.chars().enumerate() {
+                    if k < keys.len() && i == keys[k] {
+                        k += 1;
+                        continue;
+                    }
+                    result.push(ch);
+                }
+            }
+            Ok(Value::String(result))
+        },
+        Value::Array(a) => {
+            let mut result = ArrayRepr::with_capacity(a.len() - keys.len());
+            {
+                // (See the algorithm description in Value::String branch above).
+                let mut k = 0;
+                for (i, elem) in a.into_iter().enumerate() {
+                    if k < keys.len() && i == keys[k] {
+                        k += 1;
+                        continue;
+                    }
+                    result.push(elem);
+                }
+            }
+            Ok(Value::Array(result))
+        },
+        _ => unreachable!(),
+    }
 }
 
 
