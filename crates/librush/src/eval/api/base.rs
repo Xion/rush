@@ -5,7 +5,9 @@
 
 use std::collections::HashSet;
 use std::cmp::Ordering;
+use std::mem;
 
+use conv::misc::InvalidSentinel;
 use unicode_segmentation::UnicodeSegmentation;
 
 use eval::{self, Context, Error, Function, Value};
@@ -115,66 +117,64 @@ pub fn values(value: Value) -> eval::Result {
 /// * an object
 /// * a string (with character indices as keys)
 pub fn pick(keys: Value, from: Value) -> eval::Result {
-    if keys.is_array() {
-        // TODO: get rid of the .clone() calls for elements that we pull out of source collections;
-        // requires rewriting the function to not use mismatch! for error handling
-        match &from {
-            &Value::String(ref s) => {
-                let keys = keys.unwrap_array();
-                let mut result = StringRepr::with_capacity(keys.len());
-                if keys.len() > 0 {
-                    let chars: Vec<char> = s.chars().collect();
-                    for idx in keys {
-                        let idx = try!(int(idx)).unwrap_int();
-                        if !(0 <= idx && idx < s.len() as IntegerRepr) {
-                            return Err(Error::new(&format!(
-                                "string index out of range: {} > {}", idx, s.len()
-                            )));
-                        }
-                        result.push(chars[idx as usize].clone());
-                    }
-                }
-                return Ok(Value::String(result));
-            },
-            &Value::Array(ref a) => {
-                let keys = keys.unwrap_array();
-                let mut result = ArrayRepr::with_capacity(keys.len());
+    argcheck!("pick"; ("array", "string") |
+                      ("array", "array") |
+                      ("array", "object") => (keys, from));
+
+    let keys = keys.unwrap_array();
+    match from {
+        Value::String(s) => {
+            let mut result = StringRepr::with_capacity(keys.len());
+            if keys.len() > 0 {
+                let chars: Vec<char> = s.chars().collect();
                 for idx in keys {
                     let idx = try!(int(idx)).unwrap_int();
-                    if !(0 <= idx && idx < a.len() as IntegerRepr) {
+                    if !(0 <= idx && idx < s.len() as IntegerRepr) {
                         return Err(Error::new(&format!(
-                            "string index out of range: {} > {}", idx, a.len()
+                            "string index out of range: {} > {}", idx, s.len()
                         )));
                     }
-                    result.push(a[idx as usize].clone());
+                    result.push(chars[idx as usize]);
                 }
-                return Ok(Value::Array(result));
-            },
-            &Value::Object(ref o) => {
-                let keys = keys.unwrap_array();
-                let mut result = ObjectRepr::with_capacity(keys.len());
-                for key in keys {
-                    let key = try!(str_(key)).unwrap_string();
-                    if result.get(&key).is_some() {
-                        return Err(Error::new(&format!(
-                            "duplicate object key: {}", key)));
-                    }
-                    let value = match o.get(&key) {
-                        Some(v) => v,
-                        None => return Err(Error::new(&format!(
-                            "key doesn't exist in source object: {}", key
-                        ))),
-                    };
-                    result.insert(key, value.clone());
+            }
+            Ok(Value::String(result))
+        },
+        Value::Array(mut a) => {
+            let mut result = ArrayRepr::with_capacity(keys.len());
+            for idx in keys {
+                let idx = try!(int(idx)).unwrap_int();
+                if !(0 <= idx && idx < a.len() as IntegerRepr) {
+                    return Err(Error::new(&format!(
+                        "string index out of range: {} > {}", idx, a.len()
+                    )));
                 }
-                return Ok(Value::Object(result));
-            },
-            _ => {},
-        }
+                // Thanks to this mem::replace(), we can pick the elements in linear time
+                // with respect to the number to keys.
+                let elem = mem::replace(&mut a[idx as usize], Value::invalid_sentinel());
+                result.push(elem);
+            }
+            Ok(Value::Array(result))
+        },
+        Value::Object(mut o) => {
+            let mut result = ObjectRepr::with_capacity(keys.len());
+            for key in keys {
+                let key = try!(str_(key)).unwrap_string();
+                let value = match o.remove(&key) {
+                    Some(v) => v,
+                    None => return Err(Error::new(
+                        &if result.contains_key(&key) {
+                            format!("duplicate object key: {}", key)
+                        } else {
+                            format!("key doesn't exist in source object: {}", key)
+                        }
+                    )),
+                };
+                result.insert(key, value);
+            }
+            Ok(Value::Object(result))
+        },
+        _ => unreachable!(),
     }
-    mismatch!("pick"; ("array", "string") |
-                      ("array", "array") |
-                      ("array", "object") => (keys, from))
 }
 
 /// Opposite of pick(). Preserves only the values from given collections
