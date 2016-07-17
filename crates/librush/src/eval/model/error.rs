@@ -9,6 +9,33 @@ use std::fmt;
 use super::Value;
 
 
+/// Macro to use at the beginning of operators' and API functions' implementations.
+/// Allows to check the actual types of arguments passed against
+/// one of expected function sigunatures.
+///
+/// Example:
+///
+///     argcheck!("rot13"; ("string") => (value))
+///
+/// Using this macro is typically more convenient than mismatch!,
+/// as it allows the arguments to be moved/consumed by the function later.
+macro_rules! argcheck (
+    ($op:expr; $(($($ex:expr),*))|+ => ($($ac:ident),*)) => ({
+        let specs: &[&[&'static str]] = &[ $(
+            &[ $( $ex ),* ]
+        ),* ];
+        let argtypes: &[&'static str] = &[ $($ac.typename()),* ];
+
+        let has_match = specs.len() == 0 || specs.iter().any(|spec| {
+            spec.iter().zip(argtypes).all(|(ex, act)| *ex == *act)
+        });
+        if !has_match {
+            return mismatch!($op; $( ($( $ex ),*) )|+ => ($( $ac ),*));
+        }
+    });
+);
+
+
 /// Macro for use within operators and API functions' implementations.
 /// Creates an erroneous eval::Result indicating a mismatch between expected argument types
 /// and values actually received.
@@ -17,6 +44,8 @@ use super::Value;
 ///
 ///     mismatch!("rot13"; ("string") => (value))
 ///
+/// Using argcheck! is typically preferable over mismatch!,
+/// as the latter requires argument not to have been moved/consumed by the function.
 macro_rules! mismatch (
     ($op:expr; $(($($ex:expr),*))|+ => ($($ac:ident),*)) => (
         Err($crate::eval::Error::mismatch($op, vec![$(
@@ -24,8 +53,6 @@ macro_rules! mismatch (
         ),+], vec![$( &$ac ),*]))
     );
 );
-// TODO: rewrite this macro so it can be used at the very beginning of the API functions,
-// to assert types of arguments before they are moved/consumed and thus become unusable
 
 
 /// Error that may have occurred during evaluation.
@@ -166,10 +193,10 @@ impl fmt::Display for Mismatch {
         // if present, format the expected type signatures as separate lines
         let expected = match self.expected.len() {
             0 => "".to_owned(),
-            1 => format!("({})", self.expected[0].join(", ")),
+            1 => format!("{} ", self.expected[0].join(", ")),
             _ => format!(
-                "one of \n\t{}\n", self.expected.iter()
-                    .map(|sig| format!("({})", sig.join(", ")))
+                "one of:\n{}\n", self.expected.iter()
+                    .map(|sig| format!("\t{}", sig.join(", ")))
                     .collect::<Vec<_>>().join("\n")
             ),
         };
@@ -181,7 +208,7 @@ impl fmt::Display for Mismatch {
             .collect::<Vec<_>>().join(actual_sep);
 
         if expected != "" {
-            write!(f, "{} expected {} but got: {}", operation, expected, actual)
+            write!(f, "{} expected {}but got: {}", operation, expected, actual)
         } else {
             write!(f, "{} got invalid arguments: {}", operation, actual)
         }

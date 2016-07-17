@@ -28,6 +28,7 @@ pub fn join(delim: Value, array: Value) -> eval::Result {
         if error_count == 0 {
             return Ok(Value::String(strings.join(&d)));
         } else {
+            // TODO: include the error message of the offending element's conversion
             return Err(Error::new(&format!(
                 "join() failed to stringify {} element(s) of the input array",
                 error_count)));
@@ -51,11 +52,7 @@ pub fn split(delim: Value, string: Value) -> eval::Result {
     eval2!((delim: &Regex, string: &String) -> Array {
         do_regex_split(delim, string)
     });
-
-    Err(Error::new(&format!(
-        "split() expects string/regex delimiter and string to split, got: {}, {}",
-        string.typename(), delim.typename()
-    )))
+    mismatch!("split"; ("string", "string") | ("regex", "string") => (delim, string))
 }
 
 /// Split a string into array of words.

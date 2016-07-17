@@ -54,7 +54,7 @@ impl Value {
             Value::Boolean(..) => "bool",
             Value::Integer(..) => "int",
             Value::Float(..) => "float",
-            Value::String(..) => "str",
+            Value::String(..) => "string",
             Value::Regex(..) => "regex",
             Value::Array(..) => "array",
             Value::Object(..) => "object",
