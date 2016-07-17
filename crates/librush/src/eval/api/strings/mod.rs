@@ -50,6 +50,19 @@ pub fn ord(value: Value) -> eval::Result {
 }
 
 
+/// Converts a string into an array of characters.
+/// Each character is represented as a string of length 1.
+pub fn chars(value: Value) -> eval::Result {
+    eval1!((value: &String) -> Array {
+        value.chars()
+            .map(|c| { let mut s = String::with_capacity(1); s.push(c); s })
+            .map(Value::String)
+            .collect()
+    });
+    mismatch!("chars"; ("string") => (value))
+}
+
+
 /// Peforms string formatting a'la Python str.format().
 pub fn format_(fmt: Value, arg: Value) -> eval:: Result {
     if let Value::String(fmt) = fmt {

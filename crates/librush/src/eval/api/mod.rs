@@ -38,6 +38,7 @@ impl<'c> Context<'c> {
         self.define_unary(          "bool",     conv::bool          );
         self.define_unary(          "ceil",     math::ceil          );
         self.define_unary(          "char",     strings::chr        );
+        self.define_unary(          "chars",    strings::chars      );
         self.define_unary(          "chr",      strings::chr        );
         self.define_unary(          "compact",  base::compact       );
         self.define_unary(          "csv",      conv::csv           );
@@ -86,6 +87,7 @@ impl<'c> Context<'c> {
         self.define_binary(         "split",    strings::split      );
         self.define_unary(          "sqrt",     math::sqrt          );
         self.define_unary(          "str",      conv::str_          );
+        self.define_unary(          "string",   conv::str_          );
         self.define_ternary_ctx(    "sub",      strings::sub        );
         self.define_ternary_ctx(    "sub1",     strings::sub1       );
         self.define_unary_ctx(      "sum",      base::sum           );
