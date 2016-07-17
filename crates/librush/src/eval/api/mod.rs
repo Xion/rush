@@ -56,6 +56,7 @@ impl<'c> Context<'c> {
         self.define_binary(         "join",     strings::join       );
         self.define_unary(          "json",     conv::json          );
         self.define_unary(          "keys",     base::keys          );
+        self.define_unary(          "latin1",   strings::latin1     );
         self.define_unary(          "len",      base::len           );
         self.define_unary(          "lines",    strings::lines      );
         self.define_unary(          "ln",       math::ln            );

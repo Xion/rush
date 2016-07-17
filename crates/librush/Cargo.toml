@@ -17,6 +17,7 @@ rand = "0.3"
 regex = "0.1"
 rustc-serialize = "0.3"
 unicode-segmentation = "0.1.0"
+unidecode = "0.2.0"
 
 [dev-dependencies]
 maplit = "0.1.3"

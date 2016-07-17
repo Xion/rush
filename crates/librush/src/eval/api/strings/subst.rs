@@ -3,6 +3,7 @@
 use std::char;
 use std::str::from_utf8;
 
+use unidecode::unidecode;
 use regex::{Captures, Regex};
 
 use eval::{self, Context, Error, Value};
@@ -26,6 +27,20 @@ pub fn rot13(value: Value) -> eval::Result {
         }).collect()
     });
     mismatch!("rot13"; ("string") => (value))
+}
+
+
+/// "Latinize" the string by translating it to a closest approximation of Latin letters.
+///
+/// This is done using the Text::Unidecode method that was original implemented in Perl
+/// (CPAN: http://search.cpan.org/%7Esburke/Text-Unidecode-1.23/lib/Text/Unidecode.pm)
+/// and is described in more detail here: http://interglacial.com/%7Esburke/tpj/as_html/tpj22.html
+pub fn latin1(value: Value) -> eval::Result {
+    eval1!(value : &String {
+        // The unidecode process sometimes produces strings with newlines, which we'll cut out.
+        unidecode(value).replace("\n", "")
+    });
+    mismatch!("latin1"; ("string") => (value))
 }
 
 
