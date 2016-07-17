@@ -62,6 +62,17 @@ pub fn chars(value: Value) -> eval::Result {
     mismatch!("chars"; ("string") => (value))
 }
 
+/// Converts a string into an array of UTF8 bytes.
+/// Each byte is represented as its integer value.
+pub fn utf8(value: Value) -> eval::Result {
+    eval1!((value: &String) -> Array {
+        value.as_bytes().iter()
+            .map(|b| *b as IntegerRepr).map(Value::Integer)
+            .collect()
+    });
+    mismatch!("utf8"; ("string") => (value))
+}
+
 
 /// Peforms string formatting a'la Python str.format().
 pub fn format_(fmt: Value, arg: Value) -> eval:: Result {

@@ -93,6 +93,7 @@ impl<'c> Context<'c> {
         self.define_unary_ctx(      "sum",      base::sum           );
         self.define_unary(          "trim",     strings::trim       );
         self.define_unary(          "trunc",    math::trunc         );
+        self.define_unary(          "utf8",     strings::utf8       );
         self.define_unary(          "values",   base::values        );
         self.define_unary(          "words",    strings::words      );
     }
