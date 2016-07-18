@@ -45,6 +45,7 @@ impl<'c> Context<'c> {
         self.define_unary(          "deburr",   strings::deburr     );
         self.define_unary(          "exp",      math::exp           );
         self.define_binary_ctx(     "filter",   base::filter        );
+        self.define_unary(          "flip",     base::flip          );
         self.define_unary(          "float",    conv::float         );
         self.define_unary(          "floor",    math::floor         );
         self.define_ternary_ctx(    "fold",     base::reduce        );

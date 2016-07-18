@@ -11,7 +11,7 @@ use conv::misc::InvalidSentinel;
 use unicode_segmentation::UnicodeSegmentation;
 
 use eval::{self, Context, Error, Function, Value};
-use eval::model::{ArgCount, Invoke};
+use eval::model::{Args, ArgCount, Invoke};
 use eval::util::cmp::TryOrd;
 use eval::value::{ArrayRepr, IntegerRepr, ObjectRepr, StringRepr};
 use parse::ast::BinaryOpNode;
@@ -21,6 +21,20 @@ use super::conv::{bool, int, str_};
 /// Identity function.
 pub fn identity(value: Value) -> eval::Result {
     Ok(value)
+}
+
+/// Create a function that invokes given one with arguments reversed.
+pub fn flip(value: Value) -> eval::Result {
+    if value.is_function() {
+        let func = value.unwrap_function();
+        let arity = func.arity();
+        let flipped = move |mut args: Args, context: &Context| {
+            args.reverse();
+            func.invoke(args, context)
+        };
+        return Ok(Value::Function(Function::from_native_ctx(arity, flipped)));
+    }
+    mismatch!("flip"; ("function") => (value))
 }
 
 

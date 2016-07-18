@@ -69,21 +69,34 @@ impl Function {
     pub fn from_raw(invoke: Box<Invoke>) -> Function {
         Function::Raw(Rc::new(invoke))
     }
+
+    /// Create the Function struct from a simple native Rust function.
+    ///
+    /// Note that if the Rust function is a closure, you'll may need to
+    /// use Functin::from_native_ctx() -- even if you don't need the Context --
+    /// to resolve lifetime issues.
     #[inline(always)]
     pub fn from_native<F>(arity: Arity, f: F) -> Function
         where F: Fn(Args) -> eval::Result + 'static
     {
         Function::Native(arity, Rc::new(f))
     }
+
+    /// Create the Function struct from a native Rust function
+    /// that receives a reference Context as an explicit parameter.
+    ///
+    /// This is useful is the function itself needs to call other Invoke objects.
     #[inline(always)]
     pub fn from_native_ctx<F>(arity: Arity, f: F) -> Function
         where F: Fn(Args, &Context) -> eval::Result + 'static
     {
         Function::NativeCtx(arity, Rc::new(f))
     }
+
+    /// Create the Function struct from a lambda expression.
     #[inline(always)]
-    pub fn from_lambda(argnames: Vec<String>, expr: Box<Eval>) -> Function {
-        Function::Custom(CustomFunction::new(argnames, expr))
+    pub fn from_lambda(argnames: Vec<String>, body: Box<Eval>) -> Function {
+        Function::Custom(CustomFunction::new(argnames, body))
     }
 
     /// Function composition:
