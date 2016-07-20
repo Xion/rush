@@ -447,6 +447,7 @@ pub fn map(func: Value, array: Value, context: &Context) -> eval::Result {
 }
 
 /// Filter an array through a predicate function.
+/// This is the opposite of reject().
 ///
 /// Returns the array created by applying the function to each element
 /// and preserving only those for it returned a truthy value.
