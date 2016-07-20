@@ -80,8 +80,8 @@ impl_value_type!(Array(ArrayRepr)       => (is_array,    unwrap_array,    as_arr
 impl_value_type!(Object(ObjectRepr)     => (is_object,   unwrap_object,   as_object,   as_mut_object));
 impl_value_type!(Function(FunctionRepr) => (is_function, unwrap_function, as_function, as_mut_function));
 
-impl_value_type!(Integer(IntegerRepr)   => (is_int, unwrap_int, as_int, as_mut_int));    // alias
-impl_value_type!(String(StringRepr)     => (is_str, unwrap_str, as_str, as_mut_string)); // alias
+impl_value_type!(Integer(IntegerRepr)   => (is_int, unwrap_int, as_int, as_mut_int));  // alias
+impl_value_type!(String(StringRepr)     => (is_str, unwrap_str, as_str, as_mut_str));  // alias
 
 
 /// Additional methods that deal with more than one type at once.
