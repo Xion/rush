@@ -2,5 +2,7 @@
 
 invoke>=0.13
 
+semver
+
 mkdocs
 mkdocs-material
