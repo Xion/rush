@@ -58,6 +58,13 @@ cargo_build() {
         fatal "Failed to build the release binary, aborting."
     fi
 
+    # strip the binary of debug symbols to reduce its size
+    if exists strip; then
+        strip "${SOURCE_DIR}/$BIN"
+    else
+        warn "'strip' not found, binary will retain debug symbols."
+    fi
+
     # ensure a license file is available in the source directory
     cp --force --no-target-directory "$LICENSE_FILE" "$SOURCE_DIR/$LICENSE_FILE"
     # TODO(xion): include the license file in the final bundles
