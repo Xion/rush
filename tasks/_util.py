@@ -9,15 +9,19 @@ except ImportError:
     from pipes import quote
 import sys
 
-from invoke import run
 import yaml
 
 
 __all__ = ['cargo', 'get_docs_output_dir']
 
 
-def cargo(cmd, *args, **kwargs):
+def cargo(ctx, cmd, *args, **kwargs):
     """Run Cargo as if inside the specified crate directory.
+
+    :param ctx: Invoke's Context object
+    :param cmd: Cargo command to run
+
+    The following are optional keyword arguments:
 
     :param crate: Name of the crate to run Cargo against
     :param wait: Whether to wait for the Cargo process to finish (True),
@@ -34,7 +38,7 @@ def cargo(cmd, *args, **kwargs):
 
     wait = kwargs.pop('wait', True)
     if wait:
-        return run('cargo ' + ' '.join(map(quote, cargo_args)), **kwargs)
+        return ctx.run('cargo ' + ' '.join(map(quote, cargo_args)), **kwargs)
     else:
         argv = ['cargo'] + cargo_args  # execvp() needs explicit argv[0]
         os.execvp('cargo', argv)

@@ -14,10 +14,9 @@ LIB = 'librush'
 # TODO: rewrite the ./tools/release script in Python into nested tasks
 # like release.deb or release.rpm or release.brew
 @task
-def release():
+def release(ctx):
     """Create the release packages for various operating systems."""
-    from invoke import run
-    run('./tools/release', pty=True)
+    ctx.run('./tools/release', pty=True)
 
 
 # Setup

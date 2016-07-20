@@ -13,15 +13,15 @@ from tasks._util import cargo, get_docs_output_dir
 
 
 @task(default=True)
-def bin():
+def bin(ctx):
     """Run the binary crate."""
     # Because we want to accept arbitrary arguments, we have to ferret them out
     # of sys.argv manually.
-    cargo('run', *sys.argv[2:], crate=BIN, wait=False)
+    cargo(ctx, 'run', *sys.argv[2:], crate=BIN, wait=False)
 
 
 @task(pre=[build.docs])
-def docs():
+def docs(ctx):
     """"Run" the docs, i.e. preview them in the default web browser."""
     path = os.path.join(get_docs_output_dir(), 'index.html')
     if sys.platform == 'darwin':

@@ -15,23 +15,23 @@ HELP = {'release': "Whether the to clean release artifacts."}
 
 
 @task(help=HELP, default=True)
-def all(release=False):
+def all(ctx, release=False):
     """Clean all of the project's build artifacts."""
-    lib(release)
-    bin(release)
-    docs()
+    lib(ctx, release=release)
+    bin(ctx, release=release)
+    docs(ctx)
     print("\nAll cleaned.")
 
 
 @task(help=HELP)
-def bin(release=False):
+def bin(ctx, release=False):
     """Clean the binary crate's build artifacts."""
     args = ['--release'] if release else []
-    cargo('clean', *args, crate=BIN, pty=True)
+    cargo(ctx, 'clean', *args, crate=BIN, pty=True)
 
 
 @task
-def docs():
+def docs(ctx):
     """Clean the built documentation."""
     output_dir = get_docs_output_dir()
     if os.path.isdir(output_dir):
@@ -42,7 +42,7 @@ def docs():
 
 
 @task(help=HELP)
-def lib(release=False):
+def lib(ctx, release=False):
     """Clean the library crate's build artifacts."""
     args = ['--release'] if release else []
-    cargo('clean', *args, crate=LIB, pty=True)
+    cargo(ctx, 'clean', *args, crate=LIB, pty=True)
