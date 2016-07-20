@@ -22,8 +22,8 @@ def all(ctx, release=False):
     """Build the project."""
     # calling build_lib() is unnecessary because the binary crate
     # depeends on the library, so it will be rebuilt as well
-    bin(release)
-    docs(release)
+    bin(ctx, release)
+    docs(ctx, release)
     print("\nBuild finished.")
 
 
