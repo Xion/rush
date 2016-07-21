@@ -3,6 +3,7 @@
 invoke>=0.13
 
 semver
+glob2
 
 mkdocs
 mkdocs-material
