@@ -14,7 +14,7 @@ from invoke import task
 import semver
 
 from tasks import BIN, LIB
-from tasks._util import cargo
+from tasks.util import cargo
 
 
 MIN_RUSTC_VERSION = '1.10.0'

@@ -9,7 +9,8 @@ from invoke import task
 
 from tasks import BIN
 from tasks import build
-from tasks._util import cargo, get_docs_output_dir
+from tasks.util import cargo
+from tasks.util.docs import get_docs_output_dir
 
 
 @task(default=True)

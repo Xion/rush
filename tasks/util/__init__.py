@@ -1,7 +1,6 @@
 """
 Utility functions used by multiple task collections.
 """
-import logging
 import os
 try:
     from shlex import quote
@@ -9,10 +8,8 @@ except ImportError:
     from pipes import quote
 import sys
 
-import yaml
 
-
-__all__ = ['cargo', 'get_docs_output_dir']
+__all__ = ['cargo']
 
 
 def cargo(ctx, cmd, *args, **kwargs):
@@ -42,16 +39,3 @@ def cargo(ctx, cmd, *args, **kwargs):
     else:
         argv = ['cargo'] + cargo_args  # execvp() needs explicit argv[0]
         os.execvp('cargo', argv)
-
-
-def get_docs_output_dir():
-    """Retrieve the full path to the documentation's output directory."""
-    base_dir = os.getcwd()
-    config_file = os.path.join(base_dir, 'mkdocs.yml')
-    if not os.path.exists(config_file):
-        logging.error("mkdocs.yaml config file cannot be found; "
-                      "is it the project's root directory?")
-        sys.exit(1)
-    with open(config_file) as f:
-        config = yaml.load(f)
-    return os.path.join(base_dir, config.get('site_dir', 'site'))

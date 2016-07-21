@@ -4,7 +4,7 @@ Test tasks.
 from invoke import task
 
 from tasks import BIN, LIB
-from tasks._util import cargo
+from tasks.util import cargo
 
 
 @task(default=True)
