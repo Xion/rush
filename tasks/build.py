@@ -15,6 +15,7 @@ import semver
 
 from tasks import BIN, LIB
 from tasks.util import cargo
+from tasks.util.docs import describe_rust_api
 
 
 MIN_RUSTC_VERSION = '1.10.0'
@@ -49,10 +50,22 @@ def lib(ctx, release=False):
 
 
 @task(help=HELP)
-def docs(ctx, release=False):
+def docs(ctx, release=False, dump_api=False):
     """Build the project documentation."""
     args = ['--clean'] if release else []
     ctx.run('mkdocs build ' + ' '.join(map(quote, args)), pty=True)
+
+    # TEMPORARY: analyze the API package and display results
+    # TODO: use it to generate the docs/api.md file
+    if dump_api:
+        print()
+        modules = describe_rust_api('./crates/%s/src/eval/api/**/*.rs' % LIB)
+        for module in modules:
+            print("%s (%s)" % (module.name, module.path))
+            for func in module.functions:
+                print('-- ' + func.name)
+                print(func.description)
+            print()
 
 
 # Utility functions

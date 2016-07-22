@@ -32,6 +32,7 @@ def get_docs_output_dir():
 
 #: Module under eval::api that contains API functions.
 Module = namedtuple('Module', [
+    'path',  # full path to the module file
     'name',
     'submodules',  # list of Module objects
     'functions',  # list of Function objects
@@ -95,7 +96,7 @@ def analyze_rust_module(path):
 
         # extract documentation
         docstring_lines = []
-        for j in range(idx, 0, -1):
+        for j in range(idx - 1, 0, -1):
             line = lines[j].lstrip()
             if not line.startswith('///'):
                 break
@@ -117,7 +118,8 @@ def analyze_rust_module(path):
         functions.append(func)
 
     mod_name, _ = os.path.splitext(os.path.basename(path))
-    module = Module(name=mod_name,  # TODO: parent directory name if mod.rs
+    module = Module(path=path,
+                    name=mod_name,  # TODO: parent directory name if mod.rs
                     submodules=[],  # TODO: descend to submodules if mod.rs
                     functions=functions)
 
