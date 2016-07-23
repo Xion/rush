@@ -26,7 +26,7 @@ HELP = {'release': "Whether to build artifacts in release mode"}
 @task(help=HELP, default=True)
 def all(ctx, release=False):
     """Build the project."""
-    # calling build_lib() is unnecessary because the binary crate
+    # calling lib() is unnecessary because the binary crate
     # depeends on the library, so it will be rebuilt as well
     bin(ctx, release)
     docs(ctx, release)
@@ -59,13 +59,19 @@ def docs(ctx, release=False, dump_api=False):
     # TODO: use it to generate the docs/api.md file
     if dump_api:
         print()
-        modules = describe_rust_api('./crates/%s/src/eval/api/**/*.rs' % LIB)
-        for module in modules:
-            print("%s (%s)" % (module.name, module.path))
+        modules = describe_rust_api('./crates/%s/src/eval/api/*.rs' % LIB)
+
+        def print_module(module, indent=''):
+            print(indent + "%s (%s)" % (module.name, module.path))
             for func in module.functions:
-                print('-- ' + func.name)
-                print(func.description)
+                print(indent + '-- ' + func.name)
+                print(indent + func.description)
             print()
+            for submodule in module.submodules:
+                print_module(submodule, indent + ' ' * 4)
+
+        for module in modules:
+            print_module(module)
 
 
 # Utility functions

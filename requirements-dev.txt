@@ -1,9 +1,15 @@
+#
 # Python packages used in development
+#
 
 invoke>=0.13
 
+# Dependencies used directly by automation tasks
+pathlib
 semver
 glob2
+jinja2
 
+# Documentation generation
 mkdocs
 mkdocs-material

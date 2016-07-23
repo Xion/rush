@@ -2,9 +2,9 @@
 Helper code related to generating documentation for the project.
 """
 from collections import namedtuple, OrderedDict
-import io
 import logging
 import os
+from pathlib import Path
 import re
 import sys
 
@@ -17,15 +17,15 @@ __all__ = ['get_docs_output_dir']
 
 def get_docs_output_dir():
     """Retrieve the full path to the documentation's output directory."""
-    base_dir = os.getcwd()
-    config_file = os.path.join(base_dir, 'mkdocs.yml')
-    if not os.path.exists(config_file):
+    base_dir = Path.cwd()
+    config_file = base_dir / 'mkdocs.yml'
+    if not config_file.exists():
         logging.error("mkdocs.yaml config file cannot be found; "
                       "is it the project's root directory?")
         sys.exit(1)
-    with io.open(config_file, encoding='utf-8') as f:
+    with config_file.open(encoding='utf-8') as f:
         config = yaml.load(f)
-    return os.path.join(base_dir, config.get('site_dir', 'site'))
+    return base_dir / config.get('site_dir', 'site')
 
 
 # Generating API docs
@@ -73,12 +73,27 @@ def analyze_rust_module(path):
     :param path: Path to the module
     :return: Module object or None
     """
+    path = Path(path)
     logging.info("Analyzing Rust module %s...", path)
-    with io.open(path, encoding='utf-8') as f:
+
+    # extract module name & potentially analyze submodules
+    mod_name = path.stem
+    submodules = []
+    if mod_name == 'mod':
+        if path.parent:
+            mod_name = path.parent.stem
+            for submodule_path in path.parent.glob('*.rs'):
+                if submodule_path.stem !='mod':
+                    submodules.extend(describe_rust_api(str(submodule_path)))
+        else:
+            # bare "mod.rs" as module path, rather unlikely occurrence
+            mod_name = ''
+
+    with path.open(encoding='utf-8') as f:
         lines = f.readlines()
 
+    # analyze the function declarations and extract info on them
     functions = []
-
     pub_fn_line_indices = (i for i, line in enumerate(lines)
                            if line.lstrip().startswith('pub fn'))
     for idx in pub_fn_line_indices:
@@ -103,6 +118,7 @@ def analyze_rust_module(path):
             # treat empty lines as paragraph separators
             line = line.lstrip('/').strip() or os.linesep
             docstring_lines.append(line)
+        docstring_lines.reverse()
         docstring = ''.join(docstring_lines)
 
         # TODO: support some kind of docstring tags that'd describe
@@ -117,10 +133,10 @@ def analyze_rust_module(path):
             func.name, ', '.join(func.arguments), func.returns or "?")
         functions.append(func)
 
-    mod_name, _ = os.path.splitext(os.path.basename(path))
+    # TODO: extract module-level documentation string
     module = Module(path=path,
-                    name=mod_name,  # TODO: parent directory name if mod.rs
-                    submodules=[],  # TODO: descend to submodules if mod.rs
+                    name=mod_name,
+                    submodules=submodules,
                     functions=functions)
 
     logging.info("Module %s had %s function(s) and %s submodule(s)",
