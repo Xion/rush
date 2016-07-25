@@ -174,6 +174,8 @@ def analyze_rust_module(path):
                            if line.lstrip().startswith('pub fn'))
     for idx in pub_fn_line_indices:
         def_start_line = lines[idx]
+        if re.search(r'\bself\b', def_start_line):
+            continue  # omit methods
 
         # extract function name
         fn_name_match = re.match(r'pub\s+fn\s+(\w+)\(', def_start_line)

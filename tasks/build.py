@@ -12,6 +12,7 @@ import sys
 
 from invoke import task
 import semver
+from taipan.collections import dicts
 
 from tasks import BIN, LIB
 from tasks.util import cargo
@@ -49,8 +50,10 @@ def lib(ctx, release=False):
     cargo(ctx, 'build', *args, crate=LIB, pty=True)
 
 
-@task(help=HELP)
-def docs(ctx, release=False, dump_api=False):
+@task(help=dicts.merge(HELP, {
+    'verbose': "Whether to show verbose logging output of the build",
+}))
+def docs(ctx, release=False, verbose=False, dump_api=False):
     """Build the project documentation."""
     modules = describe_rust_api('./crates/%s/src/eval/api/*.rs' % LIB)
 
@@ -73,7 +76,11 @@ def docs(ctx, release=False, dump_api=False):
         insert_api_docs(modules, into='./docs/api.md')
 
     # build the docs in output format
-    args = ['--clean'] if release else []
+    args = ['--strict']
+    if release:
+        args.append('--clean')
+    if verbose:
+        args.append('--verbose')
     ctx.run('mkdocs build ' + ' '.join(map(quote, args)), pty=True)
 
 

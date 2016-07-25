@@ -54,6 +54,6 @@ def docs(ctx, port=8000, reload=False, verbose=False):
         '' if reload else 'no-',
         '--verbose' if verbose else '',
     ), pty=True)
-    if not server.ok():
+    if not server.ok:
         build_error_event.set()
         opener_thread.join()
