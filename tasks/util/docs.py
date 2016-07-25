@@ -2,6 +2,7 @@
 Helper code related to generating documentation for the project.
 """
 from collections import namedtuple, OrderedDict
+from itertools import repeat
 import logging
 import os
 from pathlib import Path
@@ -18,7 +19,9 @@ __all__ = ['get_docs_output_dir',
 
 
 def get_docs_output_dir():
-    """Retrieve the full path to the documentation's output directory."""
+    """Retrieve the full path to the documentation's output directory.
+    :return: Docs output directory as Path object
+    """
     base_dir = Path.cwd()
     config_file = base_dir / 'mkdocs.yml'
     if not config_file.exists():
@@ -170,17 +173,23 @@ def analyze_rust_module(path):
     pub_fn_line_indices = (i for i, line in enumerate(lines)
                            if line.lstrip().startswith('pub fn'))
     for idx in pub_fn_line_indices:
-        def_line = lines[idx]
+        def_start_line = lines[idx]
 
         # extract function name
-        fn_name_match = re.match(r'pub\s+fn\s+(\w+)\(', def_line)
+        fn_name_match = re.match(r'pub\s+fn\s+(\w+)\(', def_start_line)
         if not fn_name_match:
             logging.warning(
-                "Spurious Rust function definition line: %s", def_line)
+                "Spurious Rust function definition line: %s", def_start_line)
             continue
         fn_name = fn_name_match.group(1)
 
-        # TODO: extract argument names
+        # get a complete function header and extract argument names
+        func_header = def_start_line
+        j = idx
+        while '{' not in lines[j]:  # { will mark the start of function body
+            func_header += lines[j]
+        argnames = [m.group(1) for m in re.finditer(r'(\w+)\s*:(?!:)',
+                                                    func_header)]
 
         # extract documentation
         docstring_lines = []
@@ -194,11 +203,17 @@ def analyze_rust_module(path):
         docstring_lines.reverse()
         docstring = ''.join(docstring_lines)
 
+        # fix the function data to account for some of the idiosyncrasies
+        # that the expression functions exhibit
+        fn_name = fn_name.rstrip('_')  # _ is used to avoid name collisions
+        if argnames[:-1] == 'context':
+            argnames = argnames[:-1]  # expression context is impl. detail
+
         # TODO: support some kind of docstring tags that'd describe
         # arguments and the return value
         func = Function(name=fn_name,
                         description=docstring,
-                        arguments=OrderedDict(),
+                        arguments=OrderedDict(zip(argnames, repeat(None))),
                         returns=None)
 
         logging.debug(

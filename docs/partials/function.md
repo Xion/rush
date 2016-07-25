@@ -4,6 +4,6 @@
   :param func: Function object, as defined in tasks/util/docs.py
 -#}
 
-### {{ func.name }}
+### {{ func.name -}} ( {{- func.arguments|join(", ") -}} )
 
 {{ func.description }}

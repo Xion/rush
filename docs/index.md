@@ -1,3 +1,17 @@
+# rush
+
+Succinct & readable processing language for the shell
+
+## Documentation
+
+* [Expression API reference](api.md)
+
+
+(Original index.md below)
+
+(TODO: incorporate `mkdocs serve` into automation tasks somewhere)
+
+
 # Welcome to MkDocs
 
 For full documentation visit [mkdocs.org](http://mkdocs.org).
