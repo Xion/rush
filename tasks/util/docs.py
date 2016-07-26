@@ -2,7 +2,7 @@
 Helper code related to generating documentation for the project.
 """
 from collections import namedtuple, OrderedDict
-from itertools import repeat
+from itertools import repeat, takewhile
 import logging
 import os
 from pathlib import Path
@@ -46,6 +46,7 @@ jinja_env = jinja2.Environment(
 class Module(namedtuple('Module', [
     'path',  # full path to the module file
     'name',
+    'description',  # module-level docstring
     'submodules',  # list of Module objects
     'functions',  # list of Function objects
 ])):
@@ -168,6 +169,11 @@ def analyze_rust_module(path):
     with path.open(encoding='utf-8') as f:
         lines = f.readlines()
 
+    # extract module-level docstring if available
+    mod_docstring = os.linesep.join(
+        line.lstrip('/!').strip()
+        for line in takewhile(lambda l: l.startswith('//!'), lines))
+
     # analyze the function declarations and extract info on them
     functions = []
     pub_fn_line_indices = (i for i, line in enumerate(lines)
@@ -223,9 +229,9 @@ def analyze_rust_module(path):
             func.name, ', '.join(func.arguments), func.returns or "?")
         functions.append(func)
 
-    # TODO: extract module-level documentation string
     module = Module(path=path,
                     name=mod_name,
+                    description=mod_docstring,
                     submodules=submodules,
                     functions=functions)
 
