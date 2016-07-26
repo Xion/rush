@@ -4,6 +4,7 @@ Build tasks.
 from __future__ import print_function
 
 import logging
+from pathlib import Path
 try:
     from shlex import quote
 except ImportError:
@@ -55,25 +56,14 @@ def lib(ctx, release=False):
 }))
 def docs(ctx, release=False, verbose=False, dump_api=False):
     """Build the project documentation."""
-    modules = describe_rust_api('./crates/%s/src/eval/api/*.rs' % LIB)
-
-    # TEMPORARY: analyze the API package and display results
-    # TODO: use it to generate the docs/api.md file
-    if dump_api:
-        def print_module(module, indent=''):
-            print(indent + "%s (%s)" % (module.name, module.path))
-            for func in module.functions:
-                print(indent + '-- ' + func.name)
-                print(indent + func.description)
-            print()
-            for submodule in module.submodules:
-                print_module(submodule, indent + ' ' * 4)
-
-        print()
-        for module in modules:
-            print_module(module)
-    else:
-        insert_api_docs(modules, into='./docs/api.md')
+    # describe the API modules and functions contained therein,
+    # rendering the documentation as Markdown into the designated doc page
+    is_root_mod_rs = lambda p: p.stem == 'mod' and p.parent.stem == 'api'
+    module_paths = [
+        mod for mod in Path('./crates', LIB, 'src/eval/api').rglob('**/*.rs')
+        if not is_root_mod_rs(mod)]
+    modules = describe_rust_api(*module_paths)
+    insert_api_docs(modules, into='./docs/api.md')
 
     # build the docs in output format
     args = ['--strict']

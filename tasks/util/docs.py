@@ -129,13 +129,13 @@ def describe_rust_api(*src):
     :return: Iterable of Module objects
     """
     # collapse the possible lists of files into a single list
-    sources = [[s] if isinstance(s, str) else s for s in src]
+    sources = [[s] if isinstance(s, (str, Path)) else s for s in src]
     sources = sum(sources, [])
     if not sources:
         return
 
     for source in sources:
-        for filename in glob(source):
+        for filename in glob(str(source)):
             module = analyze_rust_module(filename)
             if module:
                 yield module
