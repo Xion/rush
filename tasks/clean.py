@@ -1,9 +1,12 @@
 """
 Clean tasks.
 """
+from __future__ import print_function
+
 import logging
 import os
 import shutil
+import sys
 
 from invoke import task
 
@@ -21,7 +24,7 @@ def all(ctx, release=False):
     lib(ctx, release=release)
     bin(ctx, release=release)
     docs(ctx)
-    print("\nAll cleaned.")
+    print("\nAll cleaned.", file=sys.stderr)
 
 
 @task(help=HELP)

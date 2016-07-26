@@ -4,6 +4,13 @@ site_author: "Karol Kuczmarski"
 
 theme: 'material'
 
-site_dir: release/docs
+docs_dir: 'docs'
+site_dir: 'release/docs'
+
 pages:
 - API: 'api.md'
+
+markdown_extensions:
+- smarty
+- toc:
+    permalink: True

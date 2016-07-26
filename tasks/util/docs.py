@@ -14,23 +14,34 @@ import yaml
 from glob2 import glob
 
 
-__all__ = ['get_docs_output_dir',
+__all__ = ['read_mkdocs_config', 'get_docs_output_dir',
            'describe_rust_api', 'insert_api_docs']
+
+
+def read_mkdocs_config():
+    """Read the Mkdocs configuration file.
+    :return: Dictionary of Mkdocs config options
+    """
+    base_dir = Path.cwd()
+
+    for filename in ('mkdocs.yml', 'mkdocs.yaml'):
+        config_file = base_dir / filename
+        if not config_file.exists():
+            continue
+        with config_file.open(encoding='utf-8') as f:
+            return yaml.load(f)
+
+    logging.error("Mkdocs config file cannot be found; "
+                  "is it the project's root directory?")
+    sys.exit(1)
 
 
 def get_docs_output_dir():
     """Retrieve the full path to the documentation's output directory.
     :return: Docs output directory as Path object
     """
-    base_dir = Path.cwd()
-    config_file = base_dir / 'mkdocs.yml'
-    if not config_file.exists():
-        logging.error("mkdocs.yaml config file cannot be found; "
-                      "is it the project's root directory?")
-        sys.exit(1)
-    with config_file.open(encoding='utf-8') as f:
-        config = yaml.load(f)
-    return base_dir / config.get('site_dir', 'site')
+    config = read_mkdocs_config()
+    return Path.cwd() / config.get('site_dir', 'site')
 
 
 # Generating API docs
@@ -52,7 +63,7 @@ class Module(namedtuple('Module', [
 ])):
     def render(self):
         """Render the module as Markdown source."""
-        template = jinja_env.get_template('module.md')
+        template = jinja_env.get_template('module.md.jinja')
         return template.render({'mod': self})
 
 #: API function that should be described in the end-user documentation.
@@ -64,7 +75,7 @@ class Function(namedtuple('Function', [
 ])):
     def render(self):
         """Render the function as Markdown source."""
-        template = jinja_env.get_template('function.md')
+        template = jinja_env.get_template('function.md.jinja')
         return template.render({'func': self})
 
 
