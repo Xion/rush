@@ -13,7 +13,6 @@ import sys
 
 from invoke import task
 import semver
-from taipan.collections import dicts
 
 from tasks import BIN, LIB
 from tasks.util import cargo
@@ -22,38 +21,39 @@ from tasks.util.docs import describe_rust_api, insert_api_docs
 
 MIN_RUSTC_VERSION = '1.10.0'
 
-HELP = {'release': "Whether to build artifacts in release mode"}
+HELP = {
+    'release': "Whether to build artifacts in release mode",
+    'verbose': "Whether to show verbose logging output of the build",
+}
 
 
 @task(help=HELP, default=True)
-def all(ctx, release=False):
+def all(ctx, release=False, verbose=False):
     """Build the project."""
     # calling lib() is unnecessary because the binary crate
     # depeends on the library, so it will be rebuilt as well
-    bin(ctx, release)
-    docs(ctx, release)
+    bin(ctx, release=release, verbose=verbose)
+    docs(ctx, release=release, verbose=verbose)
     print("\nBuild finished.")
 
 
 @task(help=HELP)
-def bin(ctx, release=False):
+def bin(ctx, release=False, verbose=False):
     """Build the binary crate."""
     ensure_rustc_version(ctx)
-    args = ['--release'] if release else []
-    cargo(ctx, 'build', *args, crate=BIN, pty=True)
+    cargo(ctx, 'build', *get_rustc_flags(release, verbose),
+          crate=BIN, pty=True)
 
 
 @task(help=HELP)
-def lib(ctx, release=False):
+def lib(ctx, release=False, verbose=False):
     """Build the library crate."""
     ensure_rustc_version(ctx)
-    args = ['--release'] if release else []
-    cargo(ctx, 'build', *args, crate=LIB, pty=True)
+    cargo(ctx, 'build', *get_rustc_flags(release, verbose),
+          crate=LIB, pty=True)
 
 
-@task(help=dicts.merge(HELP, {
-    'verbose': "Whether to show verbose logging output of the build",
-}))
+@task(help=HELP)
 def docs(ctx, release=False, verbose=False, dump_api=False):
     """Build the project documentation."""
     # describe the API modules and functions contained therein,
@@ -90,3 +90,13 @@ def ensure_rustc_version(ctx):
         sys.exit(1)
 
     return True
+
+
+def get_rustc_flags(release, verbose):
+    """Return a list of Rust compiler flags corresponding to given params."""
+    flags = []
+    if release:
+        flags.append('--release')
+    if verbose:
+        flags.append('--verbose')
+    return flags

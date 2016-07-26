@@ -9,7 +9,6 @@ pathlib
 semver
 glob2
 jinja2
-git+https://github.com/Xion/taipan.git#egg=taipan
 
 # Documentation generation
 mkdocs
