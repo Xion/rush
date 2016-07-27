@@ -14,8 +14,10 @@ import yaml
 from glob2 import glob
 
 
-__all__ = ['read_mkdocs_config', 'get_docs_output_dir',
-           'describe_rust_api', 'insert_api_docs']
+__all__ = [
+    'read_mkdocs_config', 'get_docs_output_dir', 'scrub_html_comment_markers',
+    'describe_rust_api', 'insert_api_docs',
+]
 
 
 def read_mkdocs_config():
@@ -42,6 +44,23 @@ def get_docs_output_dir():
     """
     config = read_mkdocs_config()
     return Path.cwd() / config.get('site_dir', 'site')
+
+
+def scrub_html_comment_markers(filepath):
+    """Scrub lines with HTML comments from given file.
+
+    Only lines that contain HTML comments and nothing else are removed.
+    """
+    path = Path(filepath)
+
+    is_marker_line = lambda l: (
+        l.lstrip().startswith('<!--') and l.rstrip().endswith('-->'))
+    with path.open('r+t', encoding='utf-8') as f:
+        lines = [line for line in f.readlines() if not is_marker_line(line)]
+
+        f.seek(0)
+        f.truncate()
+        f.writelines(lines)
 
 
 # Generating API docs
@@ -128,6 +147,7 @@ def insert_api_docs(modules,
         ])
 
         f.seek(0)
+        f.truncate()
         f.write(target_content)
 
 

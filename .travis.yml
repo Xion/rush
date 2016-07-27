@@ -14,5 +14,6 @@ matrix:
     - rust: nightly
 
 # Run the test for just the binary crate. as it will build  & test everything.
+# TODO: make Travis run Invoke tasks instead
 script: cargo test --no-fail-fast --manifest-path ./crates/rush/Cargo.toml
 sudo: false

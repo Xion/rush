@@ -17,9 +17,7 @@ from invoke import task
 import semver
 
 from tasks import BIN, LIB
-from tasks.util import cargo
-from tasks.util.docs import \
-    read_mkdocs_config, describe_rust_api, insert_api_docs
+from tasks.util import cargo, docs as docs_util
 
 
 MIN_RUSTC_VERSION = '1.10.0'
@@ -47,6 +45,9 @@ def bin(ctx, release=False, verbose=False):
     cargo(ctx, 'build', *get_rustc_flags(release, verbose),
           crate=BIN, pty=True)
 
+    # TODO: run the resulting binary to obtain usage information
+    # and paste it to README
+
 
 @task(help=HELP)
 def lib(ctx, release=False, verbose=False):
@@ -73,8 +74,8 @@ def docs(ctx, release=False, verbose=False, dump_api=False):
     module_paths = [
         mod for mod in Path('./crates', LIB, 'src/eval/api').rglob('**/*.rs')
         if not is_root_mod_rs(mod)]
-    modules = describe_rust_api(*module_paths)
-    insert_api_docs(modules, into='./docs/api.md')
+    modules = docs_util.describe_rust_api(*module_paths)
+    docs_util.insert_api_docs(modules, into='./docs/api.md')
 
     # build the docs in output format
     args = ['--strict']
@@ -87,16 +88,20 @@ def docs(ctx, release=False, verbose=False, dump_api=False):
         logging.fatal("mkdocs build failed, aborting.")
         sys.exit(1)
 
+    mkdocs_config = docs_util.read_mkdocs_config()
+    source_dir = Path.cwd() / mkdocs_config.get('docs_dir', 'docs')
+    output_dir = Path.cwd() / mkdocs_config.get('site_dir', 'site')
+
+    # purge any HTML comments that have been carried from Markdown
+    for path in output_dir.rglob('*.html'):
+        docs_util.scrub_html_comment_markers(path)
+
     # for release doc builds, clean some of the output files that get
     # copied verbatim since mkdocs doesn't support ignoring them
     if release:
-        mkdocs_config = read_mkdocs_config()
-
         # read the list of ignored path patterns from a file
         ignored = []
-        ignore_file = (
-            Path.cwd() / mkdocs_config.get('docs_dir', 'docs') / '.docsignore'
-        )
+        ignore_file = source_dir / '.docsignore'
         if ignore_file.exists():
             if verbose:
                 logging.info(
@@ -113,7 +118,6 @@ def docs(ctx, release=False, verbose=False, dump_api=False):
         # resolve the patterns to see what files in the output dir
         # they correspond to, if any
         if ignored:
-            output_dir = Path.cwd() / mkdocs_config.get('site_dir', 'site')
             ignored = chain.from_iterable(imap(output_dir.glob, ignored))
 
         # "ignore" them, i.e. delete from output directory
