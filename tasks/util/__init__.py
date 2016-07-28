@@ -6,7 +6,6 @@ try:
     from shlex import quote
 except ImportError:
     from pipes import quote
-import sys
 
 
 __all__ = ['cargo']

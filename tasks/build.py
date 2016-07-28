@@ -17,7 +17,7 @@ from invoke import task
 import semver
 
 from tasks import BIN, LIB
-from tasks.util import cargo, docs as docs_util
+from tasks.util import cargo, docs
 
 
 MIN_RUSTC_VERSION = '1.10.0'
@@ -57,8 +57,8 @@ def lib(ctx, release=False, verbose=False):
           crate=LIB, pty=True)
 
 
-@task(help=HELP)
-def docs(ctx, release=False, verbose=False, dump_api=False):
+@task(name='docs', help=HELP)
+def docs_(ctx, release=False, verbose=False, dump_api=False):
     """Build the project documentation.
 
     This includes analyzing the Rust modules that implement expression API
@@ -74,8 +74,8 @@ def docs(ctx, release=False, verbose=False, dump_api=False):
     module_paths = [
         mod for mod in Path('./crates', LIB, 'src/eval/api').rglob('**/*.rs')
         if not is_root_mod_rs(mod)]
-    modules = docs_util.describe_rust_api(*module_paths)
-    docs_util.insert_api_docs(modules, into='./docs/api.md')
+    modules = docs.describe_rust_api(*module_paths)
+    docs.insert_api_docs(modules, into='./docs/api.md')
 
     # build the docs in output format
     args = ['--strict']
@@ -88,13 +88,13 @@ def docs(ctx, release=False, verbose=False, dump_api=False):
         logging.fatal("mkdocs build failed, aborting.")
         sys.exit(1)
 
-    mkdocs_config = docs_util.read_mkdocs_config()
+    mkdocs_config = docs.read_mkdocs_config()
     source_dir = Path.cwd() / mkdocs_config.get('docs_dir', 'docs')
     output_dir = Path.cwd() / mkdocs_config.get('site_dir', 'site')
 
     # purge any HTML comments that have been carried from Markdown
     for path in output_dir.rglob('*.html'):
-        docs_util.scrub_html_comment_markers(path)
+        docs.scrub_html_comment_markers(path)
 
     # for release doc builds, clean some of the output files that get
     # copied verbatim since mkdocs doesn't support ignoring them

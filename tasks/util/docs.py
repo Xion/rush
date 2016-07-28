@@ -67,10 +67,11 @@ def scrub_html_comment_markers(filepath):
 
 #: Jinja environment for rendering the API modules' Markdown docs.
 #: The **output** here is Markdown; it is then further processed by mkdocs.
-#;
-#; The template loader assumes the code is ran from project's root directory.
+#:
+#: The template loader assumes the code is ran from project's root directory.
 jinja_env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(str(Path.cwd() / 'docs' / 'partials')))
+
 
 #: Module under eval::api that contains API functions.
 class Module(namedtuple('Module', [
@@ -84,6 +85,7 @@ class Module(namedtuple('Module', [
         """Render the module as Markdown source."""
         template = jinja_env.get_template('module.md.jinja')
         return template.render({'mod': self})
+
 
 #: API function that should be described in the end-user documentation.
 class Function(namedtuple('Function', [
@@ -191,7 +193,7 @@ def analyze_rust_module(path):
         if path.parent:
             mod_name = path.parent.stem  # Rust rule: foo.rs == foo/mod.rs
             for submodule_path in path.parent.glob('*.rs'):
-                if submodule_path.stem !='mod':
+                if submodule_path.stem != 'mod':
                     submodules.extend(describe_rust_api(str(submodule_path)))
         else:
             # bare "mod.rs" as module path, rather unlikely occurrence
