@@ -8,7 +8,7 @@ use parse::ast::{ArrayNode, ObjectNode, ScalarNode};
 
 /// Evaluate the AST node representing a scalar value.
 impl Eval for ScalarNode {
-    #[inline(always)]
+    #[inline]
     fn eval(&self, context: &mut Context) -> eval::Result {
         Ok(context.resolve(&self.value))
     }

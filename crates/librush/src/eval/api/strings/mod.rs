@@ -39,8 +39,8 @@ pub fn ord(value: Value) -> eval::Result {
     eval1!((value: &String) -> Integer {
         match value.len() {
             1 => value.chars().next().unwrap() as IntegerRepr,
-            len@_ => return Err(Error::new(&format!(
-                "ord() requires string of length 1, got {}", len
+            x => return Err(Error::new(&format!(
+                "ord() requires string of length 1, got {}", x
             ))),
         }
     });
@@ -79,15 +79,15 @@ pub fn format_(fmt: Value, arg: Value) -> eval:: Result {
     if let Value::String(fmt) = fmt {
         let mut args: Vec<&Display> = Vec::new();
 
-        match &arg {
-            &Value::Boolean(..) |
-            &Value::Integer(..) |
-            &Value::Float(..) |
-            &Value::String(..) => args.push(&arg),
-            &Value::Array(ref a) => {
+        match arg {
+            Value::Boolean(..) |
+            Value::Integer(..) |
+            Value::Float(..) |
+            Value::String(..) => args.push(&arg),
+            Value::Array(ref a) => {
                 args = a.iter().map(|v| v as &Display).collect();
             },
-            &Value::Object(..) => {
+            Value::Object(..) => {
                 // TODO(xion): Object should be possible but the formatting code
                 // doesn't support named placeholders yet :(
                 return Err(Error::new(

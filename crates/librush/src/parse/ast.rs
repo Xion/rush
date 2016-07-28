@@ -22,7 +22,7 @@ impl fmt::Debug for ScalarNode {
 }
 
 impl<T> From<T> for ScalarNode where Value: From<T> {
-    #[inline(always)]
+    #[inline]
     fn from(input: T) -> Self {
         ScalarNode{value: Value::from(input)}
     }
@@ -31,7 +31,7 @@ impl<T> From<T> for ScalarNode where Value: From<T> {
 impl FromStr for ScalarNode {
     type Err = <Value as FromStr>::Err;
 
-    #[inline(always)]
+    #[inline]
     fn from_str(s: &str) -> Result<ScalarNode, Self::Err> {
         s.parse::<Value>().map(ScalarNode::from)
     }
@@ -44,7 +44,7 @@ pub struct ArrayNode {
 }
 
 impl ArrayNode {
-    #[inline(always)]
+    #[inline]
     pub fn new(elements: Vec<Box<Eval>>) -> ArrayNode {
         ArrayNode{elements: elements}
     }
@@ -69,7 +69,7 @@ pub struct ObjectNode {
 }
 
 impl ObjectNode {
-    #[inline(always)]
+    #[inline]
     pub fn new(attributes: Vec<(Box<Eval>, Box<Eval>)>) -> ObjectNode {
         ObjectNode{attributes: attributes}
     }
@@ -93,7 +93,7 @@ pub struct UnaryOpNode {
 }
 
 impl UnaryOpNode {
-    #[inline(always)]
+    #[inline]
     pub fn new(op: String, arg: Box<Eval>) -> UnaryOpNode {
         UnaryOpNode{op: op, arg: arg}
     }
@@ -134,7 +134,7 @@ pub struct BinaryOpNode {
 }
 
 impl BinaryOpNode {
-    #[inline(always)]
+    #[inline]
     pub fn new(assoc: Associativity,
                first: Box<Eval>, rest: Vec<(String, Box<Eval>)>) -> BinaryOpNode {
         BinaryOpNode{assoc: assoc, first: first, rest: rest}
@@ -162,15 +162,15 @@ pub struct CurriedBinaryOpNode  {
 }
 
 impl CurriedBinaryOpNode {
-    #[inline(always)]
+    #[inline]
     pub fn with_none(op: String) -> CurriedBinaryOpNode {
         CurriedBinaryOpNode{op: op, left: None, right: None}
     }
-    #[inline(always)]
+    #[inline]
     pub fn with_left(op: String, arg: Box<Eval>) -> CurriedBinaryOpNode {
         CurriedBinaryOpNode{op: op, left: Some(arg), right: None}
     }
-    #[inline(always)]
+    #[inline]
     pub fn with_right(op: String, arg: Box<Eval>) -> CurriedBinaryOpNode {
         CurriedBinaryOpNode{op: op, left: None, right: Some(arg)}
     }
@@ -217,7 +217,7 @@ pub struct SubscriptNode {
 }
 
 impl SubscriptNode {
-    #[inline(always)]
+    #[inline]
     pub fn new(object: Box<Eval>, index: Index) -> SubscriptNode {
         SubscriptNode{object: object, index: index}
     }
@@ -241,7 +241,7 @@ pub struct FunctionCallNode {
 }
 
 impl FunctionCallNode {
-    #[inline(always)]
+    #[inline]
     pub fn new(func: Box<Eval>, args: Vec<Box<Eval>>) -> FunctionCallNode {
         FunctionCallNode{func: func, args: args}
     }
@@ -268,7 +268,7 @@ pub struct ConditionalNode {
 }
 
 impl ConditionalNode {
-    #[inline(always)]
+    #[inline]
     pub fn new(cond: Box<Eval>, then: Box<Eval>, else_: Box<Eval>) -> ConditionalNode {
         ConditionalNode{cond: cond, then: then, else_: else_}
     }
@@ -291,7 +291,7 @@ pub struct BlockNode {
 }
 
 impl BlockNode {
-    #[inline(always)]
+    #[inline]
     pub fn new(exprs: Vec<Box<Eval>>) -> BlockNode {
         BlockNode{expressions: exprs}
     }

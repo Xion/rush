@@ -129,7 +129,7 @@ fn float_literal(input: &[u8]) -> IResult<&[u8], String> {
             IResult::Done(rest.as_bytes(), String::from(parsed)),
         IResult::Incomplete(i) => IResult::Incomplete(i),
         IResult::Error(nom::Err::Code(e)) => IResult::Error(nom::Err::Code(e)),
-        r@_ => unreachable!("unexpected result from parsing float: {:?}", r),
+        r => unreachable!("unexpected result from parsing float: {:?}", r),
     }
 }
 
@@ -171,6 +171,7 @@ fn regex_literal(input: &[u8]) -> IResult<&[u8], Regex> {
 named!(string_value( &[u8] ) -> Box<Eval>, map!(string_literal, |value: StringRepr| {
     Box::new(ScalarNode::from(Value::String(value)))
 }));
+#[allow(single_char_pattern)]
 fn string_literal(input: &[u8]) -> IResult<&[u8], String> {
     let (mut input, _) = try_parse!(input, tag!("\""));
 

@@ -70,7 +70,7 @@ pub fn lines(string: Value) -> eval::Result {
 
 // Utility functions
 
-#[inline(always)]
+#[inline]
 fn do_regex_split(delim: &Regex, string: &str) -> ArrayRepr {
     delim.split(string).map(StringRepr::from).map(Value::String).collect()
 }

@@ -23,7 +23,7 @@ impl<'c> Context<'c> {
     ///
     /// Returns a reference to the Context for easy chaining.
     ///
-    pub fn define<'n, N: ?Sized, F>(&mut self, name: &'static N, arity: Arity, func: F) -> &mut Self
+    pub fn define<N: ?Sized, F>(&mut self, name: &'static N, arity: Arity, func: F) -> &mut Self
         where Name: Borrow<N>, N: ToOwned<Owned=Name> + Hash + Eq + Display,
               F: Fn(Args) -> eval::Result + 'static
     {

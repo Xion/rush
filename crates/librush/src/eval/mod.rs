@@ -1,4 +1,12 @@
 //! Module implementing evaluation of parsed expressions.
+//
+//! Currently, the evaluator is a recursive descent over the AST.
+
+#![allow(doc_markdown)]
+#![allow(needless_borrow)]
+#![allow(option_map_unwrap_or)]
+#![allow(ptr_arg)]
+#![allow(transmute_ptr_to_ref)]
 
 #[macro_use]
 pub mod util;

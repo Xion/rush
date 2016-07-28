@@ -32,15 +32,19 @@ pub trait Invoke {
     //
     // Convenience shortcuts for invocations with different number of arguments.
     //
+    #[inline]
     fn invoke0(&self, context: &Context) -> eval::Result {
         self.invoke(vec![], context)
     }
+    #[inline]
     fn invoke1(&self, arg: Value, context: &Context) -> eval::Result {
         self.invoke(vec![arg], context)
     }
+    #[inline]
     fn invoke2(&self, arg1: Value, arg2: Value, context: &Context) -> eval::Result {
         self.invoke(vec![arg1, arg2], context)
     }
+    #[inline]
     fn invoke3(&self, arg1: Value, arg2: Value, arg3: Value, context: &Context) -> eval::Result {
         self.invoke(vec![arg1, arg2, arg3], context)
     }
@@ -65,7 +69,7 @@ pub enum Function {
 }
 
 impl Function {
-    #[inline(always)]
+    #[inline]
     pub fn from_raw(invoke: Box<Invoke>) -> Function {
         Function::Raw(Rc::new(invoke))
     }
@@ -75,7 +79,7 @@ impl Function {
     /// Note that if the Rust function is a closure, you'll may need to
     /// use Functin::from_native_ctx() -- even if you don't need the Context --
     /// to resolve lifetime issues.
-    #[inline(always)]
+    #[inline]
     pub fn from_native<F>(arity: Arity, f: F) -> Function
         where F: Fn(Args) -> eval::Result + 'static
     {
@@ -86,7 +90,7 @@ impl Function {
     /// that receives a reference Context as an explicit parameter.
     ///
     /// This is useful is the function itself needs to call other Invoke objects.
-    #[inline(always)]
+    #[inline]
     pub fn from_native_ctx<F>(arity: Arity, f: F) -> Function
         where F: Fn(Args, &Context) -> eval::Result + 'static
     {
@@ -94,7 +98,7 @@ impl Function {
     }
 
     /// Create the Function struct from a lambda expression.
-    #[inline(always)]
+    #[inline]
     pub fn from_lambda(argnames: Vec<String>, body: Box<Eval>) -> Function {
         Function::Custom(CustomFunction::new(argnames, body))
     }
@@ -131,7 +135,7 @@ impl Function {
 }
 
 impl PartialEq for Function {
-    #[inline(always)]
+    #[inline]
     fn eq(&self, _: &Self) -> bool {
         // for simplicity, functions are never equal to one another
         false
@@ -140,34 +144,34 @@ impl PartialEq for Function {
 
 impl fmt::Debug for Function {
     fn fmt(&self, fmt:  &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &Function::Raw(ref f) => write!(fmt, "<raw func of {} arg(s)>", f.arity()),
-            &Function::Native(a, _) => write!(fmt, "<native func of {} arg(s)>", a),
-            &Function::NativeCtx(a, _) => write!(fmt, "<native(ctx) func of {} arg(s)>", a),
-            &Function::Custom(ref f) => write!(fmt, "{:?}", f),
+        match *self {
+            Function::Raw(ref f) => write!(fmt, "<raw func of {} arg(s)>", f.arity()),
+            Function::Native(a, _) => write!(fmt, "<native func of {} arg(s)>", a),
+            Function::NativeCtx(a, _) => write!(fmt, "<native(ctx) func of {} arg(s)>", a),
+            Function::Custom(ref f) => write!(fmt, "{:?}", f),
         }
     }
 }
 
 impl Invoke for Function {
     fn arity(&self) -> Arity {
-        match self {
-            &Function::Raw(ref f) => f.arity(),
-            &Function::Native(a, _) => a,
-            &Function::NativeCtx(a, _) => a,
-            &Function::Custom(ref f) => f.arity(),
+        match *self {
+            Function::Raw(ref f) => f.arity(),
+            Function::Native(a, _) | Function::NativeCtx(a, _) => a,
+            Function::Custom(ref f) => f.arity(),
         }
     }
 
+    #[allow(match_same_arms)]
     fn invoke(&self, args: Args, context: &Context) -> eval::Result {
-        match self {
-            &Function::Raw(ref f) => f.invoke(args, &context),
-            &Function::Native(_, ref f) => f(args),
-            &Function::NativeCtx(_, ref f) => {
+        match *self {
+            Function::Raw(ref f) => f.invoke(args, &context),
+            Function::Native(_, ref f) => f(args),
+            Function::NativeCtx(_, ref f) => {
                 let context = Context::with_parent(context);
                 f(args, &context)
             },
-            &Function::Custom(ref f) => f.invoke(args, &context),
+            Function::Custom(ref f) => f.invoke(args, &context),
         }
     }
 }
@@ -193,7 +197,7 @@ pub struct CustomFunction {
 }
 
 impl CustomFunction {
-    #[inline(always)]
+    #[inline]
     pub fn new(argnames: Vec<String>, expr: Box<Eval>) -> CustomFunction {
         CustomFunction{
             argnames: argnames,
@@ -209,7 +213,7 @@ impl fmt::Debug for CustomFunction {
 }
 
 impl Invoke for CustomFunction {
-    #[inline(always)]
+    #[inline]
     fn arity(&self) -> Arity {
         Arity::Exact(self.argnames.len())
     }

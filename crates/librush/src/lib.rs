@@ -1,5 +1,7 @@
 //! Root module of the rush library crate.
 
+#![allow(unknown_lints)]  // for Clippy
+
 // NOTE: `nom` has to be declared before `log` because both define an error!
 // macro, and we want to use the one from `log`.
 #[macro_use]

@@ -3,6 +3,8 @@
 //! This module defines how a Value is serialized as an output of the expression.
 //! See also the `json` module.
 
+#![allow(useless_format)]
+
 use std::fmt;
 
 use conv::TryFrom;
@@ -15,7 +17,7 @@ use super::Value;
 impl TryFrom<Value> for String {
     type Err = GeneralError<&'static str>;
 
-    #[inline(always)]
+    #[inline]
     fn try_from(src: Value) -> Result<Self, Self::Err> {
         String::try_from(&src)
     }
@@ -37,7 +39,7 @@ impl<'a> TryFrom<&'a Value> for String {
                 // always include decimal point and zero, even if the float
                 // is actually an integer
                 let mut res = f.to_string();
-                if !res.contains(".") {
+                if !res.contains('.') {
                     res.push_str(".0");
                 }
                 Ok(format!("{}", res))

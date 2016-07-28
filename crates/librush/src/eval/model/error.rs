@@ -68,7 +68,7 @@ pub enum Error {
 
 impl Error {
     // TODO(xion): remove this legacy constructor after all usages of Error are fixed
-    #[inline(always)]
+    #[inline]
     pub fn new(msg: &str) -> Error {
         Error::other(msg)
     }
@@ -96,7 +96,7 @@ impl Error {
         ))
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn other(msg: &str) -> Error {
         Error::Other(msg.to_owned())
     }
@@ -119,7 +119,7 @@ impl StdError for Error {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn cause(&self) -> Option<&StdError> {
         None
     }
@@ -152,17 +152,17 @@ pub struct Mismatch {
     actual: Vec<(Type, ValueRepr)>,
 }
 impl Mismatch {
-    #[inline(always)]
+    #[inline]
     pub fn new(operation: &str, args: Vec<&Value>) -> Mismatch {
         Mismatch::against_many(operation, Vec::new(), args)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn against_one(operation: &str, expected: Signature, actual: Vec<&Value>) -> Mismatch {
         Mismatch::against_many(operation, vec![expected], actual)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn against_many(operation: &str,
                         expected: Vec<Signature>, actual: Vec<&Value>) -> Mismatch {
         // Note that we don't assert that `expected` is non empty because this error

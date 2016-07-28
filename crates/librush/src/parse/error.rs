@@ -24,8 +24,8 @@ pub enum Error {
 
 impl Error {
     /// Whether the error can be interpreted as simple syntax error.
-    pub fn is_syntax(self) -> bool {
-        match self {
+    pub fn is_syntax(&self) -> bool {
+        match *self {
             Error::Empty | Error::Corrupted => false,
             _ => true
         }
@@ -34,10 +34,10 @@ impl Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        match self {
-            &Error::Excess(ref s) =>
+        match *self {
+            Error::Excess(ref s) =>
                 write!(f, "expected end of expression, but found `{}`", s),
-            &Error::Incomplete(_) =>
+            Error::Incomplete(_) =>
                 write!(f, "unexpected end of expression"),
             _ => write!(f, "{}", self.description()),
         }
@@ -55,6 +55,7 @@ impl StdError for Error {
         }
     }
 
+    #[allow(match_same_arms)]
     fn cause(&self) -> Option<&StdError> {
         match *self {
             Error::Empty |

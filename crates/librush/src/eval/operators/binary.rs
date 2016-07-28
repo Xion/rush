@@ -134,7 +134,7 @@ impl BinaryOpNode {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_assignment_op(op: &str) -> bool {
         ["="].contains(&op)
     }
@@ -156,7 +156,7 @@ impl BinaryOpNode {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_shortcircuit_op(op: &str) -> bool {
         ["&&", "||"].contains(&op)
     }
@@ -246,7 +246,7 @@ impl BinaryOpNode {
     /// Evaluate the "@" operator for two values.
     fn eval_at(left: Value, right: Value) -> eval::Result {
         // value @ array is a membership test
-        if let &Value::Array(ref a) = &right {
+        if let Value::Array(ref a) = right {
             return Ok(Value::Boolean(a.contains(&left)));
         }
 
@@ -266,9 +266,9 @@ impl BinaryOpNode {
             let right = right.unwrap_function();
             return right.compose_with(left)  // reverse order!
                 .map(Value::Function)
-                .ok_or_else(|| eval::Error::new(&format!(
+                .ok_or_else(|| eval::Error::new(
                     "second argument of `&` must be a unary function"
-                )));
+                ));
         }
         BinaryOpNode::err("&", left, right)
     }
@@ -282,9 +282,9 @@ impl BinaryOpNode {
             } else {
                 left.curry(right)
                     .map(Value::Function)
-                    .ok_or_else(|| eval::Error::new(&format!(
+                    .ok_or_else(|| eval::Error::new(
                         "left side of `$` must be a function taking at least one argument"
-                    )))
+                    ))
             };
         }
         BinaryOpNode::err("$", left, right)
@@ -352,9 +352,9 @@ impl BinaryOpNode {
             let right = right.unwrap_function();
             return left.compose_with(right)
                 .map(Value::Function)
-                .ok_or_else(|| eval::Error::new(&format!(
+                .ok_or_else(|| eval::Error::new(
                     "left side of function composition must be unary"
-                )));
+                ));
         }
 
         BinaryOpNode::err("*", left, right)
@@ -431,7 +431,7 @@ impl BinaryOpNode {
 // Utility functions.
 impl BinaryOpNode {
     /// Produce an error about invalid arguments for an operator.
-    #[inline(always)]
+    #[inline]
     fn err(op: &str, left: Value, right: Value) -> eval::Result {
         Err(eval::Error::invalid(op, vec![&left, &right]))
     }

@@ -162,7 +162,7 @@ enum Sub {
 fn do_regex_sub(how: Sub,
                 needle: &Regex, replacement: &Value, haystack: &String,
                 ctx: &Context) -> eval::Result {
-    if let &Value::String(ref r) = replacement {
+    if let Value::String(ref r) = *replacement {
         let result = match how {
             Sub::All => needle.replace_all(haystack, r as &str),
             Sub::First => needle.replace(haystack, r as &str),
@@ -170,7 +170,7 @@ fn do_regex_sub(how: Sub,
         return Ok(Value::String(result));
     }
 
-    if let &Value::Function(ref f) = replacement {
+    if let Value::Function(ref f) = *replacement {
         // the function should accept the value of each capture group;
         // note that the 0th one is the whole matched string
         if !f.arity().accepts(needle.captures_len()) {

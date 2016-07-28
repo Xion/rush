@@ -43,7 +43,7 @@ impl UnaryOpNode {
 
 impl UnaryOpNode {
     /// Produce an error about invalid argument for an operator.
-    #[inline(always)]
+    #[inline]
     fn err(op: &str, arg: &Value) -> eval::Result {
         Err(eval::Error::new(&format!(
             "invalid argument for `{}` operator: `{:?}`", op, arg

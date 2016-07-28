@@ -33,7 +33,7 @@ macro_rules! impl_value_type {
     ($variant:ident($t:ty) => ($is:ident, $unwrap:ident, $as_:ident, $as_mut:ident)) => (
         impl Value {
             /// Check whether Value is of type $t.
-            #[inline(always)]
+            #[inline]
             pub fn $is(&self) -> bool {
                 match *self { Value::$variant(..) => true, _ => false, }
             }
@@ -52,8 +52,8 @@ macro_rules! impl_value_type {
             /// Panics if the Value is not a $t.
             #[inline]
             pub fn $as_(&self) -> &$t {
-                match self {
-                    &Value::$variant(ref x) => x,
+                match *self {
+                    Value::$variant(ref x) => x,
                     _ => panic!(concat!(stringify!($as_), "() on {} value"), self.typename()),
                 }
             }
@@ -62,8 +62,8 @@ macro_rules! impl_value_type {
             /// Panics if the Value is not a $t.
             #[inline]
             pub fn $as_mut(&mut self) -> &mut $t {
-                match self {
-                    &mut Value::$variant(ref mut x) => x,
+                match *self {
+                    Value::$variant(ref mut x) => x,
                     _ => panic!(concat!(stringify!($as_mut), "() on {} value"), self.typename())
                 }
             }
@@ -86,17 +86,17 @@ impl_value_type!(String(StringRepr)     => (is_str, unwrap_str, as_str, as_mut_s
 
 /// Additional methods that deal with more than one type at once.
 impl Value {
-    #[inline(always)]
+    #[inline]
     pub fn is_collection(&self) -> bool {
         self.is_array() || self.is_object()
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn is_scalar(&self) -> bool {
         self.is_bool() || self.is_int() || self.is_float() || self.is_string()
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn is_number(&self) -> bool {
         self.is_int() || self.is_float()
     }

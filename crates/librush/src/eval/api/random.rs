@@ -6,7 +6,7 @@ use eval::{self, Value};
 
 
 /// Generate a random floating point number from the 0..1 range.
-#[inline(always)]
+#[inline]
 pub fn rand_() -> eval::Result {
     Ok(Value::Float(rand::random()))
 }

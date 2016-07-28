@@ -64,7 +64,7 @@ impl Value {
 }
 
 impl InvalidSentinel for Value {
-    #[inline(always)]
+    #[inline]
     fn invalid_sentinel() -> Self { Value::Empty }
 }
 

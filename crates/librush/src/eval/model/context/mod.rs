@@ -29,6 +29,7 @@ type Hasher = BuildHasherDefault<FnvHasher>;
 
 
 /// Evaluation context for an expression.
+#[derive(Default)]
 pub struct Context<'c> {
     /// Optional parent Context, i.e. a lower "frame" on the "stack".
     parent: Option<&'c Context<'c>>,
@@ -46,13 +47,13 @@ impl<'c> Context<'c> {
     }
 
     /// Create a new Context that's a child of given parent.
-    #[inline(always)]
+    #[inline]
     pub fn with_parent(parent: &'c Context<'c>) -> Context<'c> {
         Context{parent: Some(parent), scope: HashMap::default()}
     }
 
     /// Whether this is a root context (one without a parent).
-    #[inline(always)]
+    #[inline]
     pub fn is_root(&self) -> bool {
         self.parent.is_none()
     }
@@ -70,7 +71,7 @@ impl<'c> Context<'c> {
 
     /// Check if given name is defined in this context.
     /// Does not look at parent Contexts.
-    #[inline(always)]
+    #[inline]
     pub fn is_defined_here<N: ?Sized>(&self, name: &N) -> bool
         where Name: Borrow<N>, N: Hash + Eq
     {
@@ -90,7 +91,7 @@ impl<'c> Context<'c> {
     /// Set a value for a variable inside the context's scope.
     /// If the name already exists in the parent scope (if any),
     /// it will be shadowed.
-    #[inline(always)]
+    #[inline]
     pub fn set<N: ?Sized>(&mut self, name: &N, value: Value)
         where Name: Borrow<N>, N: ToOwned<Owned=Name>
     {
@@ -129,16 +130,11 @@ impl<'c> Context<'c> {
         let mut result = value;
 
         // follow the chain of references until it bottoms out
-        loop {
-            match result {
-                &Value::Symbol(ref sym) => {
-                    if let Some(target) = self.get(sym) {
-                        result = target;
-                    } else {
-                        return Value::String(sym.clone())
-                    }
-                }
-                _ => { break; }
+        while let Value::Symbol(ref sym) = *result {
+            if let Some(target) = self.get(sym) {
+                result = target;
+            } else {
+                return Value::String(sym.clone())
             }
         }
         result.clone()

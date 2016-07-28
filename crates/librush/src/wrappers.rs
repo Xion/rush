@@ -26,7 +26,7 @@ pub fn eval(expr: &str, context: &mut Context) -> io::Result<Value> {
 
 /// Execute the expression within given Context.
 /// The result of the expression is discarded, but any side effects will persist in the Context.
-#[inline(always)]
+#[inline]
 pub fn exec(expr: &str, context: &mut Context) -> io::Result<()> {
     try!(eval(expr, context));
     Ok(())
@@ -37,21 +37,21 @@ pub fn exec(expr: &str, context: &mut Context) -> io::Result<()> {
 
 /// Apply the expresion to a complete input stream, processed as single string,
 /// writing to the given output stream.
-#[inline(always)]
+#[inline]
 pub fn apply_string<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
     apply_string_multi(&[expr], input, output)
 }
 
 /// Apply the expression to given input taken as array of lines,
 /// writing result to the given output stream.
-#[inline(always)]
+#[inline]
 pub fn apply_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
     apply_lines_multi(&[expr], input, output)
 }
 
 /// Apply the expression to given input stream, line by line,
 /// writing to the given output stream.
-#[inline(always)]
+#[inline]
 pub fn map_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
     map_lines_multi(&[expr], input, output)
 }
@@ -59,7 +59,7 @@ pub fn map_lines<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
 /// Apply the expression to given input stream, word by word,
 /// (each word treated as string in the expression itself),
 /// and writing to the given output stream.
-#[inline(always)]
+#[inline]
 pub fn map_words<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
     map_words_multi(&[expr], input, output)
 }
@@ -67,7 +67,7 @@ pub fn map_words<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
 /// Apply the expression to given input stream, character by character
 /// (treated as 1-character string in the expression itself),
 /// and writing to the given output stream.
-#[inline(always)]
+#[inline]
 pub fn map_chars<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
     map_chars_multi(&[expr], input, output)
 }
@@ -76,7 +76,7 @@ pub fn map_chars<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
 /// writing the transformed bytes into given output stream.
 ///
 /// Note that the expression must always produce a byte (i.e. an integer from the 0-255 range).
-#[inline(always)]
+#[inline]
 pub fn map_bytes<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
     map_bytes_multi(&[expr], input, output)
 }
@@ -84,7 +84,7 @@ pub fn map_bytes<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
 /// Apply the expression to the content of each file (as string)
 /// whose path is given as a line of the input stream.
 /// Write the results as lines to the output stream.
-#[inline(always)]
+#[inline]
 pub fn map_files<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io::Result<()> {
     map_files_multi(&[expr], input, output)
 }
@@ -98,7 +98,7 @@ pub fn map_files<R: Read, W: Write>(expr: &str, input: R, output: &mut W) -> io:
 /// whose result is then passed to the second one, etc.
 ///
 /// The final result is written to the given output stream.
-#[inline(always)]
+#[inline]
 pub fn apply_string_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
     let mut context = Context::new();
     apply_string_multi_ctx(&mut context, exprs, input, output)
@@ -110,7 +110,7 @@ pub fn apply_string_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &
 /// whose result is then passed to the second one, etc.
 ///
 /// The final result is written to the given output stream.
-#[inline(always)]
+#[inline]
 pub fn apply_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
     let mut context = Context::new();
     apply_lines_multi_ctx(&mut context, exprs, input, output)
@@ -123,7 +123,7 @@ pub fn apply_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &m
 ///
 /// The final result is written then to the given output stream.
 /// This continues for each line of input.
-#[inline(always)]
+#[inline]
 pub fn map_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
     let mut context = Context::new();
     map_lines_multi_ctx(&mut context, exprs, input, output)
@@ -136,7 +136,7 @@ pub fn map_lines_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
 ///
 /// The final result is written then to the given output stream.
 /// This continues for each word of input.
-#[inline(always)]
+#[inline]
 pub fn map_words_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
     let mut context = Context::new();
     map_words_multi_ctx(&mut context, exprs, input, output)
@@ -149,7 +149,7 @@ pub fn map_words_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
 ///
 /// The final result is written then to the given output stream.
 /// This continues for each character of input.
-#[inline(always)]
+#[inline]
 pub fn map_chars_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
     let mut context = Context::new();
     map_chars_multi_ctx(&mut context, exprs, input, output)
@@ -162,7 +162,7 @@ pub fn map_chars_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
 ///
 /// The final result -- which has to be a 0-255 integer -- is written then
 /// to the given output stream. This continues for each byte of input.
-#[inline(always)]
+#[inline]
 pub fn map_bytes_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
     let mut context = Context::new();
     map_bytes_multi_ctx(&mut context, exprs, input, output)
@@ -177,7 +177,7 @@ pub fn map_bytes_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut
 //
 /// The final result is written then to the given output stream.
 /// This continues for each line (file path) of input.
-#[inline(always)]
+#[inline]
 pub fn map_files_multi<R: Read, W: Write>(exprs: &[&str], input: R, output: &mut W) -> io::Result<()> {
     let mut context = Context::new();
     map_files_multi_ctx(&mut context, exprs, input, output)
@@ -222,6 +222,7 @@ pub fn apply_string_multi_ctx<R, W>(context: &mut Context,
 /// Expression context is shared throughout.
 ///
 /// The final result is written to the given output stream.
+#[allow(or_fun_call)]
 pub fn apply_lines_multi_ctx<R, W>(context: &mut Context,
                                    exprs: &[&str],
                                    input: R, output: &mut W) -> io::Result<()>
@@ -232,10 +233,8 @@ pub fn apply_lines_multi_ctx<R, W>(context: &mut Context,
 
     // parse input lines into a vector of Value objects
     let lines: Vec<_> = BufReader::new(input).lines()
-        .map(|r| {
-            r.ok().expect("failed to read input line")
-                .parse::<Value>().unwrap_or(Value::invalid_sentinel())
-        })
+        .map(|r| r.expect("failed to read input line")
+            .parse::<Value>().unwrap_or(Value::invalid_sentinel()))
         .filter(|v| *v != Value::invalid_sentinel())
         .collect();
     let line_count = lines.len();
@@ -512,7 +511,7 @@ fn to_value(input: String) -> Value {
 }
 
 fn process<'c>(context: &'c mut Context, exprs: &[Box<Eval>]) -> io::Result<&'c Value> {
-    for ast in exprs.iter() {
+    for ast in exprs {
         let result = try!(evaluate(ast, context));
         context.set(CURRENT, result);
     }
@@ -525,7 +524,7 @@ fn evaluate<'c>(ast: &Box<Eval>, context: &'c mut Context) -> io::Result<Value> 
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
 }
 
-fn maybe_apply_result<'c>(result: Value, context: &'c mut Context) -> EvalResult {
+fn maybe_apply_result(result: Value, context: &mut Context) -> EvalResult {
     // result might be a function, in which case we will try to apply to original input
     if let Value::Function(func) = result {
         if func.arity() != 1 {
@@ -535,7 +534,7 @@ fn maybe_apply_result<'c>(result: Value, context: &'c mut Context) -> EvalResult
         }
         debug!("Result found to be a function, applying it to input");
         let input = context.unset_here(CURRENT).unwrap();
-        return func.invoke1(input, &context);
+        return func.invoke1(input, context);
     }
     Ok(result)
 }

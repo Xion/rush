@@ -24,8 +24,8 @@ pub fn bool(value: Value) -> eval::Result {
         Value::String(ref s) => s.parse::<BooleanRepr>()
             .map_err(|_| Error::new(&format!("invalid bool value: {}", s)))
             .map(Value::Boolean),
-        Value::Array(ref a) => Ok(Value::Boolean(a.len() > 0)),
-        Value::Object(ref o) => Ok(Value::Boolean(o.len() > 0)),
+        Value::Array(ref a) => Ok(Value::Boolean(!a.is_empty())),
+        Value::Object(ref o) => Ok(Value::Boolean(!o.is_empty())),
         _ => Err(Error::new(
             &format!("cannot convert {} to bool", value.typename())
         )),

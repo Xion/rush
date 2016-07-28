@@ -37,17 +37,17 @@ pub enum Arity {
 }
 
 impl Arity {
-    #[inline(always)]
+    #[inline]
     pub fn with_exact(argcount: ArgCount) -> Arity {
         Arity::Exact(argcount)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn with_minimum(argcount: ArgCount) -> Arity {
         Arity::Minimum(argcount)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn with_maximum(argcount: ArgCount) -> Arity {
         if argcount == 0 { Arity::Exact(0) }
         else             { Arity::Range(0, argcount) }
@@ -64,7 +64,7 @@ impl Arity {
 }
 
 impl Arity {
-    #[inline(always)]
+    #[inline]
     pub fn is_exact(&self) -> bool {
         match *self { Arity::Exact(..) => true, _ => false }
     }
@@ -73,9 +73,7 @@ impl Arity {
     #[inline]
     pub fn minimum(&self) -> ArgCount {
         match *self {
-            Arity::Exact(c) => c,
-            Arity::Minimum(c) => c,
-            Arity::Range(c, _) => c,
+            Arity::Exact(c) | Arity::Minimum(c) | Arity::Range(_, c) => c,
         }
     }
 
@@ -83,9 +81,8 @@ impl Arity {
     #[inline]
     pub fn maximum(&self) -> ArgCount {
         match *self {
-            Arity::Exact(c) => c,
+            Arity::Exact(c) | Arity::Range(_, c) => c,
             Arity::Minimum(_) => usize::MAX as ArgCount,
-            Arity::Range(_, c) => c,
         }
     }
 
@@ -115,7 +112,7 @@ impl fmt::Display for Arity {
 // Conversions
 
 impl From<ArgCount> for Arity {
-    #[inline(always)]
+    #[inline]
     fn from(input: ArgCount) -> Self {
         Arity::Exact(input)
     }
@@ -128,7 +125,7 @@ impl TryInto<ArgCount> for Arity {
         match self {
             Arity::Exact(c) => Ok(c),
             Arity::Range(a, b) if a == b => Ok(a),
-            arity@_ => Err(Unrepresentable(arity)),
+            arity => Err(Unrepresentable(arity)),
         }
     }
 }
@@ -152,7 +149,7 @@ impl TryInto<Range<ArgCount>> for Arity {
         match self {
             Arity::Exact(c) => Ok(Range{start: c, end: c}),
             Arity::Range(a, b) => Ok(Range{start: a, end: b + 1}),
-            arity@_ => Err(Unrepresentable(arity)),
+            arity => Err(Unrepresentable(arity)),
         }
     }
 }

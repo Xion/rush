@@ -139,7 +139,7 @@ pub fn pick(keys: Value, from: Value) -> eval::Result {
     match from {
         Value::String(s) => {
             let mut result = StringRepr::with_capacity(keys.len());
-            if keys.len() > 0 {
+            if !keys.is_empty() {
                 let chars: Vec<char> = s.chars().collect();
                 for idx in keys {
                     let idx = try!(int(idx)).unwrap_int();
@@ -202,7 +202,7 @@ pub fn omit(keys: Value, from: Value) -> eval::Result {
                       ("array", "array") |
                       ("array", "object") => (keys, from));
 
-    if keys.as_array().len() == 0 {
+    if keys.as_array().is_empty() {
         return Ok(from);
     }
 
@@ -617,7 +617,7 @@ pub fn sort_by(array: Value, cmp: Value, context: &Context) -> eval::Result {
 
 // Utility functions
 
-#[inline(always)]
+#[inline]
 fn ensure_argcount(func: &Function, argcount: ArgCount, api_call: &str) -> Result<(), Error> {
     let arity = func.arity();
     if !arity.accepts(argcount) {
