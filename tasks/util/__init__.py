@@ -22,6 +22,8 @@ def cargo(ctx, cmd, *args, **kwargs):
     :param crate: Name of the crate to run Cargo against
     :param wait: Whether to wait for the Cargo process to finish (True),
                  or to replace the whole Invoke process with it (False)
+
+    :return: If wait=True, the Invoke's Result object of the run.
     """
     cargo_args = [cmd]
 

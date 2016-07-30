@@ -227,7 +227,7 @@ def analyze_rust_module(path):
         # get a complete function header and extract argument names
         func_header = def_start_line
         j = idx
-        while '{' not in lines[j]:  # { will mark the start of function body
+        while '{' not in lines[j]:  # { will mark the start of a function body
             func_header += lines[j]
         argnames = [m.group(1) for m in re.finditer(r'(\w+)\s*:(?!:)',
                                                     func_header)]
