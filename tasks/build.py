@@ -5,6 +5,7 @@ from __future__ import print_function
 
 from itertools import chain, imap
 import logging
+import os
 from pathlib import Path
 try:
     from shlex import quote
@@ -45,8 +46,43 @@ def bin(ctx, release=False, verbose=False):
     cargo(ctx, 'build', *get_rustc_flags(release, verbose),
           crate=BIN, pty=True)
 
-    # TODO: run the resulting binary to obtain usage information
+    # run the resulting binary to obtain usage information
     # and paste it to README
+    binary = cargo(ctx, 'run', crate=BIN, hide=True)
+    if not binary.ok:
+        logging.critical("Compiled binary return error code %s; stderr:\n%s",
+                         binary.return_code, binary.stderr)
+        return binary.return_code
+    usage = binary.stdout.strip()
+    with (Path.cwd() / 'README.md').open('r+t', encoding='utf-8') as f:
+        readme_lines = [line.strip() for line in f.readlines()]
+
+        # determine the line indices of the region to replace
+        begin_idx, end_idx = None, None
+        for i, line in enumerate(readme_lines):
+            if not line.startswith('#'):
+                continue
+            if begin_idx is None:
+                if "# Usage" in line:
+                    begin_idx = i
+            else:
+                end_idx = i
+        if begin_idx is None or end_idx is None:
+            logging.critical(
+                "usage begin or end marker not found in README "
+                "(begin:%s, end:%s)", begin_idx, end_idx)
+            return 2
+
+        # reassemble the modified content of the README, with usage inside
+        readme_content = os.linesep.join([
+            os.linesep.join(readme_lines[:begin_idx + 1]).strip(),
+            '', usage, '',
+            os.linesep.join(readme_lines[end_idx:]).strip(),
+        ])
+
+        f.seek(0)
+        f.truncate()
+        f.write(readme_content)
 
 
 @task(help=HELP)
