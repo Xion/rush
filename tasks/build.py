@@ -46,18 +46,34 @@ def bin(ctx, release=False, verbose=False):
     cargo(ctx, 'build', *get_rustc_flags(release, verbose),
           crate=BIN, pty=True)
 
-    # run the resulting binary to obtain usage information
-    # and paste it to README
+    # TODO: everything below should probably its own separate task
+
+    # run the resulting binary to obtain command line help
     binary = cargo(ctx, 'run', crate=BIN, hide=True)
     if not binary.ok:
         logging.critical("Compiled binary return error code %s; stderr:\n%s",
                          binary.return_code, binary.stderr)
         return binary.return_code
-    usage = binary.stdout.strip()
+    help_lines = binary.stdout.strip().splitlines()
+
+    # beautify it a little before pasting into README
+    while not help_lines[0].startswith("USAGE"):
+        del help_lines[0]  # remove "About" line & other fluff
+    del help_lines[0]  # remove "USAGE:" header
+    help_lines[0] = (
+        # make the usage line more readable by splitting long flags into
+        # separate lines, and fix binary name
+        ']\n\t'.join(help_lines[0].strip().split('] '))
+        .replace("rush", "rh")
+    )
+    help = os.linesep.join(help_lines)
+
+    # paste the modified help into README
     with (Path.cwd() / 'README.md').open('r+t', encoding='utf-8') as f:
         readme_lines = [line.strip() for line in f.readlines()]
 
-        # determine the line indices of the region to replace
+        # determine the line indices of the region to replace,
+        # which is between the header titled "Usage" and the immediate next one
         begin_idx, end_idx = None, None
         for i, line in enumerate(readme_lines):
             if not line.startswith('#'):
@@ -67,17 +83,19 @@ def bin(ctx, release=False, verbose=False):
                     begin_idx = i
             else:
                 end_idx = i
+                break
         if begin_idx is None or end_idx is None:
             logging.critical(
-                "usage begin or end marker not found in README "
+                "usage begin or end markers not found in README "
                 "(begin:%s, end:%s)", begin_idx, end_idx)
             return 2
 
-        # reassemble the modified content of the README, with usage inside
+        # reassemble the modified content of the README, with help inside
         readme_content = os.linesep.join([
             os.linesep.join(readme_lines[:begin_idx + 1]).strip(),
-            '', usage, '',
+            '', help, '',
             os.linesep.join(readme_lines[end_idx:]).strip(),
+            '',   # ensure newline at the end of file
         ])
 
         f.seek(0)
