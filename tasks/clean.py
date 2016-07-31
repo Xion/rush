@@ -4,7 +4,6 @@ Clean tasks.
 from __future__ import print_function
 
 import logging
-import os
 import shutil
 import sys
 
@@ -38,9 +37,9 @@ def bin(ctx, release=False):
 def docs(ctx):
     """Clean the built documentation."""
     output_dir = get_docs_output_dir()
-    if os.path.isdir(output_dir):
+    if output_dir.is_dir():
         try:
-            shutil.rmtree(output_dir)
+            shutil.rmtree(str(output_dir))
         except (OSError, shutil.Error) as e:
             logging.warning("Error while cleaning docs' output dir: %s", e)
 
