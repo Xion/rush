@@ -9,4 +9,4 @@ from invoke import task
 @task(default=True)
 def all(ctx):
     """Create the release packages for various operating systems."""
-    ctx.run('./tools/release', pty=True)
+    return ctx.run('./tools/release', pty=True).return_code

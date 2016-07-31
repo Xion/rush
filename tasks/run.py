@@ -1,6 +1,7 @@
 """
 Run tasks.
 """
+import logging
 import sys
 import threading
 import webbrowser
@@ -55,5 +56,7 @@ def docs(ctx, port=8000, reload=False, verbose=False):
         '--verbose' if verbose else '',
     ), pty=True)
     if not server.ok:
+        logging.critical("Failed to start the mkdocs server")
         build_error_event.set()
         opener_thread.join()
+        return server.return_code

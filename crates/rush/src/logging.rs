@@ -19,7 +19,7 @@ pub fn init() -> Result<(), SetLoggerError> {
 struct Logger;
 
 impl Log for Logger {
-    #[inline(always)]
+    #[inline]
     fn enabled(&self, metadata: &LogMetadata) -> bool {
         metadata.level() <= MAX_LEVEL
     }

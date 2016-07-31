@@ -35,7 +35,7 @@ def all(ctx, release=False, verbose=False):
     # calling lib() is unnecessary because the binary crate
     # depeends on the library, so it will be rebuilt as well
     bin(ctx, release=release, verbose=verbose)
-    docs(ctx, release=release, verbose=verbose)
+    docs_(ctx, release=release, verbose=verbose)
     print("\nBuild finished.", file=sys.stderr)
 
 
@@ -43,8 +43,11 @@ def all(ctx, release=False, verbose=False):
 def bin(ctx, release=False, verbose=False):
     """Build the binary crate."""
     ensure_rustc_version(ctx)
-    cargo(ctx, 'build', *get_rustc_flags(release, verbose),
-          crate=BIN, pty=True)
+    cargo_build = cargo(ctx, 'build', *get_rustc_flags(release, verbose),
+                        crate=BIN, pty=True)
+    if not cargo_build.ok:
+        logging.critical("Failed to build the binary crate")
+        return cargo_build.return_code
 
     # TODO: everything below should probably its own separate task
 
@@ -85,9 +88,8 @@ def bin(ctx, release=False, verbose=False):
                 end_idx = i
                 break
         if begin_idx is None or end_idx is None:
-            logging.critical(
-                "usage begin or end markers not found in README "
-                "(begin:%s, end:%s)", begin_idx, end_idx)
+            logging.critical("usage begin or end markers not found in README "
+                             "(begin:%s, end:%s)", begin_idx, end_idx)
             return 2
 
         # reassemble the modified content of the README, with help inside
@@ -107,8 +109,9 @@ def bin(ctx, release=False, verbose=False):
 def lib(ctx, release=False, verbose=False):
     """Build the library crate."""
     ensure_rustc_version(ctx)
-    cargo(ctx, 'build', *get_rustc_flags(release, verbose),
-          crate=LIB, pty=True)
+    return cargo(
+        ctx, 'build', *get_rustc_flags(release, verbose), crate=LIB, pty=True
+    ).return_code
 
 
 @task(name='docs', help=HELP)
@@ -140,7 +143,7 @@ def docs_(ctx, release=False, verbose=False, dump_api=False):
     build_run = ctx.run('mkdocs build ' + ' '.join(map(quote, args)), pty=True)
     if not build_run.ok:
         logging.fatal("mkdocs build failed, aborting.")
-        sys.exit(1)
+        return build_run.return_code
 
     mkdocs_config = docs.read_mkdocs_config()
     source_dir = Path.cwd() / mkdocs_config.get('docs_dir', 'docs')
@@ -191,7 +194,7 @@ def ensure_rustc_version(ctx):
     rustc_v = ctx.run('rustc --version', hide=True)
     if not rustc_v.ok:
         logging.critical("Rust compiler not found, aborting build.")
-        sys.exit(127)
+        sys.exit(rustc_v.return_code)
 
     _, version, _ = rustc_v.stdout.split(None, 2)
     if not semver.match(version, '>=' + MIN_RUSTC_VERSION):

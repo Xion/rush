@@ -1,7 +1,7 @@
 //! Utility macros used by the syntax definition.
 
 
-/// Make the underlying parser assume UTF8-encoded input
+/// Make the underlying byte parser assume UTF8-encoded input
 /// and output String objects.
 macro_rules! string (
     ($i:expr, $submac:ident!( $($args:tt)* )) => ({

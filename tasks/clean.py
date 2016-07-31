@@ -31,7 +31,7 @@ def all(ctx, release=False):
 def bin(ctx, release=False):
     """Clean the binary crate's build artifacts."""
     args = ['--release'] if release else []
-    cargo(ctx, 'clean', *args, crate=BIN, pty=True)
+    return cargo(ctx, 'clean', *args, crate=BIN, pty=True).return_code
 
 
 @task
@@ -49,4 +49,4 @@ def docs(ctx):
 def lib(ctx, release=False):
     """Clean the library crate's build artifacts."""
     args = ['--release'] if release else []
-    cargo(ctx, 'clean', *args, crate=LIB, pty=True)
+    return cargo(ctx, 'clean', *args, crate=LIB, pty=True).return_code
