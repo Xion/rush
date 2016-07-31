@@ -13,7 +13,7 @@ use super::types::*;
 macro_rules! value_from (
     ($input:ty => $output:ident) => {
         impl From<$input> for Value {
-            #[inline(always)]
+            #[inline]
             fn from(input: $input) -> Self {
                 Value::$output(input)
             }

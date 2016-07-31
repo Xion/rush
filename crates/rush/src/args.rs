@@ -102,14 +102,14 @@ impl<'a> From<ArgMatches<'a>> for InputMode {
 
 
 /// Parse command line arguments and return matches' object.
-#[inline(always)]
+#[inline]
 pub fn parse() -> Options {
     parse_from_argv(env::args_os())
 }
 
 /// Parse application options from given array of arguments
 /// (*all* arguments, including binary name).
-#[inline(always)]
+#[inline]
 pub fn parse_from_argv<I, T>(argv: I) -> Options
     where I: IntoIterator<Item=T>, T: Into<OsString>
 {
