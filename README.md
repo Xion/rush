@@ -45,27 +45,27 @@ Any Unix-like system should do.
 
 ### Strings
 
-$ echo 'Alice has a cat' | rh 'before("cat")' '_ + "dog"'
-Alice has a dog
-$ echo 'Alice has a cat' | rh 'after("Alice")' '"Bob" + _'
-Bob has a cat
+    $ echo 'Alice has a cat' | rh 'before("cat")' '_ + "dog"'
+    Alice has a dog
+    $ echo 'Alice has a cat' | rh 'after("Alice")' '"Bob" + _'
+    Bob has a cat
 
 # ROT13
-$ echo -n 'flap' | rh -c 'ord' '(_ - ord(a) + 13) % 26' '_ + ord(a)' chr | rh -s 'sub(/\s+/, "")'
-sync
-$ echo -n 'flap' | rh -s rot13
-sync
+
+    $ echo -n 'flap' | rh -c 'ord' '(_ - ord(a) + 13) % 26' '_ + ord(a)' chr | rh -s 'sub(/\s+/, "")'
+    sync
+    $ echo -n 'flap' | rh -s rot13
+    sync
 
 ### CSV
 
-$ echo '1,2,3' | rh 'csv & map(int & (*2)) & csv'
-2,4,6
+    $ echo '1,2,3' | rh 'csv & map(int & (*2)) & csv'
+    2,4,6
 
-$ rh 'csv' '{number: _[0], symbol: _[1], name: _[2], mass: _[3]}'  <./elements.csv
-{"mass":"1","name":"Hydrogen","number":"1","symbol":"H"}
-{"mass":"4","name":"Helium","number":"2","symbol":"He"}
-# etc.
-
+    $ rh 'csv' '{number: _[0], symbol: _[1], name: _[2], mass: _[3]}'  <./elements.csv
+    {"mass":"1","name":"Hydrogen","number":"1","symbol":"H"}
+    {"mass":"4","name":"Helium","number":"2","symbol":"He"}
+    # etc.
 
 ## Contributing
 
@@ -74,12 +74,12 @@ You need a Rust toolchain (with Cargo) to build _rush_ itself.
 Additionally, the Python-based [Invoke](http://pyinvoke.org) task runner is used for automation.
 It is recommended you install it inside a Python virtualenv. e.g.:
 
-$ virtualenv ~/venv/rush && source ~/venv/rush/bin/activate
-$ pip install -r -requirements-dev.txt
+    $ virtualenv ~/venv/rush && source ~/venv/rush/bin/activate
+    $ pip install -r -requirements-dev.txt
 
 Then you can use:
 
-$ inv
+    $ inv
 
 to build the binary & the library crate, and run their tests.
 

@@ -74,7 +74,7 @@ def bin(ctx, release=False, verbose=False):
 
     # paste the modified help into README
     with (Path.cwd() / 'README.md').open('r+t', encoding='utf-8') as f:
-        readme_lines = [line.strip() for line in f.readlines()]
+        readme_lines = [line.rstrip() for line in f.readlines()]
 
         # determine the line indices of the region to replace,
         # which is between the header titled "Usage" and the immediate next one
@@ -95,9 +95,9 @@ def bin(ctx, release=False, verbose=False):
 
         # reassemble the modified content of the README, with help inside
         readme_content = os.linesep.join([
-            os.linesep.join(readme_lines[:begin_idx + 1]).strip(),
+            os.linesep.join(readme_lines[:begin_idx + 1]),
             '', help, '',
-            os.linesep.join(readme_lines[end_idx:]).strip(),
+            os.linesep.join(readme_lines[end_idx:]),
             '',   # ensure newline at the end of file
         ])
 
