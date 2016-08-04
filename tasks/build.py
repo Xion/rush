@@ -63,13 +63,14 @@ def bin(ctx, release=False, verbose=False):
     while not help_lines[0].startswith("USAGE"):
         del help_lines[0]  # remove "About" line & other fluff
     del help_lines[0]  # remove "USAGE:" header
-    help_lines[0] = (
+    help_lines[:1] = (
         # make the usage line more readable by splitting long flags into
         # separate lines, and fix binary name
-        ']\n\t'.join(help_lines[0].strip().split('] '))
+        ']\n    '.join(help_lines[0].strip().split('] '))
         .replace("rush", "rh")
+        .splitlines()
     )
-    help = os.linesep.join(help_lines)
+    help = os.linesep.join('    ' + line for line in help_lines)
 
     # paste the modified help into README
     with (Path.cwd() / 'README.md').open('r+t', encoding='utf-8') as f:

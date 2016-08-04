@@ -16,30 +16,30 @@ Any Unix-like system should do.
 
 ## Usage
 
-rh [--input <MODE> | --string | --lines | --words | --chars | --bytes | --files]
-	[--before <EXPRESSION>]
-	[--after <EXPRESSION>]
-	<EXPRESSION> [<EXPRESSION> ...]
-
-OPTIONS:
-    -i, --input <MODE>
-        Defines how the input should be treated when processed by EXPRESSION [values: string, lines, words, chars, bytes, files]
-    -s, --string                 Apply the expression once to the whole input as single string
-    -l, --lines                  Apply the expression to each line of input as string. This is the default
-    -w, --words                  Apply the expression to each word in the input as string.
-    -c, --chars                  Apply the expression to each character of input (treated as 1-character string).
-    -b, --bytes                  Apply the expression to input bytes. The expression must take byte value as integer and return integer output.
-    -f, --files                  Apply the expression to the content of each file (as string) whose path is given as a line of input
-    -B, --before <EXPRESSION>
-        Optional expression to evaluate before processing the input. The result of this expression is discarded but any side effects (assignments) will persist.
-    -A, --after <EXPRESSION>
-        Optional expression to evaluate after processing the input. If provided, only the result of this expression will be printed to standard output.
-    -H, --help                   Prints help information
-    -V, --version                Prints version information
-
-ARGS:
-    <EXPRESSION>...
-        Expression(s) to apply to input. When multiple expressions are given, the result of one is passed as input to the next one.
+    rh [--input <MODE> | --string | --lines | --words | --chars | --bytes | --files]
+        [--before <EXPRESSION>]
+        [--after <EXPRESSION>]
+        <EXPRESSION> [<EXPRESSION> ...]
+    
+    OPTIONS:
+        -i, --input <MODE>
+            Defines how the input should be treated when processed by EXPRESSION [values: string, lines, words, chars, bytes, files]
+        -s, --string                 Apply the expression once to the whole input as single string
+        -l, --lines                  Apply the expression to each line of input as string. This is the default
+        -w, --words                  Apply the expression to each word in the input as string.
+        -c, --chars                  Apply the expression to each character of input (treated as 1-character string).
+        -b, --bytes                  Apply the expression to input bytes. The expression must take byte value as integer and return integer output.
+        -f, --files                  Apply the expression to the content of each file (as string) whose path is given as a line of input
+        -B, --before <EXPRESSION>
+            Optional expression to evaluate before processing the input. The result of this expression is discarded but any side effects (assignments) will persist.
+        -A, --after <EXPRESSION>
+            Optional expression to evaluate after processing the input. If provided, only the result of this expression will be printed to standard output.
+        -H, --help                   Prints help information
+        -V, --version                Prints version information
+    
+    ARGS:
+        <EXPRESSION>...
+            Expression(s) to apply to input. When multiple expressions are given, the result of one is passed as input to the next one.
 
 ## Examples
 
