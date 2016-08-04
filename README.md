@@ -7,8 +7,8 @@ _Warning:_: Work in progress.
 
 Succinct & readable processing language for a Unix shell. Written in Rust.
 
-$ echo "Hello " | rh '_ + world'
-Hello world
+    $ echo "Hello " | rh '_ + world'
+    Hello world
 
 ## Requirements
 
