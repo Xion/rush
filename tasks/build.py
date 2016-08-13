@@ -33,7 +33,7 @@ HELP = {
 def all(ctx, release=False, verbose=False):
     """Build the project."""
     # calling lib() is unnecessary because the binary crate
-    # depeends on the library, so it will be rebuilt as well
+    # depeends on the library crate, so it will be rebuilt as well
     bin(ctx, release=release, verbose=verbose)
     docs_(ctx, release=release, verbose=verbose)
     print("\nBuild finished.", file=sys.stderr)
@@ -73,6 +73,7 @@ def bin(ctx, release=False, verbose=False):
     help = os.linesep.join('    ' + line for line in help_lines)
 
     # paste the modified help into README
+    verbose and logging.info("Updating README to add binary's help string")
     with (Path.cwd() / 'README.md').open('r+t', encoding='utf-8') as f:
         readme_lines = [line.rstrip() for line in f.readlines()]
 
@@ -161,17 +162,15 @@ def docs_(ctx, release=False, verbose=False, dump_api=False):
         ignored = []
         ignore_file = source_dir / '.docsignore'
         if ignore_file.exists():
-            if verbose:
-                logging.info(
-                    "%s file found, applying ignore patterns...", ignore_file)
+            verbose and logging.info(
+                "%s file found, applying ignore patterns...", ignore_file)
             with ignore_file.open(encoding='utf-8') as f:
                 ignored = [
                     line.rstrip() for line in f.readlines()
                     if line.strip() and not line.lstrip().startswith('#')]
         else:
-            if verbose:
-                logging.info("%s not found, not removing any ignored files.",
-                             ignore_file)
+            verbose and logging.info(
+                "%s not found, not removing any ignored files.", ignore_file)
 
         # resolve the patterns to see what files in the output dir
         # they correspond to, if any
@@ -180,8 +179,8 @@ def docs_(ctx, release=False, verbose=False, dump_api=False):
 
         # "ignore" them, i.e. delete from output directory
         for path in ignored:
-            if verbose:
-                logging.info("Removing ignored file/directory '%s'", path)
+            verbose and logging.info(
+                "Removing ignored file/directory '%s'", path)
             if path.is_dir():
                 shutil.rmtree(str(path))
             else:

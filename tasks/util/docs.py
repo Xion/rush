@@ -53,8 +53,9 @@ def scrub_html_comment_markers(filepath):
     """
     path = Path(filepath)
 
-    is_marker_line = lambda l: (
-        l.lstrip().startswith('<!--') and l.rstrip().endswith('-->'))
+    def is_marker_line(l):
+        return l.lstrip().startswith('<!--') and l.rstrip().endswith('-->')
+
     with path.open('r+t', encoding='utf-8') as f:
         lines = [line for line in f.readlines() if not is_marker_line(line)]
 
