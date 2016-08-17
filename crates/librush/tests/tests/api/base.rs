@@ -126,6 +126,4 @@ mod index {
     }
 }
 
-// TODO(xion): tests for all() and any()
-// TODO(xion): tests for min(), max() and sum()
 // TODO(xion): tests for sort() and sortby()

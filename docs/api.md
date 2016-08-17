@@ -58,24 +58,6 @@ Opposite of pick(). Preserves only the values from given collectionswhose keys/i
 ### index(elem, seq)
 
 Find an index of given element inside a sequence.Returns an empty value if the element couldn't be found.
-### all(value)
-
-Returns true if all elements of an array are truthy (as per bool() functions).Note that if the array is empty, it also returns true.
-### any(value)
-
-Returns true if at least one element of the array is truthy(as per the bool() function).
-### min(value, context)
-
-Find a minimum value in the array. Returns nil for empty arrays.
-### max(value, context)
-
-Find a maximum value in the array. Returns nil for empty arrays.
-### sum(value, context)
-
-Return a sum of all elements in an array.
-### compact(array)
-
-Returns the array with all falsy values removed.This is determined via the bool() conversion.
 ### sort(array)
 
 Sort the array using a default comparison method.
@@ -100,6 +82,29 @@ Shuffle the elements of an array or characters in a string.
 ### sample(size, source)
 
 Pick a sample of given size among the values from a collection.Returns the array of picked elements.
+
+## itertools
+
+Iteration-related API functions.
+
+### all(value)
+
+Returns true if all elements of an array are truthy (as per bool() functions).Note that if the array is empty, it also returns true.
+### any(value)
+
+Returns true if at least one element of the array is truthy(as per the bool() function).
+### min(value, context)
+
+Find a minimum value in the array. Returns nil for empty arrays.
+### max(value, context)
+
+Find a maximum value in the array. Returns nil for empty arrays.
+### sum(value, context)
+
+Return a sum of all elements in an array.
+### compact(array)
+
+Returns the array with all falsy values removed.This is determined via the bool() conversion.
 
 ## conv
 

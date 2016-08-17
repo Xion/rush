@@ -6,6 +6,7 @@
 pub mod base;
 pub mod conv;
 pub mod functools;
+pub mod itertools;
 pub mod math;
 pub mod random;
 pub mod strings;
@@ -32,8 +33,8 @@ impl<'c> Context<'c> {
         //
         self.define_unary(          "abs",      math::abs           );
         self.define_binary(         "after",    strings::after      );
-        self.define_unary(          "all",      base::all           );
-        self.define_unary(          "any",      base::any           );
+        self.define_unary(          "all",      itertools::all      );
+        self.define_unary(          "any",      itertools::any      );
         self.define_binary(         "before",   strings::before     );
         self.define_unary(          "bin",      math::bin           );
         self.define_unary(          "bool",     conv::bool          );
@@ -41,7 +42,7 @@ impl<'c> Context<'c> {
         self.define_unary(          "char",     strings::chr        );
         self.define_unary(          "chars",    strings::chars      );
         self.define_unary(          "chr",      strings::chr        );
-        self.define_unary(          "compact",  base::compact       );
+        self.define_unary(          "compact",  itertools::compact  );
         self.define_unary(          "csv",      conv::csv           );
         self.define_unary(          "deburr",   strings::deburr     );
         self.define_unary(          "exp",      math::exp           );
@@ -65,8 +66,8 @@ impl<'c> Context<'c> {
         self.define_unary(          "lines",    strings::lines      );
         self.define_unary(          "ln",       math::ln            );
         self.define_binary_ctx(     "map",      functools::map      );
-        self.define_unary_ctx(      "max",      base::max           );
-        self.define_unary_ctx(      "min",      base::min           );
+        self.define_unary_ctx(      "max",      itertools::max      );
+        self.define_unary_ctx(      "min",      itertools::min      );
         self.define_unary(          "oct",      math::oct           );
         self.define_binary(         "omit",     base::omit          );
         self.define_unary(          "ord",      strings::ord        );
@@ -92,7 +93,7 @@ impl<'c> Context<'c> {
         self.define_unary(          "string",   conv::str_          );
         self.define_ternary_ctx(    "sub",      strings::sub        );
         self.define_ternary_ctx(    "sub1",     strings::sub1       );
-        self.define_unary_ctx(      "sum",      base::sum           );
+        self.define_unary_ctx(      "sum",      itertools::sum      );
         self.define_unary(          "trim",     strings::trim       );
         self.define_unary(          "trunc",    math::trunc         );
         self.define_unary(          "utf8",     strings::utf8       );
@@ -104,7 +105,7 @@ impl<'c> Context<'c> {
         //
         // Keep the list sorted alphabetically by constant names (ignore case).
         //
-        self.set(   "pi",       Value::Float(f64::consts::PI as FloatRepr)  );
+        self.set("pi", Value::Float(f64::consts::PI as FloatRepr));
     }
 }
 
