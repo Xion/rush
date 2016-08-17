@@ -77,7 +77,7 @@ impl Function {
     /// Create the Function struct from a simple native Rust function.
     ///
     /// Note that if the Rust function is a closure, you'll may need to
-    /// use Functin::from_native_ctx() -- even if you don't need the Context --
+    /// use Function::from_native_ctx() -- even if you don't need the Context --
     /// to resolve lifetime issues.
     #[inline]
     pub fn from_native<F>(arity: Arity, f: F) -> Function

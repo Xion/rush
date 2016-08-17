@@ -58,7 +58,7 @@ impl SubscriptNode {
         // TODO(xion): roll this into eval_point_on_array(), which would require
         // copying parts of the filter() function implementation
         if object.is_array() && index.is_function() {
-            return api::base::filter(index, object, &context);
+            return api::functools::filter(index, object, &context);
         }
 
         match object {

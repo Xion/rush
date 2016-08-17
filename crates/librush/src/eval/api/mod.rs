@@ -5,6 +5,7 @@
 
 pub mod base;
 pub mod conv;
+pub mod functools;
 pub mod math;
 pub mod random;
 pub mod strings;
@@ -44,16 +45,16 @@ impl<'c> Context<'c> {
         self.define_unary(          "csv",      conv::csv           );
         self.define_unary(          "deburr",   strings::deburr     );
         self.define_unary(          "exp",      math::exp           );
-        self.define_binary_ctx(     "filter",   base::filter        );
-        self.define_unary(          "flip",     base::flip          );
+        self.define_binary_ctx(     "filter",   functools::filter   );
+        self.define_unary(          "flip",     functools::flip     );
         self.define_unary(          "float",    conv::float         );
         self.define_unary(          "floor",    math::floor         );
-        self.define_ternary_ctx(    "fold",     base::reduce        );
-        self.define_ternary_ctx(    "foldl",    base::reduce        );
+        self.define_ternary_ctx(    "fold",     functools::reduce   );
+        self.define_ternary_ctx(    "foldl",    functools::reduce   );
         self.define_binary(         "format",   strings::format_    );
         self.define_ternary_ctx(    "gsub",     strings::sub        );
         self.define_unary(          "hex",      math::hex           );
-        self.define_unary(          "id",       base::identity      );
+        self.define_unary(          "id",       functools::identity );
         self.define_binary(         "index",    base::index         );
         self.define_unary(          "int",      conv::int           );
         self.define_binary(         "join",     strings::join       );
@@ -63,7 +64,7 @@ impl<'c> Context<'c> {
         self.define_unary(          "len",      base::len           );
         self.define_unary(          "lines",    strings::lines      );
         self.define_unary(          "ln",       math::ln            );
-        self.define_binary_ctx(     "map",      base::map           );
+        self.define_binary_ctx(     "map",      functools::map      );
         self.define_unary_ctx(      "max",      base::max           );
         self.define_unary_ctx(      "min",      base::min           );
         self.define_unary(          "oct",      math::oct           );
@@ -72,10 +73,10 @@ impl<'c> Context<'c> {
         self.define_binary(         "pick",     base::pick          );
         self.define_nullary(        "rand",     random::rand_       );
         self.define_unary(          "re",       conv::regex         );
-        self.define_ternary_ctx(    "reduce",   base::reduce        );
+        self.define_ternary_ctx(    "reduce",   functools::reduce   );
         self.define_unary(          "regex",    conv::regex         );
         self.define_unary(          "regexp",   conv::regex         );
-        self.define_binary_ctx(     "reject",   base::reject        );
+        self.define_binary_ctx(     "reject",   functools::reject   );
         self.define_unary(          "rev",      base::rev           );
         self.define_unary(          "rot13",    strings::rot13      );
         self.define_unary(          "round",    math::round         );
