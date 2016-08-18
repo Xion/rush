@@ -51,10 +51,16 @@ Return an array of object's keys.If a string or array is passed, an array of ind
 Return an array of object's values.
 ### pick(keys, from)
 
-Pick only the values from given collection that match the keys.Keys should be given as an array.Source collection can be:* an array (with element indices as keys)* an object* a string (with character indices as keys)
+Pick only the values from given collection that match the keys.Keys should be given as an array.Source collection can be:
+* an array (with element indices as keys)
+* an object
+* a string (with character indices as keys)
 ### omit(keys, from)
 
-Opposite of pick(). Preserves only the values from given collectionswhose keys/indices *don't* match the keys/indices from given array.Source collection can be:* an array (with element indices as keys)* an object* a string (with character indices as keys)
+Opposite of pick(). Preserves only the values from given collectionswhose keys/indices *don't* match the keys/indices from given array.Source collection can be:
+* an array (with element indices as keys)
+* an object
+* a string (with character indices as keys)
 ### index(elem, seq)
 
 Find an index of given element inside a sequence.Returns an empty value if the element couldn't be found.
@@ -66,7 +72,10 @@ Returns the array after sorting.
 ### sort_by(array, cmp, context)
 
 Sort the array using a comparator.
-The comparator should be a function that takes two values and returns:* a negative number - if the first value is lower than the second one* zero - if the both values are equal* a positive number - if the first value is greater than the second one
+The comparator should be a function that takes two values and returns:
+* a negative number - if the first value is lower than the second one
+* zero - if the both values are equal
+* a positive number - if the first value is greater than the second one
 Returns the array after sorting.
 
 ## random
@@ -110,10 +119,15 @@ Returns the array with all falsy values removed.This is determined via the bool(
 
 Conversion functions.
 
+### array(value)
+
+Convert a value to an array.
 ### bool(value)
 
 Convert a value to a boolean, based on its "truthy" value.
-NOTE: This conversion is used by logical (!, &&, ||) and conditional (:?)operators to coerce values to boolean whenever necessary.
+NOTE: This conversion is used in numerous places to coerce valuesto boolean where necessary. Users include:
+* logical (!, &&, ||)  and conditional (:?) operators
+* API functions such as compact()
 ### int(value)
 
 Convert a value to an integer.
@@ -128,10 +142,14 @@ Convert a value to string.
 Convert a value to a regular expression.If not a string, the value will be stringified first.
 ### csv(value)
 
-Converts a value to or from CSV:* string input is converted from CSV into an array (of arrays) of strings* array input is converted to CSV string
+Converts a value to or from CSV:
+* string input is converted from CSV into an array (of arrays) of strings
+* array input is converted to CSV string
 ### json(value)
 
-Converts a value to or from JSON:* an array or object input is converted to JSON string* a string input is parsed as JSON
+Converts a value to or from JSON:
+* an array or object input is converted to JSON string
+* a string input is parsed as JSON
 
 ## math
 
