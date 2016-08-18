@@ -45,5 +45,21 @@ fn bool() {
     assert_eq!("true", eval(&format!("bool({})", "{foo: 4}")));
 }
 
+#[test]
+fn array() {
+    assert_eq!(unlines!("f", "o", "o", "b", "a", "r"), apply("array(_)", "foobar"));
+    assert_apply_error("array(_)", "42");
+    assert_apply_error("array(_)", "13.42");
+    assert_apply_error("array(_)", "false");
+    assert_eq!(unlines!("3", "4"), eval(&format!("array({})", "[3,4]")));
+
+    // the order of object keys is unspecified
+    let keys: Vec<_> = eval(&format!("array({})", "{foo: 3, bar: 4}")).split("\n")
+        .map(String::from).collect();
+    for &s in &["foo", "bar"] {
+        assert!(keys.contains(&String::from(s)));
+    }
+}
+
 // TODO(xion): tests for csv() function
 // TODO(xion): tests for json() function

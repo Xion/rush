@@ -35,6 +35,7 @@ impl<'c> Context<'c> {
         self.define_binary(         "after",    strings::after      );
         self.define_unary(          "all",      itertools::all      );
         self.define_unary(          "any",      itertools::any      );
+        self.define_unary(          "array",    conv::array         );
         self.define_binary(         "before",   strings::before     );
         self.define_unary(          "bin",      math::bin           );
         self.define_unary(          "bool",     conv::bool          );

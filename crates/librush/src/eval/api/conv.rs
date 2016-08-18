@@ -12,10 +12,26 @@ use eval::value::{ArrayRepr, BooleanRepr, IntegerRepr, FloatRepr, RegexRepr, Str
 
 // Basic data types conversions
 
+/// Convert a value to an array.
+pub fn array(value: Value) -> eval::Result {
+    if value.is_array() {
+        return Ok(value);
+    }
+    if value.is_string() {
+        return super::strings::chars(value);
+    }
+    if value.is_object() {
+        return super::base::keys(value);
+    }
+    Err(Error::new(&format!("cannot convert {} to array", value.typename())))
+}
+
 /// Convert a value to a boolean, based on its "truthy" value.
 ///
-/// NOTE: This conversion is used by logical (!, &&, ||) and conditional (:?)
-/// operators to coerce values to boolean whenever necessary.
+/// NOTE: This conversion is used in numerous places to coerce values
+/// to boolean where necessary. Users include:
+/// * logical (!, &&, ||)  and conditional (:?) operators
+/// * API functions such as compact()
 pub fn bool(value: Value) -> eval::Result {
     match value {
         Value::Boolean(_) => Ok(value),
