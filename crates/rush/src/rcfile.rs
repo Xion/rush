@@ -31,19 +31,21 @@ pub fn load_into(context: &mut Context) -> io::Result<()> {
     for path in list_rcfiles() {
         debug!("Loading symbols from {}", path.display());
         let file = try!(File::open(&path));
-        let content = try!(read_rcfile(file));
-        if !content.is_empty() {
-            try!(rush::exec(&content, context));
-            info!("Symbols loaded from {}", path.display());
+        let exprs = try!(read_rcfile(file));
+        let expr_count = exprs.len();
+        for expr in exprs {
+            try!(rush::exec(&expr, context));
         }
+        info!("Loaded {} symbol(s) from {}", expr_count, path.display());
     }
     Ok(())
 }
 
 
 /// Read an .Xrc file, discarding all the comments & empty lines.
-fn read_rcfile<R: Read>(file: R) -> io::Result<String> {
-    let mut result = String::new();
+/// Returns the list of expressions that remained.
+fn read_rcfile<R: Read>(file: R) -> io::Result<Vec<String>> {
+    let mut result = Vec::new();
     let reader = BufReader::new(file);
     for line in reader.lines() {
         let line = try!(line);
@@ -52,20 +54,7 @@ fn read_rcfile<R: Read>(file: R) -> io::Result<String> {
         if trimmed.is_empty() || trimmed.starts_with(COMMENT_PREFIX) {
             continue;
         }
-        result.push_str(&trimmed);
-
-        // .Xrc files are documented as consisting of separate lines,
-        // but for the purposes of evaluating their expressions we'll join them
-        // into a single block
-        if !trimmed.ends_with(";") {
-            result.push_str(" ;");
-        }
-        result.push_str("\n");
-    }
-
-    // wrap the result in a block
-    if !result.is_empty() {
-        result = format!("{{\n{}}}", result);
+        result.push(trimmed.to_owned());
     }
     Ok(result)
 }

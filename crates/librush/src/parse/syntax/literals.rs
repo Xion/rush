@@ -9,7 +9,7 @@ use regex::Regex;
 use eval::{Eval, Value};
 use eval::value::{FloatRepr, IntegerRepr, RegexRepr, StringRepr};
 use parse::ast::{ArrayNode, ObjectNode, ScalarNode};
-use super::structure::{block, expression};
+use super::structure::expression;
 
 
 // TODO(xion): switch from parsers expecting &[u8] to accepting &str;
@@ -44,7 +44,7 @@ named!(pub identifier( &[u8] ) -> String, alt!(
     })
 ));
 
-/// atom ::== PRIMITIVE | '(' expression ')' | '{' block '}'
+/// atom ::== PRIMITIVE | '(' expression ')'
 /// PRIMITIVE ::== NIL | OBJECT | ARRAY | BOOLEAN | FLOAT | INTEGER | SYMBOL | REGEX | STRING
 named!(pub atom( &[u8] ) -> Box<Eval>, alt!(
     //
@@ -56,8 +56,7 @@ named!(pub atom( &[u8] ) -> Box<Eval>, alt!(
     object_value | array_value |
     bool_value | float_value | int_value | symbol_value |
     regex_value | string_value |
-    delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")"))) |
-    delimited!(multispaced!(tag!("{")), block, multispaced!(tag!("}")))
+    delimited!(multispaced!(tag!("(")), expression, multispaced!(tag!(")")))
 ));
 
 named!(nil_value( &[u8] ) -> Box<Eval>, map!(tag!("nil"), |_| {

@@ -15,7 +15,6 @@ pub mod model;
 
 mod api;
 mod atoms;
-mod blocks;
 mod operators;
 mod trailers;
 
