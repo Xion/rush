@@ -241,7 +241,7 @@ def analyze_rust_module(path):
                 break
             # treat empty lines as paragraph separators
             line = line.lstrip('/').strip() or os.linesep
-            # preserve bullet points but adding a newline before them
+            # preserve bullet points by adding a newline before them
             line = re.sub(r'^\s*\*', os.linesep + '*', line)
             docstring_lines.append(line)
         docstring_lines.reverse()

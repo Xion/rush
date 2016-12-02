@@ -4,8 +4,6 @@ Automation tasks, aided by the Invoke package.
 Most of them mimic the Rust's Cargo binary, but they do what makes sense for
 either the library crate, binary crate, or both.
 """
-from __future__ import print_function
-
 import logging
 import os
 import sys

@@ -66,7 +66,9 @@ fn process_input(mode: InputMode,
     // Prepare a Context for the processing.
     // This includes evaluating any "before" expression within it.
     let mut context = Context::new();
-    try!(rcfile::load_into(&mut context));
+    try!(rcfile::load_into(&mut context)
+        .map_err(|err| io::Error::new(io::ErrorKind::InvalidData,
+            format!("Error processing startup file: {}", err))));
     if let Some(before) = before {
         try!(rush::exec(before, &mut context));
     }

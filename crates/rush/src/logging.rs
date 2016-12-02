@@ -5,7 +5,7 @@ use std::io::{self, Write};
 use log::{Log, LogRecord, LogLevel, LogMetadata, set_logger, SetLoggerError};
 
 
-const MAX_LEVEL: LogLevel = LogLevel::Warn;
+const MAX_LEVEL: LogLevel = LogLevel::Trace;
 
 
 pub fn init() -> Result<(), SetLoggerError> {

@@ -4,10 +4,9 @@ use std::env;
 use std::ffi::OsString;
 use std::iter::IntoIterator;
 
+use clap::{self, AppSettings, Arg, ArgSettings, ArgGroup, ArgMatches};
 use conv::TryFrom;
 use conv::errors::Unrepresentable;
-
-use clap::{self, AppSettings, Arg, ArgSettings, ArgGroup, ArgMatches};
 
 
 /// Structure holding the options parsed from command line.

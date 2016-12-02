@@ -58,12 +58,16 @@ fn read_rcfile<R: Read>(file: R) -> io::Result<String> {
         // but for the purposes of evaluating their expressions we'll join them
         // into a single block
         if !trimmed.ends_with(";") {
-            result.push(';');
+            result.push_str(" ;");
         }
+        result.push_str("\n");
     }
 
     // wrap the result in a block
-    Ok(format!("{{{}}}", result))
+    if !result.is_empty() {
+        result = format!("{{\n{}}}", result);
+    }
+    Ok(result)
 }
 
 
