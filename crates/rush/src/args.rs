@@ -9,9 +9,32 @@ use conv::TryFrom;
 use conv::errors::Unrepresentable;
 
 
+/// Parse command line arguments and return matches' object.
+#[inline]
+pub fn parse() -> Options {
+    parse_from_argv(env::args_os())
+}
+
+/// Parse application options from given array of arguments
+/// (*all* arguments, including binary name).
+#[inline]
+pub fn parse_from_argv<I, T>(argv: I) -> Options
+    where I: IntoIterator<Item=T>, T: Into<OsString>
+{
+    let matches = create_parser().get_matches_from(argv);
+    Options::from(matches)
+}
+
+
 /// Structure holding the options parsed from command line.
 #[derive(Clone)]
 pub struct Options {
+    /// Verbosity of the logging output.
+    ///
+    /// Corresponds to the number of times the -v flag has been passed.
+    /// If -q has been used instead, this will be negative.
+    pub verbosity: isize,
+
     /// How to interpret the input (if anyhow).
     pub input_mode: Option<InputMode>,
     /// Optional expression to execute right before processing the input.
@@ -25,9 +48,21 @@ pub struct Options {
     pub after: Option<String>,
 }
 
+impl Options {
+    #[inline]
+    pub fn verbose(&self) -> bool { self.verbosity > 0 }
+    #[inline]
+    pub fn quiet(&self) -> bool { self.verbosity < 0 }
+}
+
 impl<'a> From<ArgMatches<'a>> for Options {
     fn from(matches: ArgMatches<'a>) -> Self {
+        let verbose_count = matches.occurrences_of(OPT_VERBOSE) as isize;
+        let quiet_count = matches.occurrences_of(OPT_QUIET) as isize;
+        let verbosity = verbose_count - quiet_count;
+
         Options{
+            verbosity: verbosity,
             before: matches.value_of(OPT_BEFORE).map(String::from),
             expressions: matches
                              .values_of(ARG_EXPRESSION).unwrap()
@@ -100,23 +135,6 @@ impl<'a> From<ArgMatches<'a>> for InputMode {
 }
 
 
-/// Parse command line arguments and return matches' object.
-#[inline]
-pub fn parse() -> Options {
-    parse_from_argv(env::args_os())
-}
-
-/// Parse application options from given array of arguments
-/// (*all* arguments, including binary name).
-#[inline]
-pub fn parse_from_argv<I, T>(argv: I) -> Options
-    where I: IntoIterator<Item=T>, T: Into<OsString>
-{
-    let matches = create_parser().get_matches_from(argv);
-    Options::from(matches)
-}
-
-
 // Parser configuration
 
 /// Type of the argument parser object
@@ -133,6 +151,9 @@ const USAGE: &'static str = concat!("rush", " [",
     "] ",
     "[--before <EXPRESSION>] ", "[--after <EXPRESSION>] ",
     "<EXPRESSION> ", "[<EXPRESSION> ...]");
+
+const OPT_VERBOSE: &'static str = "verbose";
+const OPT_QUIET: &'static str = "quiet";
 
 const OPT_INPUT_MODE: &'static str = "mode";
 const INPUT_MODES: &'static [&'static str] = &[
@@ -222,6 +243,18 @@ fn create_parser<'p>() -> Parser<'p> {
             .conflicts_with("input_group")
             .short("p").long("parse")
             .help("Only parse the expressions, printing their ASTs"))
+
+        // Verbosity flags.
+        .arg(Arg::with_name(OPT_VERBOSE)
+            .long("verbose").short("v")
+            .set(ArgSettings::Multiple)
+            .conflicts_with(OPT_QUIET)
+            .help("Increase logging verbosity"))
+        .arg(Arg::with_name(OPT_QUIET)
+            .long("quiet").short("q")
+            .set(ArgSettings::Multiple)
+            .conflicts_with(OPT_VERBOSE)
+            .help("Decrease logging verbosity"))
 
         .help_short("H")
         .version_short("V")
