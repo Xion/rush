@@ -58,6 +58,13 @@ impl<'c> Context<'c> {
         self.parent.is_none()
     }
 
+    /// Whether this context is empty, i.e. has no own symbols defined in its scope.
+    /// Note that because of builtins, the root context will never be empty!
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.scope.is_empty()
+    }
+
     /// Check if given name is defined within this Context
     /// or any of its ancestors.
     #[inline]

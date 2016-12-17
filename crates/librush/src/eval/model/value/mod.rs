@@ -21,6 +21,12 @@ use conv::misc::InvalidSentinel;
 pub use self::types::*;
 
 
+// TODO: make Value an alias like: type Value = Rc<Data>;
+// and Data should contain actual, well, data.
+// this is because currently, we are cloning the values way too much
+// and we won't really be able to fix that
+
+
 /// Typed value that's operated upon.
 #[derive(Clone)]
 pub enum Value {

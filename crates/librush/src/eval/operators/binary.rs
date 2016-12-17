@@ -1,6 +1,8 @@
 //! Module implementing evaluaton of binary operator AST nodes.
 
+use std::cell::RefCell;
 use std::iter;
+use std::mem;
 
 use eval::{self, api, Eval, Context, Value};
 use eval::model::Invoke;
@@ -15,7 +17,6 @@ enum Shortcircuit {
     /// The operation has determined its result
     /// and no further computation is necessary.
     Break,
-
     /// The result of the operation may change,
     /// so further terms need to be evaluated.
     Continue,
@@ -25,6 +26,32 @@ enum Shortcircuit {
 type ScEvalResult = Result<(Value, Shortcircuit), eval::Error>;
 
 
+/// Lazy wrapper around Value.
+///
+/// Used as an argument to the short-circuiting operators, allowing them to
+/// take both immediate values and Evals.
+///
+/// WARNING: This type says it implements Eval, but it's actually more like EvalOnce.
+/// If Eval::eval is invoked for it the second time, it will panic.
+#[derive(Debug)]
+struct LazyValue(RefCell<Option<Value>>);
+
+impl From<Value> for LazyValue {
+    fn from(value: Value) -> Self { LazyValue(RefCell::new(Some(value))) }
+}
+
+impl Eval for LazyValue {
+    fn eval(&self, _: &mut Context) -> eval::Result {
+        let maybe_value = mem::replace(&mut *self.0.borrow_mut(), None);
+        match maybe_value {
+            Some(value) => Ok(value),
+            None => panic!("<LazyValue as Eval>::eval invoked more than once!")
+        }
+    }
+}
+
+
+// Top-level impl block for BinaryOpNode code in this module.
 impl Eval for BinaryOpNode {
     #[inline]
     fn eval(&self, context: &mut Context) -> eval::Result {
@@ -38,12 +65,16 @@ impl Eval for BinaryOpNode {
 // Public interface for use by other nodes' evaluation code.
 impl BinaryOpNode {
     pub fn eval_op(op: &str, left: Value, right: Value, context: &Context) -> eval::Result {
-        match op {
-            // These short-circuited operators have to be considered here as well
-            // because eval_right_assoc() and CurriedBinaryOpNode::eval() relies on this.
-            "&&" => BinaryOpNode::eval_and(left, right).map(|(v, _)| v),
-            "||" => BinaryOpNode::eval_or(left, right).map(|(v, _)| v),
+        // These short-circuited operators have to be considered here as well
+        // because eval_right_assoc() and CurriedBinaryOpNode::eval() relies on this.
+        if BinaryOpNode::is_shortcircuit_op(op) {
+            let left = Box::new(LazyValue::from(left)) as Box<Eval>;
+            let right = Box::new(LazyValue::from(right)) as Box<Eval>;
+            let (value, _) = try!(BinaryOpNode::eval_shortcircuit_op(op, &left, &right, &context));
+            return Ok(value);
+        }
 
+        match op {
             "<" => BinaryOpNode::eval_lt(left, right),
             "<=" => BinaryOpNode::eval_le(left, right),
             ">" => BinaryOpNode::eval_gt(left, right),
@@ -59,26 +90,27 @@ impl BinaryOpNode {
             "/" => BinaryOpNode::eval_by(left, right),
             "%" => BinaryOpNode::eval_modulo(left, right),
             "**" => BinaryOpNode::eval_power(left, right),
-
             _ => Err(eval::Error::new(&format!("unknown binary operator: `{}`", op))),
         }
     }
 }
 
+// Private implementation methods for evaluating binary operators.
 impl BinaryOpNode {
     fn eval_left_assoc(&self, context: &mut Context) -> eval::Result {
         let mut result = try!(self.first.eval(context));
         for &(ref op, ref arg) in &self.rest {
-            let arg = try!(arg.eval(context));
-
             // allow for terminating evaluation of short-circuiting operators early
             if BinaryOpNode::is_shortcircuit_op(&op[..]) {
-                let (res, sc) = try!(BinaryOpNode::eval_shortcircuit_op(&op[..], result, arg));
+                let left = Box::new(LazyValue::from(result)) as Box<Eval>;
+                let (res, sc) = try!(
+                    BinaryOpNode::eval_shortcircuit_op(&op[..], &left, arg, context));
                 result = res;
                 if sc == Shortcircuit::Break {
                     break;
                 }
             } else {
+                let arg = try!(arg.eval(context));
                 result = try!(BinaryOpNode::eval_op(&op[..], result, arg, &context));
             }
         }
@@ -109,16 +141,17 @@ impl BinaryOpNode {
                 continue;
             }
 
-            let arg = try!(arg.eval(context));
-
             // allow for terminating evaluation of short-circuiting operators early
             if BinaryOpNode::is_shortcircuit_op(&op[..]) {
-                let (res, sc) = try!(BinaryOpNode::eval_shortcircuit_op(&op[..], arg, result));
+                let right = Box::new(LazyValue::from(result)) as Box<Eval>;
+                let (res, sc) = try!(
+                    BinaryOpNode::eval_shortcircuit_op(&op[..], arg, &right, context));
                 result = res;
                 if sc == Shortcircuit::Break {
                     return Ok(result);
                 }
             } else {
+                let arg = try!(arg.eval(context));
                 result = try!(BinaryOpNode::eval_op(&op[..], arg, result, &context));
             }
             op = next_op;
@@ -161,12 +194,34 @@ impl BinaryOpNode {
         ["&&", "||"].contains(&op)
     }
 
-    fn eval_shortcircuit_op(op: &str, left: Value, right: Value) -> ScEvalResult {
-        match op {
-            "&&" => BinaryOpNode::eval_and(left, right),
-            "||" => BinaryOpNode::eval_or(left, right),
-            _ => panic!("non-shortcircuiting operator: {}", op),
+    /// Evaluate a short-circuiting operator.
+    ///
+    /// The result contains both the actual Value of the operation
+    /// as well as the short-circuiting hint (whether to continue or stop further evaluation).
+    fn eval_shortcircuit_op(op: &str,
+                            left: &Box<Eval>, right: &Box<Eval>,
+                            context: &Context) -> ScEvalResult {
+        // XXX: We really don't want BinaryOpNode::eval_op to take &mut Context,
+        // so we introduce "mutability" here by adding a local Context.
+        //
+        // This of course means that any assignments that happen to this context
+        // cannot be propagated upwards. This prohibits expressions such as:
+        //    foo && (bar = 42)
+        // but they wouldn't evaluate anyway (assignment returns nil).
+        //
+        // But of course, there are some tricks (or custom functions)
+        // that allow to perform assignment AND return a non-nil value,
+        // so we'll check for any mutations in the temporary context and error-out.
+        let mut context = Context::with_parent(context);
+        let result = match op {
+            "&&" => try!(BinaryOpNode::eval_and(left, right, &mut context)),
+            "||" => try!(BinaryOpNode::eval_or(left, right, &mut context)),
+            _ => panic!("not a short-circuiting operator: {}", op),
+        };
+        if !context.is_empty() {
+            return Err(eval::Error::other("assignments are not supported in this context"));
         }
+        Ok(result)
     }
 }
 
@@ -186,13 +241,16 @@ impl BinaryOpNode {
 }
 
 // Logical operators.
-// Note that these operators can short-circuit.
+// Note that these operators can short-circuit, which is why they don't take Values.
 impl BinaryOpNode {
     /// Evaluate the "&&" operator for two values.
     #[inline]
-    fn eval_and(left: Value, right: Value) -> ScEvalResult {
+    fn eval_and<'e>(left: &Box<Eval>, right: &Box<Eval>,
+                    context: &mut Context) -> ScEvalResult {
+        let left = try!(left.eval(context));
         let is_true = try!(api::conv::bool(left.clone())).unwrap_bool();
         if is_true {
+            let right = try!(right.eval(context));
             Ok((right, Shortcircuit::Continue))
         } else {
             Ok((left, Shortcircuit::Break))
@@ -201,11 +259,14 @@ impl BinaryOpNode {
 
     /// Evaluate the "||" operator for two values.
     #[inline]
-    fn eval_or(left: Value, right: Value) -> ScEvalResult {
+    fn eval_or<'e>(left: &Box<Eval>, right: &Box<Eval>,
+                   context: &mut Context) -> ScEvalResult {
+        let left = try!(left.eval(context));
         let is_true = try!(api::conv::bool(left.clone())).unwrap_bool();
         if is_true {
             Ok((left, Shortcircuit::Break))
         } else {
+            let right = try!(right.eval(context));
             Ok((right, Shortcircuit::Continue))
         }
     }
