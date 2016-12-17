@@ -34,7 +34,7 @@ pub type Result = result::Result<Value, Error>;
 
 
 /// Trait for objects that can be evaluated within given Context.
-pub trait Eval : fmt::Debug + mopa::Any {
+pub trait Eval : fmt::Debug + mopa::Any + 'static {
     fn eval(&self, context: &mut Context) -> Result;
 }
 mopafy!(Eval);
