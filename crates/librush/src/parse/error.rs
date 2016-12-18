@@ -14,7 +14,7 @@ pub enum Error {
     /// Not an UTF8 input.
     Corrupted,
     /// Parse error (input doesn't follow valid expression syntax).
-    // TODO(xion): include more information, like the offending chracter index
+    // TODO(xion): include more information, like the offending character index
     Invalid,
     /// Extra input beyond what's allowed by expression syntax.
     Excess(String),

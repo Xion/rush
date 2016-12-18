@@ -22,6 +22,7 @@ impl TryFrom<Value> for String {
         String::try_from(&src)
     }
 }
+
 impl<'a> TryFrom<&'a Value> for String {
     type Err = <String as TryFrom<Value>>::Err;
 
@@ -42,7 +43,7 @@ impl<'a> TryFrom<&'a Value> for String {
                 if !res.contains('.') {
                     res.push_str(".0");
                 }
-                Ok(format!("{}", res))
+                Ok(res)
             },
             Value::String(ref s) => Ok(s.clone()),
             Value::Regex(..) => Err(GeneralError::Unrepresentable(

@@ -245,8 +245,8 @@ impl BinaryOpNode {
 impl BinaryOpNode {
     /// Evaluate the "&&" operator for two values.
     #[inline]
-    fn eval_and<'e>(left: &Box<Eval>, right: &Box<Eval>,
-                    context: &mut Context) -> ScEvalResult {
+    fn eval_and(left: &Box<Eval>, right: &Box<Eval>,
+                context: &mut Context) -> ScEvalResult {
         let left = try!(left.eval(context));
         let is_true = try!(api::conv::bool(left.clone())).unwrap_bool();
         if is_true {
@@ -259,8 +259,8 @@ impl BinaryOpNode {
 
     /// Evaluate the "||" operator for two values.
     #[inline]
-    fn eval_or<'e>(left: &Box<Eval>, right: &Box<Eval>,
-                   context: &mut Context) -> ScEvalResult {
+    fn eval_or(left: &Box<Eval>, right: &Box<Eval>,
+               context: &mut Context) -> ScEvalResult {
         let left = try!(left.eval(context));
         let is_true = try!(api::conv::bool(left.clone())).unwrap_bool();
         if is_true {

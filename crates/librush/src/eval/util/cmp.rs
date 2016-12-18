@@ -6,7 +6,7 @@ use std::cmp::Ordering;
 /// Trait for values that can be optionally compared for a sort-order.
 ///
 /// Unlike PartialOrd, this one treats the unspecified ordering of values
-/// as an errorneous condition. As such, it is more similar to Ord,
+/// as an erroneous condition. As such, it is more similar to Ord,
 /// and also analogous to how TryFrom and TryInto traits from the conv crate
 /// relate to the standard From and Into traits.
 pub trait TryOrd<Rhs: ?Sized = Self> {
