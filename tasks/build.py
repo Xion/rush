@@ -7,6 +7,7 @@ from itertools import chain, imap
 import logging
 import os
 from pathlib import Path
+import re
 try:
     from shlex import quote
 except ImportError:
@@ -59,10 +60,16 @@ def bin(ctx, release=False, verbose=False):
         return binary.return_code
     help_lines = binary.stdout.strip().splitlines()
 
-    # beautify it a little before pasting into README
+    # beautify it before pasting into README
     while not help_lines[0].startswith("USAGE"):
         del help_lines[0]  # remove "About" line & other fluff
     del help_lines[0]  # remove "USAGE:" header
+    flags = re.findall(r'--(?:\w|[-_])+', help_lines[0])
+    help_lines[1:] = [
+        # remove the description lines of flags that aren't in the usage string
+        line for line in help_lines[1:]
+        if not '--' in line or any(flag in line for flag in flags)
+    ]
     help_lines[:1] = (
         # make the usage line more readable by splitting long flags into
         # separate lines, and fix binary name

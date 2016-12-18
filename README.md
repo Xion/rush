@@ -34,10 +34,6 @@ Any Unix-like system should do.
             Optional expression to evaluate before processing the input. The result of this expression is discarded but any side effects (assignments) will persist.
         -A, --after <EXPRESSION>
             Optional expression to evaluate after processing the input. If provided, only the result of this expression will be printed to standard output.
-        -v, --verbose                Increase logging verbosity
-        -q, --quiet                  Decrease logging verbosity
-        -H, --help                   Prints help information
-        -V, --version                Prints version information
     
     ARGS:
         <EXPRESSION>...
